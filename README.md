@@ -71,12 +71,7 @@ supabase/
 
 ## GitHub
 
-المشروع جاهز لـ Git. لربطه بـ GitHub:
-
-```bash
-git remote add origin https://github.com/USERNAME/masrofy.git
-git push -u origin main
-```
+Repository: https://github.com/muhammednasr10/Masrofy
 
 ## الخطوات القادمة المقترحة
 

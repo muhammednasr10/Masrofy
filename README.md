@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Masrofy
 
-## Getting Started
+نظام ويب بسيط لإدارة المصروفات الشخصية باللغة العربية.
 
-First, run the development server:
+## المميزات (MVP)
+
+- تسجيل دخول وإنشاء حساب عبر Supabase Auth
+- إضافة مصروفات ودخل
+- إدارة فئات المصروفات
+- لوحة تحكم بملخص شهري وتوزيع حسب الفئة
+
+## Tech Stack
+
+- Next.js 16 (App Router)
+- TypeScript
+- Tailwind CSS
+- Supabase (Auth + PostgreSQL + RLS)
+
+## البداية السريعة
+
+### 1) إنشاء مشروع Supabase جديد
+
+> مهم: استخدم مشروع Supabase جديد خاص بـ Masrofy. لا تستخدم مشروع إنتاج آخر.
+
+1. أنشئ مشروعًا جديدًا من [Supabase Dashboard](https://supabase.com/dashboard)
+2. من **SQL Editor**، نفّذ محتوى الملف:
+   `supabase/migrations/001_init.sql`
+3. من **Authentication > Providers**، فعّل Email
+4. من **Project Settings > API**، انسخ:
+   - Project URL
+   - anon public key
+
+### 2) إعداد المتغيرات
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+املأ القيم:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 3) تشغيل المشروع
 
-## Learn More
+```bash
+npm install
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+افتح [http://localhost:3000](http://localhost:3000)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## هيكل المشروع
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```text
+src/
+  app/
+    (app)/          # الصفحات المحمية
+    (auth)/         # login / register
+    auth/callback/  # Supabase auth callback
+  components/
+  lib/
+    supabase/
+    types/
+    utils/
+supabase/
+  migrations/
+```
 
-## Deploy on Vercel
+## GitHub
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+المشروع جاهز لـ Git. لربطه بـ GitHub:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+git remote add origin https://github.com/USERNAME/masrofy.git
+git push -u origin main
+```
+
+## الخطوات القادمة المقترحة
+
+- ميزانيات شهرية لكل فئة
+- تصدير CSV / PDF
+- PWA للموبايل
+- رسوم بيانية أسبوعية
+- دعم عملات متعددة

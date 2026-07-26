@@ -2,6 +2,8 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import AccountDataSection from "@/components/account/AccountDataSection";
+import AccountSecuritySection from "@/components/account/AccountSecuritySection";
 import { currencyOptions } from "@/lib/constants/currency-options";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile, Wallet } from "@/lib/types/database";
@@ -21,6 +23,7 @@ export default function AccountPage() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [email, setEmail] = useState("");
+  const [emailVerified, setEmailVerified] = useState(true);
   const [fullName, setFullName] = useState("");
   const [currency, setCurrency] = useState("EGP");
   const [defaultWalletId, setDefaultWalletId] = useState("");
@@ -45,6 +48,7 @@ export default function AccountPage() {
       }
 
       setEmail(user.email ?? "");
+      setEmailVerified(Boolean(user.email_confirmed_at));
       setCreatedAt(user.created_at ?? null);
 
       const [
@@ -149,6 +153,11 @@ export default function AccountPage() {
     await supabase.auth.signOut();
     router.push("/login");
     router.refresh();
+  }
+
+  function handleSectionFeedback(nextError: string | null, nextMessage: string | null) {
+    setError(nextError);
+    setMessage(nextMessage);
   }
 
   if (loading) {
@@ -263,6 +272,14 @@ export default function AccountPage() {
           </div>
         </form>
       </section>
+
+      <AccountSecuritySection
+        email={email}
+        emailVerified={emailVerified}
+        onFeedback={handleSectionFeedback}
+      />
+
+      <AccountDataSection email={email} onFeedback={handleSectionFeedback} />
     </div>
   );
 }

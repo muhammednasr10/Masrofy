@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getAuthCallbackUrl } from "@/lib/supabase/site-url";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -25,6 +26,7 @@ export default function RegisterPage() {
       email,
       password,
       options: {
+        emailRedirectTo: getAuthCallbackUrl("/dashboard"),
         data: {
           full_name: fullName,
         },

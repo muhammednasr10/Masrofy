@@ -5,33 +5,44 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
   deleteTransactionAttachments,
-  loadSignedAttachmentUrls,
   uploadTransactionReceipt,
 } from "@/lib/attachments";
 import {
+  appendTransactionToSnapshot,
   emptyTransactionFilters,
   filterTransactions,
   getSelectedWalletSnapshot,
+  loadExpensesPageData,
+  removeTransactionFromSnapshot,
 } from "@/lib/expenses";
 import { usePageFeedback } from "@/hooks/usePageFeedback";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { useSyncCompleteListener } from "@/hooks/useSyncCompleteListener";
 import type { Category, Transaction, TransactionType, Wallet } from "@/lib/types/database";
 import { requireAuthenticatedUser } from "@/lib/supabase/auth";
+import {
+  buildLocalTransaction,
+  enqueueTransactionInsert,
+  isBrowserOnline,
+  saveExpensesCache,
+  type OfflineTransaction,
+} from "@/lib/offline";
 import { getMonthRange } from "@/lib/utils/format";
 import { summarizeTransactions } from "@/lib/utils/summary";
-import { normalizeWallets } from "@/lib/wallets";
 
 export function useExpensesPage() {
   const router = useRouter();
+  const online = useNetworkStatus();
   const month = useMemo(() => getMonthRange(), []);
   const { error, message, setError, setMessage, clearFeedback } = usePageFeedback();
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [wallets, setWallets] = useState<Wallet[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactions, setTransactions] = useState<OfflineTransaction[]>([]);
   const [balanceTransactions, setBalanceTransactions] = useState<
     Pick<Transaction, "id" | "wallet_id" | "amount" | "type" | "transfer_role">[]
   >([]);
-  const [monthTransactions, setMonthTransactions] = useState<Transaction[]>([]);
+  const [monthTransactions, setMonthTransactions] = useState<OfflineTransaction[]>([]);
   const [filters, setFilters] = useState(() =>
     emptyTransactionFilters(month.start, month.end),
   );
@@ -48,79 +59,97 @@ export function useExpensesPage() {
   const [attachmentUrls, setAttachmentUrls] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [usingOfflineCache, setUsingOfflineCache] = useState(false);
+
+  const applySnapshot = useCallback(
+    (
+      snapshot: {
+        currency: string;
+        categories: Category[];
+        wallets: Wallet[];
+        transactions: OfflineTransaction[];
+        monthTransactions: OfflineTransaction[];
+        balanceTransactions: Pick<
+          Transaction,
+          "id" | "wallet_id" | "amount" | "type" | "transfer_role"
+        >[];
+      },
+      options?: { fromCache?: boolean },
+    ) => {
+      setCurrency(snapshot.currency);
+      setCategories(snapshot.categories);
+      setWallets(snapshot.wallets);
+      setTransactions(snapshot.transactions);
+      setMonthTransactions(snapshot.monthTransactions);
+      setBalanceTransactions(snapshot.balanceTransactions);
+      setUsingOfflineCache(Boolean(options?.fromCache));
+
+      if (snapshot.categories[0]) {
+        setCategoryId(snapshot.categories[0].id);
+      }
+
+      const defaultWallet =
+        snapshot.wallets.find((wallet) => wallet.is_default) ?? snapshot.wallets[0];
+
+      if (defaultWallet) {
+        setWalletId(defaultWallet.id);
+      }
+    },
+    [],
+  );
 
   const loadData = useCallback(async () => {
     const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    const [
-      { data: profile },
-      { data: categoryRows },
-      { data: walletRows },
-      { data: transactionRows },
-      { data: monthRows },
-      { data: balanceRows },
-    ] = await Promise.all([
-      supabase.from("profiles").select("currency, default_wallet_id").maybeSingle(),
-      supabase.from("categories").select("*").order("sort_order", { ascending: true }),
-      supabase.from("wallets").select("*").order("sort_order", { ascending: true }),
-      supabase
-        .from("transactions")
-        .select("*, categories(name, icon, color), wallets(name, icon, color)")
-        .order("transaction_date", { ascending: false }),
-      supabase
-        .from("transactions")
-        .select("*, categories(name, icon, color)")
-        .gte("transaction_date", month.start)
-        .lte("transaction_date", month.end)
-        .order("transaction_date", { ascending: false }),
-      supabase.from("transactions").select("id, wallet_id, amount, type, transfer_role"),
-    ]);
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
-    const expenseTransactions = ((transactionRows ?? []) as Transaction[]).filter(
-      (transaction) => transaction.type !== "transfer",
-    );
-    const nextAttachmentUrls = await loadSignedAttachmentUrls(
+    const result = await loadExpensesPageData(
       supabase,
-      expenseTransactions.map((transaction) => transaction.id),
+      user.id,
+      month.start,
+      month.end,
+      { useNetwork: isBrowserOnline() },
     );
-    const typedWallets = normalizeWallets((walletRows ?? []) as Wallet[]);
 
-    setCurrency(profile?.currency ?? "EGP");
-    setCategories((categoryRows ?? []) as Category[]);
-    setWallets(typedWallets);
-    setTransactions(expenseTransactions);
-    setMonthTransactions(
-      ((monthRows ?? []) as Transaction[]).filter(
-        (transaction) => transaction.type !== "transfer",
-      ),
-    );
-    setBalanceTransactions(
-      (balanceRows ?? []) as Pick<
-        Transaction,
-        "id" | "wallet_id" | "amount" | "type" | "transfer_role"
-      >[],
-    );
-    setAttachmentUrls(nextAttachmentUrls);
-
-    if (categoryRows?.[0]) {
-      setCategoryId(categoryRows[0].id);
+    if (result.kind === "offline-missing") {
+      setError(result.message);
+      setLoading(false);
+      return;
     }
 
-    const defaultWallet =
-      typedWallets.find((wallet) => wallet.id === profile?.default_wallet_id) ??
-      typedWallets.find((wallet) => wallet.is_default) ??
-      typedWallets[0];
-
-    if (defaultWallet) {
-      setWalletId(defaultWallet.id);
+    if (result.kind === "offline-cache") {
+      applySnapshot(result.snapshot, { fromCache: true });
+      setLoading(false);
+      return;
     }
 
+    if (result.kind === "error") {
+      if (result.fallbackSnapshot) {
+        applySnapshot(result.fallbackSnapshot, { fromCache: true });
+        setMessage(result.message);
+      } else {
+        setError(result.message);
+      }
+      setLoading(false);
+      return;
+    }
+
+    applySnapshot(result.snapshot, { fromCache: false });
+    setAttachmentUrls(result.attachmentUrls);
     setLoading(false);
-  }, [month.end, month.start]);
+  }, [applySnapshot, month.end, month.start, setError, setMessage]);
 
   useEffect(() => {
-    loadData();
+    void loadData();
   }, [loadData]);
+
+  useSyncCompleteListener(loadData);
 
   const monthSummary = useMemo(
     () => summarizeTransactions(monthTransactions),
@@ -157,28 +186,72 @@ export function useExpensesPage() {
     }
   }
 
-  const ingestTransaction = useCallback(
-    (savedTransaction: Transaction) => {
-      setTransactions((current) => [savedTransaction, ...current]);
-      setBalanceTransactions((current) => [
-        {
-          id: savedTransaction.id,
-          wallet_id: savedTransaction.wallet_id,
-          amount: savedTransaction.amount,
-          type: savedTransaction.type,
-          transfer_role: savedTransaction.transfer_role,
-        },
-        ...current,
-      ]);
+  const persistSnapshot = useCallback(
+    async (snapshot: {
+      transactions: OfflineTransaction[];
+      monthTransactions: OfflineTransaction[];
+      balanceTransactions: Pick<
+        Transaction,
+        "id" | "wallet_id" | "amount" | "type" | "transfer_role"
+      >[];
+    }) => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-      if (
-        savedTransaction.transaction_date >= month.start &&
-        savedTransaction.transaction_date <= month.end
-      ) {
-        setMonthTransactions((current) => [savedTransaction, ...current]);
+      if (!user) {
+        return;
       }
+
+      await saveExpensesCache({
+        userId: user.id,
+        cachedAt: new Date().toISOString(),
+        currency,
+        categories,
+        wallets,
+        transactions: snapshot.transactions,
+        monthTransactions: snapshot.monthTransactions,
+        balanceTransactions: snapshot.balanceTransactions,
+        monthStart: month.start,
+        monthEnd: month.end,
+      });
     },
-    [month.end, month.start],
+    [categories, currency, month.end, month.start, wallets],
+  );
+
+  const ingestTransaction = useCallback(
+    (savedTransaction: OfflineTransaction) => {
+      const nextSnapshot = appendTransactionToSnapshot(
+        {
+          currency,
+          categories,
+          wallets,
+          transactions,
+          monthTransactions,
+          balanceTransactions,
+        },
+        savedTransaction,
+        month.start,
+        month.end,
+      );
+
+      setTransactions(nextSnapshot.transactions);
+      setMonthTransactions(nextSnapshot.monthTransactions);
+      setBalanceTransactions(nextSnapshot.balanceTransactions);
+      void persistSnapshot(nextSnapshot);
+    },
+    [
+      balanceTransactions,
+      categories,
+      currency,
+      month.end,
+      month.start,
+      monthTransactions,
+      persistSnapshot,
+      transactions,
+      wallets,
+    ],
   );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -196,16 +269,44 @@ export function useExpensesPage() {
 
     try {
       const user = await requireAuthenticatedUser(supabase);
+      const payload = {
+        wallet_id: walletId,
+        category_id: categoryId || null,
+        amount: Number(amount),
+        type,
+        note: note.trim() || null,
+        transaction_date: transactionDate,
+      };
+
+      if (!isBrowserOnline()) {
+        if (receiptFile) {
+          setError("رفع المرفقات يحتاج اتصالاً بالإنترنت.");
+          return;
+        }
+
+        const clientTransactionId = crypto.randomUUID();
+        await enqueueTransactionInsert(user.id, clientTransactionId, payload);
+        ingestTransaction(
+          buildLocalTransaction(
+            user.id,
+            clientTransactionId,
+            payload,
+            categories,
+            wallets,
+          ),
+        );
+        setAmount("");
+        setNote("");
+        setReceiptFile(null);
+        setMessage("تم الحفظ محلياً — سيتم رفع العملية عند عودة الإنترنت.");
+        return;
+      }
+
       const { data, error: insertError } = await supabase
         .from("transactions")
         .insert({
           user_id: user.id,
-          wallet_id: walletId,
-          category_id: categoryId || null,
-          amount: Number(amount),
-          type,
-          note: note.trim() || null,
-          transaction_date: transactionDate,
+          ...payload,
         })
         .select("*, categories(name, icon, color), wallets(name, icon, color)")
         .single();
@@ -249,6 +350,17 @@ export function useExpensesPage() {
     clearFeedback();
 
     const deletedTransaction = transactions.find((transaction) => transaction.id === id);
+
+    if (deletedTransaction?.offlinePending) {
+      setError("لا يمكن حذف عملية محفوظة محلياً قبل مزامنتها.");
+      return;
+    }
+
+    if (!isBrowserOnline()) {
+      setError("حذف العمليات يحتاج اتصالاً بالإنترنت.");
+      return;
+    }
+
     const supabase = createClient();
 
     try {
@@ -260,21 +372,26 @@ export function useExpensesPage() {
         throw deleteError;
       }
 
-      setTransactions((current) => current.filter((item) => item.id !== id));
+      const nextSnapshot = removeTransactionFromSnapshot(
+        {
+          currency,
+          categories,
+          wallets,
+          transactions,
+          monthTransactions,
+          balanceTransactions,
+        },
+        id,
+      );
+
+      setTransactions(nextSnapshot.transactions);
+      setMonthTransactions(nextSnapshot.monthTransactions);
+      setBalanceTransactions(nextSnapshot.balanceTransactions);
       setAttachmentUrls((current) => {
         const next = { ...current };
         delete next[id];
         return next;
       });
-
-      if (deletedTransaction) {
-        setBalanceTransactions((current) =>
-          current.filter((transaction) => transaction.id !== id),
-        );
-        setMonthTransactions((current) =>
-          current.filter((transaction) => transaction.id !== id),
-        );
-      }
 
       setMessage("تم حذف العملية.");
       router.refresh();
@@ -285,6 +402,8 @@ export function useExpensesPage() {
 
   return {
     loading,
+    online,
+    usingOfflineCache,
     monthLabel: month.label,
     monthStart: month.start,
     monthEnd: month.end,

@@ -1,4 +1,5 @@
-import type { Transaction, Wallet } from "@/lib/types/database";
+import type { OfflineTransaction } from "@/lib/offline/types";
+import type { Wallet } from "@/lib/types/database";
 import { getTransactionWalletDisplay } from "@/lib/expenses/display";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
 
@@ -9,7 +10,7 @@ export default function TransactionsList({
   attachmentUrls,
   onDelete,
 }: {
-  transactions: Transaction[];
+  transactions: OfflineTransaction[];
   wallets: Wallet[];
   currency: string;
   attachmentUrls: Record<string, string>;
@@ -34,6 +35,11 @@ export default function TransactionsList({
                 {transaction.categories?.icon}{" "}
                 {transaction.categories?.name ??
                   (transaction.type === "income" ? "دخل" : "بدون فئة")}
+                {transaction.offlinePending ? (
+                  <span className="mr-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                    بانتظار المزامنة
+                  </span>
+                ) : null}
               </p>
               <p className="text-sm text-slate-500">
                 {walletDisplay ? (

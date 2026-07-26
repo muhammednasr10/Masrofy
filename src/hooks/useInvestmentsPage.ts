@@ -20,7 +20,7 @@ import {
 import type { Investment, InvestmentProfitEntry, InvestmentUpdate } from "@/lib/types/database";
 import {
   getVariableInvestmentValue,
-  normalizeInvestments,
+  loadInvestmentPageData,
   sortInvestments,
   summarizeInvestments,
   validateInvestmentForm,
@@ -58,63 +58,16 @@ export function useInvestmentsPage() {
 
   const loadData = useCallback(async () => {
     const supabase = createClient();
-    const [
-      { data: profile },
-      { data: investmentRows, error: investmentError },
-      { data: profitEntryRows, error: profitEntryError },
-      { data: valueUpdateRows, error: valueUpdateError },
-    ] = await Promise.all([
-      supabase.from("profiles").select("currency").maybeSingle(),
-      supabase.from("investments").select("*").order("sort_order", { ascending: true }),
-      supabase
-        .from("investment_profit_entries")
-        .select("*")
-        .order("period_end", { ascending: false }),
-      supabase
-        .from("investment_updates")
-        .select("*")
-        .order("recorded_at", { ascending: false }),
-    ]);
+    const data = await loadInvestmentPageData(supabase);
 
-    if (investmentError) {
-      setError(investmentError.message);
+    if (data.error) {
+      setError(data.error);
     }
 
-    if (profitEntryError && !isMissingSupabaseTableError(profitEntryError, "investment_profit_entries")) {
-      setError(profitEntryError.message);
-    }
-
-    if (valueUpdateError && !isMissingSupabaseTableError(valueUpdateError, "investment_updates")) {
-      setError(valueUpdateError.message);
-    }
-
-    const typedInvestments = sortInvestments(
-      normalizeInvestments((investmentRows ?? []) as Investment[]),
-    );
-    const groupedEntries: Record<string, InvestmentProfitEntry[]> = {};
-    const groupedUpdates: Record<string, InvestmentUpdate[]> = {};
-    const profitEntriesAvailable = !profitEntryError;
-
-    if (profitEntriesAvailable) {
-      for (const entry of (profitEntryRows ?? []) as InvestmentProfitEntry[]) {
-        const current = groupedEntries[entry.investment_id] ?? [];
-        current.push(entry);
-        groupedEntries[entry.investment_id] = current;
-      }
-    }
-
-    if (!valueUpdateError) {
-      for (const update of (valueUpdateRows ?? []) as InvestmentUpdate[]) {
-        const current = groupedUpdates[update.investment_id] ?? [];
-        current.push(update);
-        groupedUpdates[update.investment_id] = current;
-      }
-    }
-
-    setCurrency(profile?.currency ?? "EGP");
-    setInvestments(typedInvestments);
-    setProfitEntriesByInvestment(groupedEntries);
-    setValueUpdatesByInvestment(groupedUpdates);
+    setCurrency(data.currency);
+    setInvestments(data.investments);
+    setProfitEntriesByInvestment(data.profitEntriesByInvestment);
+    setValueUpdatesByInvestment(data.valueUpdatesByInvestment);
     setLoading(false);
   }, []);
 

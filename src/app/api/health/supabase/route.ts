@@ -1,7 +1,19 @@
 import { createClient } from "@/lib/supabase/server";
+import { isMisconfiguredSupabaseUrl } from "@/lib/supabase/env";
 import { NextResponse } from "next/server";
 
 export async function GET() {
+  if (isMisconfiguredSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL)) {
+    return NextResponse.json(
+      {
+        connected: false,
+        message:
+          "NEXT_PUBLIC_SUPABASE_URL includes /rest/v1. Use the project URL only, e.g. https://xyz.supabase.co",
+      },
+      { status: 500 },
+    );
+  }
+
   const supabase = await createClient();
   const { error: walletsError } = await supabase.from("wallets").select("id").limit(1);
 
@@ -10,7 +22,9 @@ export async function GET() {
       {
         connected: false,
         message:
-          walletsError.code === "PGRST205"
+          walletsError.code === "PGRST125"
+            ? "Invalid Supabase URL path. Set NEXT_PUBLIC_SUPABASE_URL to https://your-project.supabase.co without /rest/v1."
+            : walletsError.code === "PGRST205"
             ? "Supabase connected, but wallets table is missing. Run supabase/migrations/002_wallets.sql first."
             : walletsError.message,
       },

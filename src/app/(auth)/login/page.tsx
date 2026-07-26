@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import SiteFooter from "@/components/layout/SiteFooter";
 import { createClient } from "@/lib/supabase/client";
+import { getSupabaseConfigHint, translateAuthError } from "@/lib/supabase/auth-errors";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -25,7 +26,7 @@ export default function LoginPage() {
     });
 
     if (signInError) {
-      setError(signInError.message);
+      setError(translateAuthError(signInError.message));
       setLoading(false);
       return;
     }
@@ -72,6 +73,12 @@ export default function LoginPage() {
               className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-emerald-500"
             />
           </label>
+
+          {getSupabaseConfigHint() ? (
+            <p className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              {getSupabaseConfigHint()}
+            </p>
+          ) : null}
 
           {error ? (
             <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>

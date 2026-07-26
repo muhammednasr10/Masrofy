@@ -14,7 +14,19 @@ export function getSiteUrl() {
   return "http://localhost:3000";
 }
 
+export function getSafeNextPath(next: string | null | undefined, fallback = "/dashboard") {
+  if (!next) {
+    return fallback;
+  }
+
+  if (!next.startsWith("/") || next.startsWith("//") || next.includes("://")) {
+    return fallback;
+  }
+
+  return next;
+}
+
 export function getAuthCallbackUrl(next = "/dashboard") {
-  const nextPath = next.startsWith("/") ? next : `/${next}`;
+  const nextPath = getSafeNextPath(next);
   return `${getSiteUrl()}/auth/callback?next=${encodeURIComponent(nextPath)}`;
 }

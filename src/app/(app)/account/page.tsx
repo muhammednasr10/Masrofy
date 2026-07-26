@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AccountDataSection from "@/components/account/AccountDataSection";
 import AccountSecuritySection from "@/components/account/AccountSecuritySection";
@@ -280,6 +281,27 @@ export default function AccountPage() {
       />
 
       <AccountDataSection email={email} onFeedback={handleSectionFeedback} />
+
+      <section className="rounded-3xl border border-white bg-white p-6 shadow-sm">
+        <h3 className="text-lg font-semibold text-slate-900">قانوني</h3>
+        <p className="mt-2 text-sm text-slate-500">
+          راجع سياسات استخدام Masrofy وحقوقك في بياناتك.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Link
+            href="/privacy"
+            className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          >
+            سياسة الخصوصية
+          </Link>
+          <Link
+            href="/terms"
+            className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          >
+            شروط الاستخدام
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }

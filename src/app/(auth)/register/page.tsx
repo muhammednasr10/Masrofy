@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import SiteFooter from "@/components/layout/SiteFooter";
 import { createClient } from "@/lib/supabase/client";
 import { getAuthCallbackUrl } from "@/lib/supabase/site-url";
 
@@ -50,7 +51,8 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-full items-center justify-center px-4 py-12">
+    <div className="flex min-h-full flex-col bg-gradient-to-b from-emerald-50 to-slate-50">
+      <div className="flex flex-1 items-center justify-center px-4 py-12">
       <div className="w-full max-w-md rounded-3xl border border-emerald-100 bg-white p-8 shadow-sm">
         <p className="text-sm text-emerald-700">Masrofy</p>
         <h1 className="mt-2 text-2xl font-semibold text-slate-900">إنشاء حساب</h1>
@@ -103,6 +105,18 @@ export default function RegisterPage() {
             </p>
           ) : null}
 
+          <p className="text-xs leading-6 text-slate-500">
+            بإنشاء حساب، فإنك توافق على{" "}
+            <Link href="/terms" className="font-medium text-emerald-700">
+              شروط الاستخدام
+            </Link>{" "}
+            و{" "}
+            <Link href="/privacy" className="font-medium text-emerald-700">
+              سياسة الخصوصية
+            </Link>
+            .
+          </p>
+
           <button
             type="submit"
             disabled={loading}
@@ -119,6 +133,8 @@ export default function RegisterPage() {
           </Link>
         </p>
       </div>
+      </div>
+      <SiteFooter />
     </div>
   );
 }

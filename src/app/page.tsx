@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SiteFooter from "@/components/layout/SiteFooter";
 
 export default function Home() {
   return (
@@ -36,6 +37,7 @@ export default function Home() {
           <FeatureCard title="ملخص شهري" description="شوف توزيع مصروفاتك بشكل واضح." />
         </section>
       </main>
+      <SiteFooter />
     </div>
   );
 }

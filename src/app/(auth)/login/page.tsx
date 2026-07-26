@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import SiteFooter from "@/components/layout/SiteFooter";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
@@ -34,7 +35,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-full items-center justify-center px-4 py-12">
+    <div className="flex min-h-full flex-col bg-gradient-to-b from-emerald-50 to-slate-50">
+      <div className="flex flex-1 items-center justify-center px-4 py-12">
       <div className="w-full max-w-md rounded-3xl border border-emerald-100 bg-white p-8 shadow-sm">
         <p className="text-sm text-emerald-700">Masrofy</p>
         <h1 className="mt-2 text-2xl font-semibold text-slate-900">تسجيل الدخول</h1>
@@ -91,6 +93,8 @@ export default function LoginPage() {
           </Link>
         </p>
       </div>
+      </div>
+      <SiteFooter />
     </div>
   );
 }

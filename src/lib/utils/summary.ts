@@ -13,6 +13,10 @@ export function summarizeTransactions(
   for (const transaction of transactions) {
     const amount = Number(transaction.amount);
 
+    if (transaction.type === "transfer") {
+      continue;
+    }
+
     if (transaction.type === "expense") {
       totalExpenses += amount;
     } else {

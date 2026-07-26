@@ -1,33 +1,29 @@
 import Link from "next/link";
+import DashboardAlerts from "@/components/dashboard/DashboardAlerts";
+import DashboardSectionCard from "@/components/dashboard/DashboardSectionCard";
+import { loadDashboardData } from "@/lib/dashboard";
 import { createClient } from "@/lib/supabase/server";
-import type { Transaction } from "@/lib/types/database";
-import { formatCurrency, formatDate, getMonthRange } from "@/lib/utils/format";
-import { summarizeTransactions } from "@/lib/utils/summary";
+import { formatCurrency } from "@/lib/utils/format";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const month = getMonthRange();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const [{ data: profile }, { data: transactions }] = await Promise.all([
-    supabase.from("profiles").select("currency").maybeSingle(),
-    supabase
-      .from("transactions")
-      .select("*, categories(name, icon, color)")
-      .gte("transaction_date", month.start)
-      .lte("transaction_date", month.end)
-      .order("transaction_date", { ascending: false }),
-  ]);
-
-  const currency = profile?.currency ?? "EGP";
-  const summary = summarizeTransactions((transactions ?? []) as Transaction[]);
-  const recentTransactions = (transactions ?? []).slice(0, 5) as Transaction[];
+  const data = await loadDashboardData(supabase, user?.id);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm text-emerald-700">ملخص الشهر</p>
-          <h2 className="text-3xl font-semibold text-slate-900">{month.label}</h2>
+          <p className="text-sm text-emerald-700">لوحة التحكم</p>
+          <h1 className="text-2xl font-semibold text-slate-900 sm:text-3xl">
+            {data.profile?.full_name ? `أهلاً، ${data.profile.full_name}` : "أهلاً بك"}
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            ملخص {data.monthLabel} — اضغط على أي كارت للانتقال
+          </p>
         </div>
 
         <Link
@@ -38,128 +34,138 @@ export default async function DashboardPage() {
         </Link>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-3">
-        <SummaryCard
-          title="إجمالي المصروفات"
-          value={formatCurrency(summary.totalExpenses, currency)}
-          tone="expense"
-        />
-        <SummaryCard
-          title="إجمالي الدخل"
-          value={formatCurrency(summary.totalIncome, currency)}
-          tone="income"
-        />
-        <SummaryCard
-          title="الرصيد"
-          value={formatCurrency(summary.balance, currency)}
-          tone="balance"
-        />
+      <section className="rounded-3xl border border-white bg-gradient-to-br from-emerald-600 to-emerald-700 p-5 text-white shadow-sm sm:p-6">
+        <p className="text-sm text-emerald-100">صافي الشهر</p>
+        <p className="mt-2 text-3xl font-semibold">
+          {formatCurrency(data.summary.balance, data.currency)}
+        </p>
+        <p className="mt-2 text-sm text-emerald-100">
+          دخل {formatCurrency(data.summary.totalIncome, data.currency)} • مصروفات{" "}
+          {formatCurrency(data.summary.totalExpenses, data.currency)}
+        </p>
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-3xl border border-white bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-slate-900">المصروفات حسب الفئة</h3>
+      <DashboardAlerts alerts={data.alerts} />
 
-          {summary.byCategory.length === 0 ? (
-            <p className="mt-4 text-sm text-slate-500">لسه مفيش مصروفات هذا الشهر.</p>
-          ) : (
-            <ul className="mt-6 space-y-4">
-              {summary.byCategory.map((category) => (
-                <li key={category.categoryId ?? category.name} className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-2 text-slate-700">
-                      <span>{category.icon}</span>
-                      {category.name}
-                    </span>
-                    <span className="font-medium text-slate-900">
-                      {formatCurrency(category.total, currency)}
-                    </span>
-                  </div>
-                  <div className="h-2 rounded-full bg-slate-100">
-                    <div
-                      className="h-2 rounded-full"
-                      style={{
-                        width: `${Math.max(
-                          8,
-                          (category.total / summary.totalExpenses) * 100,
-                        )}%`,
-                        backgroundColor: category.color,
-                      }}
-                    />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <DashboardSectionCard
+          href="/expenses"
+          icon="💸"
+          title="المصروفات"
+          description="تسجيل ومتابعة العمليات اليومية"
+          primaryValue={formatCurrency(data.summary.totalExpenses, data.currency)}
+          secondaryValue={
+            data.dueRecurringCount > 0
+              ? `${data.dueRecurringCount} عملية متكررة مستحقة`
+              : `${data.transactionCount} عملية • صافي ${formatCurrency(data.summary.balance, data.currency)}`
+          }
+          tone="red"
+        />
 
-        <div className="rounded-3xl border border-white bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-slate-900">آخر العمليات</h3>
-            <Link href="/expenses" className="text-sm font-medium text-emerald-700">
-              عرض الكل
-            </Link>
-          </div>
+        <DashboardSectionCard
+          href="/plan"
+          icon="📋"
+          title="الخطة"
+          description="مقارنة المخطط بالواقع"
+          primaryValue={
+            data.planComparison.hasPlan
+              ? formatCurrency(data.planComparison.expenses.actual, data.currency)
+              : "بدون خطة"
+          }
+          secondaryValue={data.planStatus}
+          tone="amber"
+        />
 
-          {recentTransactions.length === 0 ? (
-            <p className="mt-4 text-sm text-slate-500">ابدأ بإضافة أول مصروف.</p>
-          ) : (
-            <ul className="mt-6 space-y-4">
-              {recentTransactions.map((transaction) => (
-                <li
-                  key={transaction.id}
-                  className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3"
-                >
-                  <div>
-                    <p className="font-medium text-slate-900">
-                      {transaction.categories?.name ?? "بدون فئة"}
-                    </p>
-                    <p className="text-sm text-slate-500">
-                      {formatDate(transaction.transaction_date)}
-                      {transaction.note ? ` • ${transaction.note}` : ""}
-                    </p>
-                  </div>
-                  <p
-                    className={`font-semibold ${
-                      transaction.type === "expense"
-                        ? "text-red-600"
-                        : "text-emerald-600"
-                    }`}
-                  >
-                    {transaction.type === "expense" ? "-" : "+"}
-                    {formatCurrency(Number(transaction.amount), currency)}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <DashboardSectionCard
+          href="/wallets"
+          icon="👛"
+          title="المحافظ"
+          description="أرصدة البنوك والكاش والبطاقات"
+          primaryValue={formatCurrency(data.portfolio.assetTotal, data.currency)}
+          secondaryValue={`${data.walletCount} محفظة • صافي الثروة بدون كريديت`}
+          tone="emerald"
+        />
+
+        <DashboardSectionCard
+          href="/investments"
+          icon="📈"
+          title="الاستثمار"
+          description="متابعة قيمة محفظتك الاستثمارية"
+          primaryValue={formatCurrency(data.investmentSummary.totalCurrentValue, data.currency)}
+          secondaryValue={
+            data.investmentCount > 0
+              ? `${data.investmentCount} استثمار • ${
+                  data.investmentSummary.totalProfit >= 0 ? "+" : ""
+                }${formatCurrency(data.investmentSummary.totalProfit, data.currency)}`
+              : "ابدأ بإضافة استثمار"
+          }
+          tone="indigo"
+        />
+
+        <DashboardSectionCard
+          href="/reports"
+          icon="📊"
+          title="التقارير"
+          description="تحليلات وتقارير مالية شاملة"
+          primaryValue={formatCurrency(data.summary.balance, data.currency)}
+          secondaryValue={
+            data.topCategory
+              ? `أعلى فئة: ${data.topCategory.icon} ${data.topCategory.name}`
+              : "9 تقارير جاهزة للعرض"
+          }
+          tone="sky"
+        />
+
+        <DashboardSectionCard
+          href="/categories"
+          icon="🏷️"
+          title="الفئات"
+          description="تنظيم مصروفاتك حسب الفئات"
+          primaryValue={`${data.categoryCount} فئة`}
+          secondaryValue={
+            data.topCategory
+              ? `الأكثر هذا الشهر: ${data.topCategory.icon} ${data.topCategory.name}`
+              : "أضف فئات لتنظيم المصروفات"
+          }
+          tone="slate"
+        />
+
+        <DashboardSectionCard
+          href="/friends"
+          icon="👥"
+          title="العلاقات"
+          description="مشاركة النشاط مع الأصدقاء والعائلة"
+          primaryValue={`${data.acceptedFriends} علاقة`}
+          secondaryValue={
+            data.acceptedFriends > 0 ? "عرض النشاط المشترك" : "ادعُ شخصاً للمتابعة"
+          }
+          tone="emerald"
+        />
+
+        <DashboardSectionCard
+          href="/savings"
+          icon="🎯"
+          title="أهداف الادّخار"
+          description="تابع تقدمك نحو أهدافك المالية"
+          primaryValue={formatCurrency(data.savingsSummary.totalSaved, data.currency)}
+          secondaryValue={
+            data.savingsSummary.activeCount > 0
+              ? `${data.savingsSummary.activeCount} هدف نشط • ${data.savingsSummary.overallProgress}%`
+              : "أضف هدف ادّخار"
+          }
+          tone="emerald"
+        />
+
+        <DashboardSectionCard
+          href="/account"
+          icon="⚙️"
+          title="الحساب"
+          description="الإعدادات والملف الشخصي"
+          primaryValue={data.profile?.full_name ?? "حسابك"}
+          secondaryValue={`العملة: ${data.currency}`}
+          tone="slate"
+        />
       </section>
     </div>
-  );
-}
-
-function SummaryCard({
-  title,
-  value,
-  tone,
-}: {
-  title: string;
-  value: string;
-  tone: "expense" | "income" | "balance";
-}) {
-  const toneClasses = {
-    expense: "from-red-50 to-white text-red-700",
-    income: "from-emerald-50 to-white text-emerald-700",
-    balance: "from-slate-100 to-white text-slate-800",
-  };
-
-  return (
-    <article
-      className={`rounded-3xl border border-white bg-gradient-to-br ${toneClasses[tone]} p-6 shadow-sm`}
-    >
-      <p className="text-sm">{title}</p>
-      <p className="mt-3 text-2xl font-semibold">{value}</p>
-    </article>
   );
 }

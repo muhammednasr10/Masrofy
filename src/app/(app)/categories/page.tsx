@@ -1,24 +1,39 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import CategoriesTable from "@/components/categories/CategoriesTable";
+import CategoryFormModal from "@/components/categories/CategoryFormModal";
 import { createClient } from "@/lib/supabase/client";
+import {
+  buildCategoryPayload,
+  categoryHasChildren,
+  emptyCategoryForm,
+  getNextCategorySortOrder,
+  getParentCategories,
+} from "@/lib/categories";
+import type { CategoryFormState } from "@/lib/categories/form";
 import type { Category } from "@/lib/types/database";
-
-const colorOptions = ["#f97316", "#3b82f6", "#eab308", "#ec4899", "#22c55e", "#a855f7", "#64748b"];
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [name, setName] = useState("");
-  const [icon, setIcon] = useState("📦");
-  const [color, setColor] = useState(colorOptions[0]);
+  const [form, setForm] = useState<CategoryFormState | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const parentOptions = useMemo(
+    () => getParentCategories(categories),
+    [categories],
+  );
+
   useEffect(() => {
     async function loadCategories() {
       const supabase = createClient();
-      const { data } = await supabase.from("categories").select("*").order("name");
+      const { data } = await supabase
+        .from("categories")
+        .select("*")
+        .order("sort_order", { ascending: true });
+
       setCategories((data ?? []) as Category[]);
       setLoading(false);
     }
@@ -26,8 +41,23 @@ export default function CategoriesPage() {
     loadCategories();
   }, []);
 
+  function openForm(parentCategoryId: string | null = null) {
+    setForm(emptyCategoryForm(parentCategoryId));
+    setError(null);
+  }
+
+  function closeForm() {
+    setForm(null);
+    setError(null);
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (!form) {
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
 
@@ -42,14 +72,10 @@ export default function CategoriesPage() {
       return;
     }
 
+    const sortOrder = getNextCategorySortOrder(categories, form.parentCategoryId);
     const { data, error: insertError } = await supabase
       .from("categories")
-      .insert({
-        user_id: user.id,
-        name: name.trim(),
-        icon,
-        color,
-      })
+      .insert(buildCategoryPayload(form, user.id, sortOrder))
       .select("*")
       .single();
 
@@ -59,25 +85,38 @@ export default function CategoriesPage() {
       return;
     }
 
-    setCategories((current) =>
-      [...current, data as Category].sort((a, b) => a.name.localeCompare(b.name, "ar")),
-    );
-    setName("");
-    setIcon("📦");
-    setColor(colorOptions[0]);
+    setCategories((current) => [...current, data as Category]);
+    closeForm();
     setSubmitting(false);
   }
 
-  async function handleDelete(id: string) {
+  async function handleDelete(category: Category) {
+    const hasChildren = categoryHasChildren(category.id, categories);
+    const message = hasChildren
+      ? `حذف "${category.name}" هيحذف الفئات الفرعية التابعة ليها كمان. متأكد؟`
+      : `حذف "${category.name}"؟`;
+
+    if (!window.confirm(message)) {
+      return;
+    }
+
     const supabase = createClient();
-    const { error: deleteError } = await supabase.from("categories").delete().eq("id", id);
+    const { error: deleteError } = await supabase
+      .from("categories")
+      .delete()
+      .eq("id", category.id);
 
     if (deleteError) {
       setError(deleteError.message);
       return;
     }
 
-    setCategories((current) => current.filter((category) => category.id !== id));
+    setCategories((current) =>
+      current.filter(
+        (item) =>
+          item.id !== category.id && item.parent_category_id !== category.id,
+      ),
+    );
   }
 
   if (loading) {
@@ -85,98 +124,47 @@ export default function CategoriesPage() {
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[360px_1fr]">
+    <>
       <section className="rounded-3xl border border-white bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-semibold text-slate-900">إضافة فئة</h2>
-
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <label className="block space-y-2">
-            <span className="text-sm font-medium text-slate-700">اسم الفئة</span>
-            <input
-              type="text"
-              required
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
-            />
-          </label>
-
-          <label className="block space-y-2">
-            <span className="text-sm font-medium text-slate-700">الأيقونة</span>
-            <input
-              type="text"
-              maxLength={4}
-              value={icon}
-              onChange={(event) => setIcon(event.target.value)}
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
-            />
-          </label>
-
-          <div className="space-y-2">
-            <span className="text-sm font-medium text-slate-700">اللون</span>
-            <div className="flex flex-wrap gap-2">
-              {colorOptions.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => setColor(option)}
-                  className={`h-10 w-10 rounded-full border-2 ${
-                    color === option ? "border-slate-900" : "border-transparent"
-                  }`}
-                  style={{ backgroundColor: option }}
-                  aria-label={option}
-                />
-              ))}
-            </div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-slate-900">فئاتك</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              {categories.length} فئة • رتّب مصروفاتك بفئات رئيسية وفرعية
+            </p>
           </div>
 
-          {error ? (
-            <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
-          ) : null}
-
           <button
-            type="submit"
-            disabled={submitting}
-            className="w-full rounded-2xl bg-emerald-600 px-4 py-3 font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60"
+            type="button"
+            onClick={() => openForm()}
+            className="inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700"
           >
-            {submitting ? "جاري الحفظ..." : "حفظ الفئة"}
+            + إضافة فئة
           </button>
-        </form>
+        </div>
+
+        {error && !form ? (
+          <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
+        ) : null}
+
+        <CategoriesTable
+          categories={categories}
+          onAddSubCategory={(parentCategoryId) => openForm(parentCategoryId)}
+          onDelete={handleDelete}
+        />
       </section>
 
-      <section className="rounded-3xl border border-white bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-semibold text-slate-900">فئاتك</h2>
-
-        <ul className="mt-6 grid gap-3 sm:grid-cols-2">
-          {categories.map((category) => (
-            <li
-              key={category.id}
-              className="flex items-center justify-between rounded-2xl border border-slate-100 px-4 py-4"
-            >
-              <div className="flex items-center gap-3">
-                <span
-                  className="flex h-10 w-10 items-center justify-center rounded-2xl text-lg"
-                  style={{ backgroundColor: `${category.color}22` }}
-                >
-                  {category.icon}
-                </span>
-                <div>
-                  <p className="font-medium text-slate-900">{category.name}</p>
-                  <p className="text-xs text-slate-500">{category.color}</p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => handleDelete(category.id)}
-                className="rounded-full px-3 py-1 text-sm text-slate-500 transition hover:bg-slate-50 hover:text-red-600"
-              >
-                حذف
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </div>
+      {form ? (
+        <CategoryFormModal
+          form={form}
+          parentOptions={parentOptions}
+          submitting={submitting}
+          error={error}
+          onChange={setForm}
+          onSubmit={handleSubmit}
+          onClose={closeForm}
+        />
+      ) : null}
+    </>
   );
 }

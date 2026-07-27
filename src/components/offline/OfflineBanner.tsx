@@ -1,9 +1,11 @@
 "use client";
 
 import { useOfflineSync } from "@/hooks/useOfflineSync";
+import { useTranslations } from "@/components/i18n/LocaleProvider";
 
 export default function OfflineBanner() {
   const { online, pendingCount, syncing } = useOfflineSync();
+  const t = useTranslations();
 
   if (online && pendingCount === 0 && !syncing) {
     return null;
@@ -18,11 +20,11 @@ export default function OfflineBanner() {
       }`}
     >
       {!online ? (
-        <p>أنت غير متصل — يمكنك إضافة مصروفات محلياً وسيتم رفعها عند عودة الإنترنت.</p>
+        <p>{t("offline.offlineMessage")}</p>
       ) : syncing ? (
-        <p>جاري رفع العمليات المحفوظة محلياً...</p>
+        <p>{t("offline.syncing")}</p>
       ) : pendingCount > 0 ? (
-        <p>{pendingCount} عملية في انتظار المزامنة...</p>
+        <p>{t("offline.pending", { count: pendingCount })}</p>
       ) : null}
     </div>
   );

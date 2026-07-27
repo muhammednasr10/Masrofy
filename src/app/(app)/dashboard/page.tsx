@@ -1,5 +1,4 @@
 import Link from "next/link";
-import DashboardAlerts from "@/components/dashboard/DashboardAlerts";
 import DashboardSectionCard from "@/components/dashboard/DashboardSectionCard";
 import { loadDashboardData } from "@/lib/dashboard";
 import { createClient } from "@/lib/supabase/server";
@@ -44,8 +43,6 @@ export default async function DashboardPage() {
           {formatCurrency(data.summary.totalExpenses, data.currency)}
         </p>
       </section>
-
-      <DashboardAlerts alerts={data.alerts} />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <DashboardSectionCard

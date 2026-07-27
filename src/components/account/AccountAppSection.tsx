@@ -1,9 +1,10 @@
 "use client";
 
-import { PWA_OPEN_INSTALL_EVENT } from "@/lib/pwa/events";
+import { useTranslations } from "@/components/i18n/LocaleProvider";
 import { usePwaInstallContext } from "@/components/pwa/PwaInstallContext";
 
 export default function AccountAppSection() {
+  const t = useTranslations();
   const { installed, canInstall, platform, openPrompt } = usePwaInstallContext();
 
   function handleInstallClick() {
@@ -13,20 +14,16 @@ export default function AccountAppSection() {
   if (installed) {
     return (
       <section className="rounded-3xl border border-white bg-white p-6 shadow-sm">
-        <h3 className="text-lg font-semibold text-slate-900">تطبيق Masrofy</h3>
-        <p className="mt-2 text-sm text-emerald-700">
-          التطبيق مثبت على جهازك ويمكنك فتحه من الشاشة الرئيسية.
-        </p>
+        <h3 className="text-lg font-semibold text-slate-900">{t("account.pwaTitle")}</h3>
+        <p className="mt-2 text-sm text-emerald-700">{t("account.pwaInstalled")}</p>
       </section>
     );
   }
 
   return (
     <section className="rounded-3xl border border-white bg-white p-6 shadow-sm">
-      <h3 className="text-lg font-semibold text-slate-900">تطبيق Masrofy</h3>
-      <p className="mt-2 text-sm text-slate-500">
-        ثبّت مصروفي على هاتفك للوصول السريع والعمل بدون إنترنت.
-      </p>
+      <h3 className="text-lg font-semibold text-slate-900">{t("account.pwaTitle")}</h3>
+      <p className="mt-2 text-sm text-slate-500">{t("account.pwaSubtitle")}</p>
 
       {canInstall ? (
         <button
@@ -34,11 +31,11 @@ export default function AccountAppSection() {
           onClick={handleInstallClick}
           className="mt-4 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700"
         >
-          {platform === "ios" ? "كيف أثبت التطبيق؟" : "تثبيت التطبيق"}
+          {platform === "ios" ? t("account.pwaHowToInstall") : t("account.pwaInstall")}
         </button>
       ) : (
         <p className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-          التثبيت متاح من Chrome أو Edge على Android، أو Safari على iPhone.
+          {t("account.pwaUnavailable")}
         </p>
       )}
     </section>

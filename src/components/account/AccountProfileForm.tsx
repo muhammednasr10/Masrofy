@@ -1,8 +1,11 @@
+"use client";
+
 import { currencyOptions } from "@/lib/constants/currency-options";
 import type { Wallet } from "@/lib/types/database";
-import { formatDate } from "@/lib/utils/format";
 import WalletSelect from "@/components/wallets/WalletSelect";
 import { FeedbackBanner } from "@/components/ui/FeedbackBanner";
+import { useTranslations } from "@/components/i18n/LocaleProvider";
+import { useFormat } from "@/hooks/useFormat";
 
 type AccountProfileFormProps = {
   fullName: string;
@@ -37,13 +40,16 @@ export default function AccountProfileForm({
   onSubmit,
   onSignOut,
 }: AccountProfileFormProps) {
+  const t = useTranslations();
+  const { formatDate } = useFormat();
+
   return (
     <section className="rounded-3xl border border-white bg-white p-6 shadow-sm">
-      <h3 className="text-lg font-semibold text-slate-900">معلومات الحساب</h3>
+      <h3 className="text-lg font-semibold text-slate-900">{t("account.profileTitle")}</h3>
 
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
         <label className="block space-y-2">
-          <span className="text-sm font-medium text-slate-700">الاسم</span>
+          <span className="text-sm font-medium text-slate-700">{t("auth.name")}</span>
           <input
             type="text"
             value={fullName}
@@ -53,7 +59,7 @@ export default function AccountProfileForm({
         </label>
 
         <label className="block space-y-2">
-          <span className="text-sm font-medium text-slate-700">البريد الإلكتروني</span>
+          <span className="text-sm font-medium text-slate-700">{t("auth.email")}</span>
           <input
             type="email"
             value={email}
@@ -63,7 +69,7 @@ export default function AccountProfileForm({
         </label>
 
         <label className="block space-y-2">
-          <span className="text-sm font-medium text-slate-700">المحفظة الافتراضية</span>
+          <span className="text-sm font-medium text-slate-700">{t("account.defaultWallet")}</span>
           <WalletSelect
             wallets={wallets}
             value={defaultWalletId}
@@ -73,7 +79,7 @@ export default function AccountProfileForm({
         </label>
 
         <label className="block space-y-2">
-          <span className="text-sm font-medium text-slate-700">العملة الافتراضية</span>
+          <span className="text-sm font-medium text-slate-700">{t("account.defaultCurrency")}</span>
           <select
             value={currency}
             onChange={(event) => onCurrencyChange(event.target.value)}
@@ -89,7 +95,7 @@ export default function AccountProfileForm({
 
         {createdAt ? (
           <p className="text-sm text-slate-500">
-            تاريخ إنشاء الحساب: {formatDate(createdAt.slice(0, 10))}
+            {t("account.createdAt", { date: formatDate(createdAt.slice(0, 10)) })}
           </p>
         ) : null}
 
@@ -101,7 +107,7 @@ export default function AccountProfileForm({
             disabled={saving}
             className="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60"
           >
-            {saving ? "جاري الحفظ..." : "حفظ التعديلات"}
+            {saving ? t("account.saving") : t("account.saveChanges")}
           </button>
 
           <button
@@ -109,7 +115,7 @@ export default function AccountProfileForm({
             onClick={onSignOut}
             className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
           >
-            تسجيل الخروج
+            {t("common.signOutFull")}
           </button>
         </div>
       </form>

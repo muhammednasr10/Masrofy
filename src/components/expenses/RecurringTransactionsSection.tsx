@@ -9,7 +9,8 @@ type RecurringTransactionsSectionProps = {
   currency: string;
   onToggleActive: (recurring: RecurringTransaction) => void;
   onDelete: (id: string) => void;
-  onOpenAdd: () => void;
+  onOpenAdd?: () => void;
+  showAddButton?: boolean;
 };
 
 export default function RecurringTransactionsSection({
@@ -18,6 +19,7 @@ export default function RecurringTransactionsSection({
   onToggleActive,
   onDelete,
   onOpenAdd,
+  showAddButton = false,
 }: RecurringTransactionsSectionProps) {
   return (
     <section className="rounded-3xl border border-white bg-white p-4 shadow-sm sm:p-6">
@@ -28,13 +30,15 @@ export default function RecurringTransactionsSection({
             إيجار، اشتراكات، راتب — تُذكّرك تلقائيًا عند موعدها.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={onOpenAdd}
-          className="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700"
-        >
-          + إضافة متكررة
-        </button>
+        {showAddButton && onOpenAdd ? (
+          <button
+            type="button"
+            onClick={onOpenAdd}
+            className="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700"
+          >
+            + إضافة متكررة
+          </button>
+        ) : null}
       </div>
 
       {recurrings.length === 0 ? (

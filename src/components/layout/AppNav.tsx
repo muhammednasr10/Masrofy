@@ -2,32 +2,46 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "@/components/i18n/LocaleProvider";
+import HeaderAlertsBell from "@/components/layout/HeaderAlertsBell";
 import { MasrofyLogo } from "@/components/layout/MasrofyLogo";
+import type { DashboardAlert } from "@/lib/alerts/dashboard";
 import { createClient } from "@/lib/supabase/client";
 
-const primaryLinks = [
-  { href: "/dashboard", label: "الرئيسية", icon: "🏠" },
-  { href: "/expenses", label: "المصروفات", icon: "💸" },
-  { href: "/plan", label: "الخطة", icon: "📋" },
-  { href: "/wallets", label: "المحافظ", icon: "👛" },
-  { href: "/investments", label: "استثمار", icon: "📈" },
-];
+const primaryLinkKeys = [
+  { href: "/dashboard", key: "nav.dashboard", icon: "🏠" },
+  { href: "/expenses", key: "nav.expenses", icon: "💸" },
+  { href: "/plan", key: "nav.plan", icon: "📋" },
+  { href: "/wallets", key: "nav.wallets", icon: "👛" },
+  { href: "/investments", key: "nav.investments", icon: "📈" },
+] as const;
 
-const secondaryLinks = [
-  { href: "/reports", label: "التقارير" },
-  { href: "/savings", label: "الادّخار" },
-  { href: "/friends", label: "العلاقات" },
-  { href: "/categories", label: "الفئات" },
-  { href: "/account", label: "الحساب" },
-];
+const secondaryLinkKeys = [
+  { href: "/reports", key: "nav.reports" },
+  { href: "/savings", key: "nav.savings" },
+  { href: "/friends", key: "nav.friends" },
+  { href: "/categories", key: "nav.categories" },
+  { href: "/account", key: "nav.account" },
+] as const;
 
-const allLinks = [...primaryLinks, ...secondaryLinks];
-
-export function AppNav() {
+export function AppNav({ alerts = [] }: { alerts?: DashboardAlert[] }) {
   const pathname = usePathname();
   const router = useRouter();
+  const t = useTranslations();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const primaryLinks = useMemo(
+    () => primaryLinkKeys.map((link) => ({ ...link, label: t(link.key) })),
+    [t],
+  );
+
+  const secondaryLinks = useMemo(
+    () => secondaryLinkKeys.map((link) => ({ ...link, label: t(link.key) })),
+    [t],
+  );
+
+  const allLinks = useMemo(() => [...primaryLinks, ...secondaryLinks], [primaryLinks, secondaryLinks]);
 
   useEffect(() => {
     setMenuOpen(false);
@@ -43,10 +57,12 @@ export function AppNav() {
   return (
     <>
       <header className="sticky top-0 z-40 border-b border-emerald-100 bg-white/95 backdrop-blur safe-top">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
-          <MasrofyLogo href="/dashboard" />
+        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">
+          <div className="shrink-0">
+            <MasrofyLogo href="/dashboard" />
+          </div>
 
-          <nav className="hidden flex-wrap items-center gap-2 md:flex">
+          <nav className="hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto md:flex md:flex-nowrap md:[scrollbar-width:none] md:[&::-webkit-scrollbar]:hidden">
             {allLinks.map((link) => {
               const active = pathname.startsWith(link.href);
 
@@ -54,7 +70,7 @@ export function AppNav() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`rounded-full px-4 py-2 text-sm transition ${
+                  className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs transition lg:px-4 lg:py-2 lg:text-sm ${
                     active
                       ? "bg-emerald-600 text-white"
                       : "text-slate-600 hover:bg-emerald-50 hover:text-emerald-700"
@@ -64,25 +80,29 @@ export function AppNav() {
                 </Link>
               );
             })}
+          </nav>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <HeaderAlertsBell alerts={alerts} />
 
             <button
               type="button"
               onClick={handleSignOut}
-              className="rounded-full px-4 py-2 text-sm text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+              className="hidden rounded-full px-3 py-1.5 text-xs text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 md:inline-flex lg:px-4 lg:py-2 lg:text-sm"
             >
-              خروج
+              {t("common.signOut")}
             </button>
-          </nav>
 
-          <button
-            type="button"
-            onClick={() => setMenuOpen((current) => !current)}
-            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-lg text-slate-700 transition hover:bg-slate-50 md:hidden"
-            aria-expanded={menuOpen}
-            aria-label="القائمة"
-          >
-            ☰
-          </button>
+            <button
+              type="button"
+              onClick={() => setMenuOpen((current) => !current)}
+              className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-lg text-slate-700 transition hover:bg-slate-50 md:hidden"
+              aria-expanded={menuOpen}
+              aria-label={t("common.menu")}
+            >
+              ☰
+            </button>
+          </div>
         </div>
 
         {menuOpen ? (
@@ -108,9 +128,9 @@ export function AppNav() {
               <button
                 type="button"
                 onClick={handleSignOut}
-                className="rounded-2xl px-4 py-3 text-right text-sm text-red-600 transition hover:bg-red-50"
+                className="rounded-2xl px-4 py-3 text-start text-sm text-red-600 transition hover:bg-red-50"
               >
-                تسجيل الخروج
+                {t("common.signOutFull")}
               </button>
             </nav>
           </div>
@@ -119,7 +139,7 @@ export function AppNav() {
 
       <nav
         className="fixed inset-x-0 bottom-0 z-40 border-t border-emerald-100 bg-white/95 backdrop-blur md:hidden safe-bottom"
-        aria-label="التنقل الرئيسي"
+        aria-label={t("common.mainNav")}
       >
         <div className="mx-auto grid max-w-5xl grid-cols-5">
           {primaryLinks.map((link) => {

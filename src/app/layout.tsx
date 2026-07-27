@@ -1,6 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Cairo } from "next/font/google";
+import { LocaleProvider } from "@/components/i18n/LocaleProvider";
 import PwaRegister from "@/components/pwa/PwaRegister";
+import { getLocaleAttributes } from "@/i18n/config";
+import { getMessages } from "@/i18n/translate";
+import { getServerLocale } from "@/i18n/server";
 import "./globals.css";
 
 const cairo = Cairo({
@@ -34,16 +38,22 @@ export const viewport: Viewport = {
   themeColor: "#059669",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getServerLocale();
+  const messages = await getMessages(locale);
+  const { lang, dir } = getLocaleAttributes(locale);
+
   return (
-    <html lang="ar" dir="rtl" className={`${cairo.variable} h-full`}>
+    <html lang={lang} dir={dir} className={`${cairo.variable} h-full`}>
       <body className="min-h-full bg-slate-50 font-sans text-slate-900 antialiased">
-        <PwaRegister />
-        {children}
+        <LocaleProvider initialLocale={locale} initialMessages={messages}>
+          <PwaRegister />
+          {children}
+        </LocaleProvider>
       </body>
     </html>
   );

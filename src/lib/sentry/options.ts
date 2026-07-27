@@ -1,5 +1,3 @@
-import * as Sentry from "@sentry/nextjs";
-
 const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN ?? process.env.SENTRY_DSN;
 
 export function getSentryEnvironment() {
@@ -11,8 +9,8 @@ export function isSentryEnabled() {
 }
 
 export function createSentryOptions(
-  overrides: Partial<Parameters<typeof Sentry.init>[0]> = {},
-): Parameters<typeof Sentry.init>[0] {
+  overrides: Record<string, unknown> = {},
+) {
   return {
     dsn,
     enabled: isSentryEnabled(),

@@ -5,6 +5,7 @@ import { FormEvent } from "react";
 import WalletSelect from "@/components/wallets/WalletSelect";
 import CategorySelect from "@/components/categories/CategorySelect";
 import SelectedWalletPanel from "@/components/expenses/SelectedWalletPanel";
+import { useTranslations } from "@/components/i18n/LocaleProvider";
 import type { Category, TransactionType, Wallet } from "@/lib/types/database";
 import type { getSelectedWalletSnapshot } from "@/lib/expenses/display";
 
@@ -55,12 +56,14 @@ export default function TransactionForm({
   onTransactionDateChange,
   onSubmit,
 }: TransactionFormProps) {
+  const t = useTranslations();
+
   if (wallets.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-600">
-        <p>محتاج تضيف محفظة الأول عشان تسجّل مصروفات أو دخل.</p>
+        <p>{t("expenses.needWallet")}</p>
         <Link href="/wallets" className="mt-3 inline-block font-medium text-emerald-700">
-          إدارة المحافظ
+          {t("expenses.manageWallets")}
         </Link>
       </div>
     );
@@ -69,19 +72,19 @@ export default function TransactionForm({
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <label className="block space-y-2">
-        <span className="text-sm font-medium text-slate-700">النوع</span>
+        <span className="text-sm font-medium text-slate-700">{t("expenses.formType")}</span>
         <select
           value={type}
           onChange={(event) => onTypeChange(event.target.value as TransactionType)}
           className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
         >
-          <option value="expense">مصروف</option>
-          <option value="income">دخل</option>
+          <option value="expense">{t("expenses.typeExpense")}</option>
+          <option value="income">{t("expenses.typeIncome")}</option>
         </select>
       </label>
 
       <label className="block space-y-2">
-        <span className="text-sm font-medium text-slate-700">المبلغ</span>
+        <span className="text-sm font-medium text-slate-700">{t("expenses.formAmount")}</span>
         <input
           type="number"
           min="0.01"
@@ -95,7 +98,7 @@ export default function TransactionForm({
 
       <div className="space-y-2">
         <label className="block space-y-2">
-          <span className="text-sm font-medium text-slate-700">المحفظة</span>
+          <span className="text-sm font-medium text-slate-700">{t("expenses.formWallet")}</span>
           <WalletSelect
             wallets={wallets}
             value={walletId}
@@ -113,7 +116,7 @@ export default function TransactionForm({
 
       <label className="block space-y-2">
         <span className="text-sm font-medium text-slate-700">
-          الفئة{type === "income" ? " (اختياري)" : ""}
+          {type === "income" ? t("expenses.formCategoryOptional") : t("expenses.formCategory")}
         </span>
         <CategorySelect
           categories={categories}
@@ -125,7 +128,7 @@ export default function TransactionForm({
       </label>
 
       <label className="block space-y-2">
-        <span className="text-sm font-medium text-slate-700">التاريخ</span>
+        <span className="text-sm font-medium text-slate-700">{t("expenses.formDate")}</span>
         <input
           type="date"
           required
@@ -136,23 +139,23 @@ export default function TransactionForm({
       </label>
 
       <label className="block space-y-2">
-        <span className="text-sm font-medium text-slate-700">ملاحظة</span>
+        <span className="text-sm font-medium text-slate-700">{t("expenses.formNote")}</span>
         <input
           type="text"
           value={note}
           onChange={(event) => onNoteChange(event.target.value)}
-          placeholder="اختياري"
+          placeholder={t("expenses.formNoteOptional")}
           className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
         />
       </label>
 
       <label className="block space-y-2">
-        <span className="text-sm font-medium text-slate-700">مرفق (إيصال / فاتورة)</span>
+        <span className="text-sm font-medium text-slate-700">{t("expenses.formReceipt")}</span>
         <input
           type="file"
           accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
           onChange={(event) => onReceiptChange(event.target.files?.[0] ?? null)}
-          className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none file:mr-3 file:rounded-xl file:border-0 file:bg-emerald-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-emerald-700 focus:border-emerald-500"
+          className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none file:me-3 file:rounded-xl file:border-0 file:bg-emerald-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-emerald-700 focus:border-emerald-500"
         />
         {receiptFile ? (
           <span className="block text-xs text-slate-500">{receiptFile.name}</span>
@@ -164,7 +167,7 @@ export default function TransactionForm({
         disabled={submitting}
         className="w-full rounded-2xl bg-emerald-600 px-4 py-3 font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60"
       >
-        {submitting ? "جاري الحفظ..." : "حفظ"}
+        {submitting ? t("expenses.formSaving") : t("expenses.formSave")}
       </button>
     </form>
   );

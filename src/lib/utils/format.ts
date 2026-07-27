@@ -1,13 +1,15 @@
-export function formatCurrency(amount: number, currency = "EGP") {
-  return new Intl.NumberFormat("ar-EG", {
+import { defaultLocale, getIntlLocale, type Locale } from "@/i18n/config";
+
+export function formatCurrency(amount: number, currency = "EGP", locale: Locale = defaultLocale) {
+  return new Intl.NumberFormat(getIntlLocale(locale), {
     style: "currency",
     currency,
     maximumFractionDigits: 2,
   }).format(amount);
 }
 
-export function formatDate(date: string) {
-  return new Intl.DateTimeFormat("ar-EG", {
+export function formatDate(date: string, locale: Locale = defaultLocale) {
+  return new Intl.DateTimeFormat(getIntlLocale(locale), {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -21,14 +23,14 @@ function formatLocalDate(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
-export function getMonthRange(referenceDate = new Date()) {
+export function getMonthRange(referenceDate = new Date(), locale: Locale = defaultLocale) {
   const start = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1);
   const end = new Date(referenceDate.getFullYear(), referenceDate.getMonth() + 1, 0);
 
   return {
     start: formatLocalDate(start),
     end: formatLocalDate(end),
-    label: new Intl.DateTimeFormat("ar-EG", {
+    label: new Intl.DateTimeFormat(getIntlLocale(locale), {
       month: "long",
       year: "numeric",
     }).format(referenceDate),

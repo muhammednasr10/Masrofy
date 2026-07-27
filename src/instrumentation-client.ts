@@ -1,12 +1,15 @@
-import * as Sentry from "@sentry/nextjs";
-import { createSentryOptions } from "@/lib/sentry/options";
+import { isSentryEnabled } from "@/lib/sentry/options";
 
-Sentry.init(
-  createSentryOptions({
-    integrations: [Sentry.replayIntegration()],
-    replaysSessionSampleRate: 0,
-    replaysOnErrorSampleRate: 1,
-  }),
-);
+if (isSentryEnabled()) {
+  void import("./sentry-client-init");
+}
 
-export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+export const onRouterTransitionStart = (...args: unknown[]) => {
+  if (!isSentryEnabled()) {
+    return;
+  }
+
+  void import("@sentry/nextjs").then((Sentry) => {
+    Sentry.captureRouterTransitionStart(...(args as Parameters<typeof Sentry.captureRouterTransitionStart>));
+  });
+};

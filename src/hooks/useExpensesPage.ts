@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 import { createClient } from "@/lib/supabase/client";
 import {
   deleteTransactionAttachments,
@@ -32,8 +33,9 @@ import { summarizeTransactions } from "@/lib/utils/summary";
 
 export function useExpensesPage() {
   const router = useRouter();
+  const { locale } = useLocale();
   const online = useNetworkStatus();
-  const month = useMemo(() => getMonthRange(), []);
+  const month = useMemo(() => getMonthRange(new Date(), locale), [locale]);
   const { error, message, setError, setMessage, clearFeedback } = usePageFeedback();
 
   const [categories, setCategories] = useState<Category[]>([]);

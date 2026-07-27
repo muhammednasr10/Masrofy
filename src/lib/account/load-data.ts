@@ -13,6 +13,7 @@ export type AccountPageData = {
   fullName: string;
   currency: string;
   defaultWalletId: string;
+  locale: string;
   wallets: Wallet[];
   createdAt: string | null;
   stats: AccountStats;
@@ -56,6 +57,7 @@ export async function loadAccountPageData(
       typedWallets.find((wallet) => wallet.is_default)?.id ??
       typedWallets[0]?.id ??
       "",
+    locale: typedProfile?.locale ?? "ar",
     wallets: typedWallets,
     createdAt: user.created_at ?? null,
     stats: {

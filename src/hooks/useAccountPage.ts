@@ -2,6 +2,8 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale } from "@/components/i18n/LocaleProvider";
+import { isLocale } from "@/i18n/config";
 import { createClient } from "@/lib/supabase/client";
 import { loadAccountPageData, saveAccountProfile } from "@/lib/account";
 import { usePageFeedback } from "@/hooks/usePageFeedback";
@@ -10,6 +12,7 @@ import type { AccountStats } from "@/lib/account/load-data";
 
 export function useAccountPage() {
   const router = useRouter();
+  const { locale, setLocale } = useLocale();
   const { error, message, setError, setMessage, clearFeedback } = usePageFeedback();
 
   const [loading, setLoading] = useState(true);
@@ -44,8 +47,13 @@ export function useAccountPage() {
     setWallets(data.wallets);
     setCreatedAt(data.createdAt);
     setStats(data.stats);
+
+    if (isLocale(data.locale) && data.locale !== locale) {
+      await setLocale(data.locale);
+    }
+
     setLoading(false);
-  }, [router]);
+  }, [locale, router, setLocale]);
 
   useEffect(() => {
     void loadAccount();

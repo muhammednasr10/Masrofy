@@ -112,11 +112,11 @@ export function buildDashboardAlerts({
     alerts.push({
       id: "wallet-reconciliation",
       tone: "amber",
-      icon: "📋",
-      title: "محافظ تحتاج جرد",
+      icon: "🔄",
+      title: "محافظ تحتاج تحديث رصيد",
       description:
         walletsNeedingReconciliation.length === 1
-          ? `${names} — لم يُجرَ جرد حديث`
+          ? `${names} — لم يُحدَّث الرصيد مؤخراً`
           : `${walletsNeedingReconciliation.length} محافظ • ${names}${
               walletsNeedingReconciliation.length > 2 ? "..." : ""
             }`,

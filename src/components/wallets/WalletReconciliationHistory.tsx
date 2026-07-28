@@ -36,7 +36,7 @@ export default function WalletReconciliationHistory({
   if (reconciliations.length === 0) {
     return (
       <p className="mt-4 text-sm text-slate-500">
-        لم يتم عمل أي جرد بعد. اضغط «جرد المحافظ» لمقارنة الأرصدة بالواقع.
+        لم يتم تحديث أي رصيد بعد. اضغط «تحديث أرصدة المحافظ» لمقارنة الأرصدة بالواقع.
       </p>
     );
   }

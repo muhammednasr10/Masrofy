@@ -119,9 +119,9 @@ export default function WalletsPage() {
       />
 
       <section className="rounded-3xl border border-white bg-white p-4 shadow-sm sm:p-6">
-        <h2 className="text-xl font-semibold text-slate-900">سجل الجرد</h2>
+        <h2 className="text-xl font-semibold text-slate-900">سجل تحديث الأرصدة</h2>
         <p className="mt-1 text-sm text-slate-500">
-          تاريخ مقارنة الأرصدة المسجّلة بالواقع وطريقة معالجة كل فرق.
+          تاريخ تحديث الأرصدة ومقارنتها بالواقع، مع معاملات الإيراد/المصروف غير المعروف.
         </p>
         <WalletReconciliationHistory reconciliations={reconciliations} currency={currency} />
       </section>

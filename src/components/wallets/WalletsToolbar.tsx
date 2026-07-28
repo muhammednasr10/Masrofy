@@ -53,7 +53,7 @@ export default function WalletsToolbar({
           onClick={onOpenInventory}
           className="w-full rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm font-medium text-amber-800 transition hover:bg-amber-100 sm:w-auto"
         >
-          📋 جرد المحافظ
+          🔄 تحديث أرصدة المحافظ
         </button>
       ) : null}
 

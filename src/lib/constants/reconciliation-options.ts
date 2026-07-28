@@ -12,8 +12,8 @@ export const reconciliationResolutionOptions: Array<{
   },
   {
     value: "adjustment_tx",
-    label: "معاملة تسوية",
-    description: "ينشئ معاملة دخل أو مصروف بفرق الجرد.",
+    label: "إيراد/مصروف غير معروف",
+    description: "يسجّل الفرق تلقائياً كإيراد غير معروف أو مصروف غير معروف.",
   },
   {
     value: "log_only",

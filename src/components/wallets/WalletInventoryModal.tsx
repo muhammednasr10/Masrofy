@@ -2,9 +2,8 @@
 
 import { DifferenceBadge } from "@/components/wallets/WalletReconciliationHistory";
 import ModalShell from "@/components/ui/ModalShell";
-import { reconciliationResolutionOptions } from "@/lib/constants/reconciliation-options";
 import { createClient } from "@/lib/supabase/client";
-import type { ReconciliationResolution, Transaction, Wallet } from "@/lib/types/database";
+import type { Transaction, Wallet } from "@/lib/types/database";
 import { formatCurrency } from "@/lib/utils/format";
 import {
   buildReconciliationPreview,
@@ -13,6 +12,7 @@ import {
   getActualBalanceLabel,
   getRecordedBalanceLabel,
   getReconcilableWallets,
+  getReconciliationAdjustmentLabel,
   isCreditWallet,
 } from "@/lib/wallets";
 import { FormEvent, useMemo, useState } from "react";
@@ -54,7 +54,6 @@ export default function WalletInventoryModal({
       actualBalance: String(calculateWalletBalance(wallet, transactions)),
     })),
   );
-  const [resolution, setResolution] = useState<ReconciliationResolution>("adjust_opening");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -101,7 +100,7 @@ export default function WalletInventoryModal({
       const { error: reconcileError } = await supabase.rpc("reconcile_wallet", {
         p_wallet_id: preview.wallet.id,
         p_actual_balance: preview.actualBalance,
-        p_resolution: resolution,
+        p_resolution: "adjustment_tx",
         p_note: trimmedNote,
       });
 
@@ -121,10 +120,11 @@ export default function WalletInventoryModal({
       <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-xl font-semibold text-slate-900">
-              {focusWalletId ? "جرد محفظة" : "جرد المحافظ"}
+              {focusWalletId ? "تحديث رصيد المحفظة" : "تحديث أرصدة المحافظ"}
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              قارن الرصيد المسجّل في التطبيق بالرصيد الفعلي من البنك أو الكاش.
+              أدخل الرصيد الفعلي من البنك أو الكاش. أي فرق يُسجَّل تلقائياً كإيراد غير معروف أو مصروف
+              غير معروف.
             </p>
           </div>
           <button
@@ -142,11 +142,17 @@ export default function WalletInventoryModal({
           <SummaryChip label="فيها فرق" value={String(summary.mismatched)} tone="warning" />
         </div>
 
-        {summary.mismatched > 0 ? (
-          <p className="mt-4 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            إجمالي الفروقات: {formatCurrency(summary.totalDifference, currency)}
-          </p>
-        ) : (
+          {summary.mismatched > 0 ? (
+            <div className="mt-4 space-y-2">
+              <p className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                إجمالي الفروقات: {formatCurrency(summary.totalDifference, currency)}
+              </p>
+              <p className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                الفروقات تُسجَّل تلقائياً: زيادة الرصيد → إيراد غير معروف، نقص الرصيد → مصروف غير
+                معروف.
+              </p>
+            </div>
+          ) : (
           <p className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
             كل المحافظ متطابقة مع الواقع حتى الآن.
           </p>
@@ -185,6 +191,19 @@ export default function WalletInventoryModal({
                     <div>
                       <p className="text-xs text-slate-500">الفرق</p>
                       <DifferenceBadge difference={preview.difference} currency={currency} />
+                      {getReconciliationAdjustmentLabel(
+                        preview.difference,
+                        isCreditWallet(wallet),
+                      ) ? (
+                        <p className="mt-1 text-xs text-amber-700">
+                          سيُسجَّل:{" "}
+                          {getReconciliationAdjustmentLabel(
+                            preview.difference,
+                            isCreditWallet(wallet),
+                          )}{" "}
+                          ({formatCurrency(Math.abs(preview.difference), currency)})
+                        </p>
+                      ) : null}
                     </div>
                   </div>
                   <label className="mt-3 block space-y-1">
@@ -258,6 +277,18 @@ export default function WalletInventoryModal({
                       </td>
                       <td className="px-3 py-4">
                         <DifferenceBadge difference={preview.difference} currency={currency} />
+                        {getReconciliationAdjustmentLabel(
+                          preview.difference,
+                          isCreditWallet(wallet),
+                        ) ? (
+                          <p className="mt-1 text-xs text-amber-700">
+                            {getReconciliationAdjustmentLabel(
+                              preview.difference,
+                              isCreditWallet(wallet),
+                            )}{" "}
+                            ({formatCurrency(Math.abs(preview.difference), currency)})
+                          </p>
+                        ) : null}
                       </td>
                     </tr>
                   );
@@ -266,44 +297,13 @@ export default function WalletInventoryModal({
             </table>
           </div>
 
-          <div className="space-y-3 rounded-2xl bg-slate-50 p-4">
-            <p className="text-sm font-medium text-slate-700">طريقة معالجة الفروقات</p>
-            <div className="space-y-2">
-              {reconciliationResolutionOptions.map((option) => (
-                <label
-                  key={option.value}
-                  className={`flex cursor-pointer gap-3 rounded-2xl border px-4 py-3 ${
-                    resolution === option.value
-                      ? "border-emerald-500 bg-white"
-                      : "border-transparent bg-white/70"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="resolution"
-                    value={option.value}
-                    checked={resolution === option.value}
-                    onChange={() => setResolution(option.value)}
-                    className="mt-1"
-                  />
-                  <span>
-                    <span className="block text-sm font-medium text-slate-900">
-                      {option.label}
-                    </span>
-                    <span className="block text-xs text-slate-500">{option.description}</span>
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
-
           <label className="block space-y-2">
             <span className="text-sm font-medium text-slate-700">ملاحظة (اختياري)</span>
             <input
               type="text"
               value={note}
               onChange={(event) => setNote(event.target.value)}
-              placeholder="مثال: جرد نهاية الشهر"
+              placeholder="مثال: تحديث بعد كشف حساب البنك"
               className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
             />
           </label>
@@ -318,7 +318,7 @@ export default function WalletInventoryModal({
               disabled={saving || walletRows.length === 0}
               className="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60"
             >
-              {saving ? "جاري حفظ الجرد..." : "حفظ الجرد"}
+              {saving ? "جاري التحديث..." : "حفظ التحديث"}
             </button>
             <button
               type="button"

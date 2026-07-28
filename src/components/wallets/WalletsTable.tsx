@@ -273,8 +273,8 @@ const WalletMobileCard = memo(function WalletMobileCard({
           {isReconcilable ? (
             <p className="mt-1 text-xs text-slate-500">
               {lastReconciliation
-                ? `آخر جرد: ${formatDate(lastReconciliation.reconciled_at)}`
-                : "لم يُجرَ جرد بعد"}
+                ? `آخر تحديث: ${formatDate(lastReconciliation.reconciled_at)}`
+                : "لم يُحدَّث الرصيد بعد"}
             </p>
           ) : null}
         </div>
@@ -413,8 +413,8 @@ const WalletTableRow = memo(function WalletTableRow({
             {isReconcilable ? (
               <p className="text-xs text-slate-500">
                 {lastReconciliation
-                  ? `آخر جرد: ${formatDate(lastReconciliation.reconciled_at)}`
-                  : "لم يُجرَ جرد بعد"}
+                  ? `آخر تحديث: ${formatDate(lastReconciliation.reconciled_at)}`
+                  : "لم يُحدَّث الرصيد بعد"}
               </p>
             ) : null}
           </div>
@@ -473,8 +473,8 @@ function WalletRowActions({
       ) : null}
       {isReconcilable ? (
         <IconActionButton
-          icon="📋"
-          label="جرد"
+          icon="🔄"
+          label="تحديث الرصيد"
           onClick={() => onInventoryWallet(wallet.id)}
           tone="amber"
         />

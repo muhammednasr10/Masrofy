@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
+  isAndroidChromium,
   isIosSafari,
   isStandalonePwa,
   markInstallPromptDismissed,
@@ -38,6 +39,11 @@ export function usePwaInstall() {
       setPlatform("ios");
       setCanInstall(true);
       return;
+    }
+
+    if (isAndroidChromium()) {
+      setPlatform("chromium");
+      setCanInstall(true);
     }
 
     function handleBeforeInstallPrompt(event: Event) {
@@ -112,6 +118,7 @@ export function usePwaInstall() {
     installed,
     platform,
     canInstall,
+    canNativeInstall: deferredPrompt !== null,
     promptVisible,
     installing,
     openPrompt,

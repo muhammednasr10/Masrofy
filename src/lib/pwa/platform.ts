@@ -27,6 +27,23 @@ export function isIosSafari() {
   return isIos && isSafari;
 }
 
+export function isAndroidChromium() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const userAgent = window.navigator.userAgent;
+  const isAndroid = /Android/i.test(userAgent);
+  const isChromium =
+    /Chrome|EdgA|SamsungBrowser/i.test(userAgent) && !/Firefox|Opera|OPR|UCBrowser/i.test(userAgent);
+
+  return isAndroid && isChromium;
+}
+
+export function isMobileInstallBrowser() {
+  return isIosSafari() || isAndroidChromium();
+}
+
 export function wasInstallPromptDismissedRecently() {
   if (typeof window === "undefined") {
     return true;

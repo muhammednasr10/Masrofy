@@ -8,6 +8,7 @@ import type { PwaInstallPlatform } from "@/hooks/usePwaInstall";
 type PwaInstallPromptProps = {
   open: boolean;
   platform: PwaInstallPlatform;
+  canNativeInstall: boolean;
   installing: boolean;
   onClose: () => void;
   onInstall: () => void;
@@ -16,6 +17,7 @@ type PwaInstallPromptProps = {
 export default function PwaInstallPrompt({
   open,
   platform,
+  canNativeInstall,
   installing,
   onClose,
   onInstall,
@@ -52,6 +54,15 @@ export default function PwaInstallPrompt({
               <li>{t("pwa.iosStep3")}</li>
             </ol>
           </div>
+        ) : !canNativeInstall ? (
+          <div className="mt-5 rounded-2xl bg-slate-50 px-4 py-4 text-start text-sm leading-7 text-slate-700">
+            <p className="font-medium text-slate-900">{t("pwa.androidTitle")}</p>
+            <ol className="mt-2 list-decimal space-y-1 ps-5">
+              <li>{t("pwa.androidStep1")}</li>
+              <li>{t("pwa.androidStep2")}</li>
+              <li>{t("pwa.androidStep3")}</li>
+            </ol>
+          </div>
         ) : (
           <ul className="mt-5 space-y-2 text-start text-sm text-slate-600">
             <li className="rounded-2xl bg-emerald-50 px-4 py-3">{t("pwa.installFeature1")}</li>
@@ -62,7 +73,7 @@ export default function PwaInstallPrompt({
       </div>
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row-reverse">
-        {platform === "chromium" ? (
+        {platform === "chromium" && canNativeInstall ? (
           <button
             type="button"
             onClick={onInstall}
@@ -78,7 +89,7 @@ export default function PwaInstallPrompt({
           onClick={onClose}
           className="flex-1 rounded-2xl border border-slate-200 px-5 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
         >
-          {platform === "ios" ? t("pwa.gotIt") : t("pwa.notNow")}
+          {platform === "ios" || !canNativeInstall ? t("pwa.gotIt") : t("pwa.notNow")}
         </button>
       </div>
     </ModalShell>

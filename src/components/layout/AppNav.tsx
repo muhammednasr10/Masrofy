@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import HeaderAlertsBell from "@/components/layout/HeaderAlertsBell";
 import HeaderPwaInstallButton from "@/components/layout/HeaderPwaInstallButton";
+import SidebarPwaInstallButton from "@/components/layout/SidebarPwaInstallButton";
 import { MasrofyLogo } from "@/components/layout/MasrofyLogo";
 import { createClient } from "@/lib/supabase/client";
 
@@ -80,8 +81,13 @@ export function AppNav() {
             ☰
           </button>
 
-          <div className="shrink-0">
-            <MasrofyLogo href="/dashboard" />
+          <div className="min-w-0 shrink md:shrink-0">
+            <div className="md:hidden">
+              <MasrofyLogo href="/dashboard" showText={false} size="sm" />
+            </div>
+            <div className="hidden md:block">
+              <MasrofyLogo href="/dashboard" />
+            </div>
           </div>
 
           <nav className="hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto md:flex md:flex-nowrap md:[scrollbar-width:none] md:[&::-webkit-scrollbar]:hidden">
@@ -175,7 +181,8 @@ export function AppNav() {
               </ul>
             </nav>
 
-            <div className="border-t border-emerald-50 p-4">
+            <div className="border-t border-emerald-50 p-4 space-y-2">
+              <SidebarPwaInstallButton onOpen={() => setSidebarOpen(false)} />
               <button
                 type="button"
                 onClick={handleSignOut}

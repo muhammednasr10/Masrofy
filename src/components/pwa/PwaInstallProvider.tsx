@@ -14,6 +14,7 @@ export default function PwaInstallProvider({ children }: { children: React.React
     installed,
     platform,
     canInstall,
+    canNativeInstall,
     promptVisible,
     installing,
     openPrompt,
@@ -60,6 +61,7 @@ export default function PwaInstallProvider({ children }: { children: React.React
       <PwaInstallPrompt
         open={promptVisible}
         platform={platform}
+        canNativeInstall={canNativeInstall}
         installing={installing}
         onClose={() => dismissPrompt(true)}
         onInstall={() => {

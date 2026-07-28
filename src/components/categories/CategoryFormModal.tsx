@@ -14,6 +14,7 @@ type CategoryFormModalProps = {
   onChange: (form: CategoryFormState) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onClose: () => void;
+  zIndexClassName?: string;
 };
 
 export default function CategoryFormModal({
@@ -24,6 +25,7 @@ export default function CategoryFormModal({
   onChange,
   onSubmit,
   onClose,
+  zIndexClassName,
 }: CategoryFormModalProps) {
   const title = form.parentCategoryId ? "إضافة فئة فرعية" : "إضافة فئة";
   const description = form.parentCategoryId
@@ -31,7 +33,7 @@ export default function CategoryFormModal({
     : "أنشئ فئة رئيسية جديدة أو اختر فئة رئيسية لإضافة فرعية.";
 
   return (
-    <ModalShell onClose={onClose} maxWidthClassName="sm:max-w-lg">
+    <ModalShell onClose={onClose} maxWidthClassName="sm:max-w-lg" zIndexClassName={zIndexClassName}>
       <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="text-xl font-semibold text-slate-900">{title}</h2>

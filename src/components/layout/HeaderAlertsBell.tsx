@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import type { DashboardAlert } from "@/lib/alerts/dashboard";
@@ -11,14 +12,38 @@ const toneClasses = {
   indigo: "border-indigo-200 bg-indigo-50 text-indigo-900 hover:bg-indigo-100",
 };
 
-type HeaderAlertsBellProps = {
-  alerts: DashboardAlert[];
-};
-
-export default function HeaderAlertsBell({ alerts }: HeaderAlertsBellProps) {
+export default function HeaderAlertsBell() {
   const t = useTranslations();
+  const pathname = usePathname();
+  const [alerts, setAlerts] = useState<DashboardAlert[]>([]);
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadAlerts() {
+      try {
+        const response = await fetch("/api/alerts", { cache: "no-store" });
+        if (!response.ok) {
+          return;
+        }
+
+        const payload = (await response.json()) as { alerts?: DashboardAlert[] };
+        if (!cancelled) {
+          setAlerts(payload.alerts ?? []);
+        }
+      } catch {
+        // Ignore alert fetch failures in the header.
+      }
+    }
+
+    void loadAlerts();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
 
   useEffect(() => {
     if (!open) {

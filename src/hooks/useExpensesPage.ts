@@ -402,6 +402,11 @@ export function useExpensesPage() {
     }
   }
 
+  const ingestCategory = useCallback((category: Category) => {
+    setCategories((current) => [...current, category]);
+    setCategoryId(category.id);
+  }, []);
+
   return {
     loading,
     online,
@@ -440,5 +445,6 @@ export function useExpensesPage() {
     handleSubmit,
     handleDelete,
     ingestTransaction,
+    ingestCategory,
   };
 }

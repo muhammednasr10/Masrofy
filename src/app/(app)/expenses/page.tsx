@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import ExpensesSummaryCard from "@/components/expenses/ExpensesSummaryCard";
 import RecurringDueSection from "@/components/expenses/RecurringDueSection";
 import RecurringTransactionFormModal from "@/components/expenses/RecurringTransactionFormModal";
@@ -13,12 +14,16 @@ import { FeedbackBanner } from "@/components/wallets/FeedbackBanner";
 import { useExpensesPage } from "@/hooks/useExpensesPage";
 import { useFormat } from "@/hooks/useFormat";
 import { useRecurringTransactions } from "@/hooks/useRecurringTransactions";
+import { ADD_EXPENSE_QUERY } from "@/lib/expenses/navigation";
 
-export default function ExpensesPage() {
+function ExpensesPageContent() {
   const t = useTranslations();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { formatCurrency } = useFormat();
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const wasSubmittingRef = useRef(false);
+  const openedFromQueryRef = useRef(false);
 
   const {
     loading,
@@ -56,6 +61,7 @@ export default function ExpensesPage() {
     handleSubmit,
     handleDelete,
     ingestTransaction,
+    ingestCategory,
   } = useExpensesPage();
 
   const recurring = useRecurringTransactions({
@@ -64,6 +70,18 @@ export default function ExpensesPage() {
     defaultWalletId: walletId,
     onTransactionCreated: ingestTransaction,
   });
+
+  useEffect(() => {
+    if (openedFromQueryRef.current || loading || recurring.loading) {
+      return;
+    }
+
+    if (searchParams.get(ADD_EXPENSE_QUERY) === "1") {
+      openedFromQueryRef.current = true;
+      setShowTransactionModal(true);
+      router.replace("/expenses", { scroll: false });
+    }
+  }, [loading, recurring.loading, router, searchParams]);
 
   useEffect(() => {
     if (wasSubmittingRef.current && !submitting && message && !error && showTransactionModal) {
@@ -187,6 +205,7 @@ export default function ExpensesPage() {
         onTransactionDateChange={setTransactionDate}
         onSubmit={handleSubmit}
         onClose={() => setShowTransactionModal(false)}
+        onCategoryCreated={ingestCategory}
       />
 
       {recurring.showFormModal ? (
@@ -201,5 +220,15 @@ export default function ExpensesPage() {
         />
       ) : null}
     </div>
+  );
+}
+
+export default function ExpensesPage() {
+  const t = useTranslations();
+
+  return (
+    <Suspense fallback={<p className="text-sm text-slate-500">{t("expenses.loading")}</p>}>
+      <ExpensesPageContent />
+    </Suspense>
   );
 }

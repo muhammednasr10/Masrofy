@@ -55,7 +55,7 @@ export function MasrofyLogo({
   }
 
   return (
-    <Link href={href} className="transition hover:opacity-90">
+    <Link href={href} className="transition hover:opacity-90" aria-label="Masrofy — الرئيسية">
       {content}
     </Link>
   );

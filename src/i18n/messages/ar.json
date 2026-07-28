@@ -129,6 +129,9 @@
     "formSaving": "جاري الحفظ...",
     "formSave": "حفظ",
     "needWallet": "محتاج تضيف محفظة الأول عشان تسجّل مصروفات أو دخل.",
+    "addCategory": "+ فئة جديدة",
+    "categoryLoginRequired": "يجب تسجيل الدخول أولاً.",
+    "categorySaveFailed": "تعذر حفظ الفئة.",
     "manageWallets": "إدارة المحافظ"
   },
   "offline": {

@@ -1,50 +1,38 @@
-import Link from "next/link";
+import DashboardAddExpenseButton from "@/components/dashboard/DashboardAddExpenseButton";
 import DashboardSectionCard from "@/components/dashboard/DashboardSectionCard";
 import { loadDashboardData } from "@/lib/dashboard";
+import { getServerLocale } from "@/i18n/server";
 import { createClient } from "@/lib/supabase/server";
-import { formatCurrency } from "@/lib/utils/format";
+import { formatCurrency, getMonthRange } from "@/lib/utils/format";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
+  const locale = await getServerLocale();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   const data = await loadDashboardData(supabase, user?.id);
+  const monthLabel = getMonthRange(new Date(), locale).label;
 
   return (
     <div className="space-y-6">
-      <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-sm text-emerald-700">لوحة التحكم</p>
-          <h1 className="text-2xl font-semibold text-slate-900 sm:text-3xl">
-            {data.profile?.full_name ? `أهلاً، ${data.profile.full_name}` : "أهلاً بك"}
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            ملخص {data.monthLabel} — اضغط على أي كارت للانتقال
-          </p>
-        </div>
-
-        <Link
-          href="/expenses"
-          className="inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700"
-        >
-          + إضافة مصروف
-        </Link>
-      </section>
-
-      <section className="rounded-3xl border border-white bg-gradient-to-br from-emerald-600 to-emerald-700 p-5 text-white shadow-sm sm:p-6">
-        <p className="text-sm text-emerald-100">صافي الشهر</p>
-        <p className="mt-2 text-3xl font-semibold">
-          {formatCurrency(data.summary.balance, data.currency)}
-        </p>
-        <p className="mt-2 text-sm text-emerald-100">
-          دخل {formatCurrency(data.summary.totalIncome, data.currency)} • مصروفات{" "}
-          {formatCurrency(data.summary.totalExpenses, data.currency)}
-        </p>
+      <section className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-semibold text-slate-900 sm:text-3xl">{monthLabel}</h1>
+        <DashboardAddExpenseButton />
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <DashboardSectionCard
+          href="/wallets"
+          icon="👛"
+          title="المحافظ"
+          description="أرصدة البنوك والكاش والبطاقات"
+          primaryValue={formatCurrency(data.portfolio.assetTotal, data.currency)}
+          secondaryValue={`${data.walletCount} محفظة • صافي الثروة بدون كريديت`}
+          tone="emerald"
+        />
+
         <DashboardSectionCard
           href="/expenses"
           icon="💸"
@@ -54,9 +42,19 @@ export default async function DashboardPage() {
           secondaryValue={
             data.dueRecurringCount > 0
               ? `${data.dueRecurringCount} عملية متكررة مستحقة`
-              : `${data.transactionCount} عملية • صافي ${formatCurrency(data.summary.balance, data.currency)}`
+              : `${data.transactionCount} عملية هذا الشهر`
           }
           tone="red"
+        />
+
+        <DashboardSectionCard
+          href="/expenses"
+          icon="📊"
+          title="صافي الشهر"
+          description="دخل − مصروفات"
+          primaryValue={formatCurrency(data.summary.balance, data.currency)}
+          secondaryValue={`دخل ${formatCurrency(data.summary.totalIncome, data.currency)} • مصروفات ${formatCurrency(data.summary.totalExpenses, data.currency)}`}
+          tone="sky"
         />
 
         <DashboardSectionCard
@@ -71,16 +69,6 @@ export default async function DashboardPage() {
           }
           secondaryValue={data.planStatus}
           tone="amber"
-        />
-
-        <DashboardSectionCard
-          href="/wallets"
-          icon="👛"
-          title="المحافظ"
-          description="أرصدة البنوك والكاش والبطاقات"
-          primaryValue={formatCurrency(data.portfolio.assetTotal, data.currency)}
-          secondaryValue={`${data.walletCount} محفظة • صافي الثروة بدون كريديت`}
-          tone="emerald"
         />
 
         <DashboardSectionCard

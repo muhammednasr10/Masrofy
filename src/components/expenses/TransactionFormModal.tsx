@@ -32,6 +32,7 @@ type TransactionFormModalProps = {
   onTransactionDateChange: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onClose: () => void;
+  onCategoryCreated?: (category: Category) => void;
 };
 
 export default function TransactionFormModal({

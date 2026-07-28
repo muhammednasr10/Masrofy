@@ -6,15 +6,19 @@ type ModalShellProps = {
   children: ReactNode;
   onClose: () => void;
   maxWidthClassName?: string;
+  zIndexClassName?: string;
 };
 
 export default function ModalShell({
   children,
   onClose,
   maxWidthClassName = "sm:max-w-2xl",
+  zIndexClassName = "z-50",
 }: ModalShellProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 sm:items-center sm:p-4">
+    <div
+      className={`fixed inset-0 ${zIndexClassName} flex items-end justify-center bg-slate-900/40 sm:items-center sm:p-4`}
+    >
       <button
         type="button"
         className="absolute inset-0"

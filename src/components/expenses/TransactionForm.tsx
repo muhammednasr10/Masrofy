@@ -1,11 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent } from "react";
+import { FormEvent, useMemo, useState } from "react";
+import CategoryFormModal from "@/components/categories/CategoryFormModal";
 import WalletSelect from "@/components/wallets/WalletSelect";
 import CategorySelect from "@/components/categories/CategorySelect";
 import SelectedWalletPanel from "@/components/expenses/SelectedWalletPanel";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
+import { createClient } from "@/lib/supabase/client";
+import {
+  emptyCategoryForm,
+  getParentCategories,
+  insertCategory,
+  type CategoryFormState,
+} from "@/lib/categories";
 import type { Category, TransactionType, Wallet } from "@/lib/types/database";
 import type { getSelectedWalletSnapshot } from "@/lib/expenses/display";
 
@@ -32,6 +40,7 @@ type TransactionFormProps = {
   onReceiptChange: (file: File | null) => void;
   onTransactionDateChange: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onCategoryCreated?: (category: Category) => void;
 };
 
 export default function TransactionForm({
@@ -55,8 +64,58 @@ export default function TransactionForm({
   onReceiptChange,
   onTransactionDateChange,
   onSubmit,
+  onCategoryCreated,
 }: TransactionFormProps) {
   const t = useTranslations();
+  const [categoryForm, setCategoryForm] = useState<CategoryFormState | null>(null);
+  const [categorySubmitting, setCategorySubmitting] = useState(false);
+  const [categoryError, setCategoryError] = useState<string | null>(null);
+
+  const parentOptions = useMemo(() => getParentCategories(categories), [categories]);
+
+  function openCategoryForm() {
+    setCategoryForm(emptyCategoryForm());
+    setCategoryError(null);
+  }
+
+  function closeCategoryForm() {
+    setCategoryForm(null);
+    setCategoryError(null);
+  }
+
+  async function handleCategorySubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!categoryForm) {
+      return;
+    }
+
+    setCategorySubmitting(true);
+    setCategoryError(null);
+
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setCategoryError(t("expenses.categoryLoginRequired"));
+      setCategorySubmitting(false);
+      return;
+    }
+
+    const result = await insertCategory(supabase, user.id, categoryForm, categories);
+
+    if (result.error || !result.category) {
+      setCategoryError(result.error ?? t("expenses.categorySaveFailed"));
+      setCategorySubmitting(false);
+      return;
+    }
+
+    onCategoryCreated?.(result.category);
+    closeCategoryForm();
+    setCategorySubmitting(false);
+  }
 
   if (wallets.length === 0) {
     return (
@@ -70,7 +129,8 @@ export default function TransactionForm({
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <>
+      <form onSubmit={onSubmit} className="space-y-4">
       <label className="block space-y-2">
         <span className="text-sm font-medium text-slate-700">{t("expenses.formType")}</span>
         <select
@@ -114,10 +174,19 @@ export default function TransactionForm({
         />
       </div>
 
-      <label className="block space-y-2">
-        <span className="text-sm font-medium text-slate-700">
-          {type === "income" ? t("expenses.formCategoryOptional") : t("expenses.formCategory")}
-        </span>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-sm font-medium text-slate-700">
+            {type === "income" ? t("expenses.formCategoryOptional") : t("expenses.formCategory")}
+          </span>
+          <button
+            type="button"
+            onClick={openCategoryForm}
+            className="text-sm font-medium text-emerald-700 transition hover:text-emerald-800"
+          >
+            {t("expenses.addCategory")}
+          </button>
+        </div>
         <CategorySelect
           categories={categories}
           value={categoryId}
@@ -125,7 +194,7 @@ export default function TransactionForm({
           allowEmpty={type === "income"}
           className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
         />
-      </label>
+      </div>
 
       <label className="block space-y-2">
         <span className="text-sm font-medium text-slate-700">{t("expenses.formDate")}</span>
@@ -169,6 +238,20 @@ export default function TransactionForm({
       >
         {submitting ? t("expenses.formSaving") : t("expenses.formSave")}
       </button>
-    </form>
+      </form>
+
+      {categoryForm ? (
+        <CategoryFormModal
+          form={categoryForm}
+          parentOptions={parentOptions}
+          submitting={categorySubmitting}
+          error={categoryError}
+          onChange={setCategoryForm}
+          onSubmit={handleCategorySubmit}
+          onClose={closeCategoryForm}
+          zIndexClassName="z-[60]"
+        />
+      ) : null}
+    </>
   );
 }

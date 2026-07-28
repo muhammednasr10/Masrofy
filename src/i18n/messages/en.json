@@ -129,6 +129,9 @@
     "formSaving": "Saving...",
     "formSave": "Save",
     "needWallet": "Add a wallet first to record expenses or income.",
+    "addCategory": "+ New category",
+    "categoryLoginRequired": "You must sign in first.",
+    "categorySaveFailed": "Could not save the category.",
     "manageWallets": "Manage wallets"
   },
   "offline": {

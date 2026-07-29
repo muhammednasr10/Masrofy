@@ -85,7 +85,7 @@ export default function DashboardAddExpenseButton() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label={t("expenses.addExpense")}
+        aria-label={t("expenses.addTransaction")}
         className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-3xl font-light leading-none text-white shadow-md transition hover:bg-emerald-700 md:hidden"
       >
         +
@@ -96,7 +96,7 @@ export default function DashboardAddExpenseButton() {
         onClick={() => setOpen(true)}
         className="hidden items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700 md:inline-flex"
       >
-        + {t("expenses.addExpense")}
+        + {t("expenses.addTransaction")}
       </button>
 
       {open ? <DashboardAddExpenseModal onClose={() => setOpen(false)} /> : null}

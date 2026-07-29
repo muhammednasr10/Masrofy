@@ -1,6 +1,9 @@
-import Link from "next/link";
+"use client";
 
-type DashboardSectionCardProps = {
+import Link from "next/link";
+import { useTranslations } from "@/components/i18n/LocaleProvider";
+
+export type DashboardSectionCardProps = {
   href: string;
   icon: string;
   title: string;
@@ -30,6 +33,8 @@ export default function DashboardSectionCard({
   tone = "emerald",
   className = "",
 }: DashboardSectionCardProps) {
+  const t = useTranslations();
+
   return (
     <Link
       href={href}
@@ -40,7 +45,7 @@ export default function DashboardSectionCard({
           {icon}
         </span>
         <span className="rounded-full bg-white/80 px-2 py-1 text-xs text-slate-500 transition group-hover:text-emerald-700">
-          فتح ←
+          {t("dashboard.openCard")}
         </span>
       </div>
 

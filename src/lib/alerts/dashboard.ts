@@ -2,9 +2,9 @@ import {
   getCollectionStatus,
   getDaysUntilCollection,
 } from "@/lib/investments/utils";
+import type { Translator } from "@/i18n/translate";
 import type { PlanComparison } from "@/lib/types/database";
 import type { Investment, Wallet, WalletReconciliation } from "@/lib/types/database";
-import { formatCurrency } from "@/lib/utils/format";
 import {
   getLatestReconciliationsByWallet,
   getReconcilableWallets,
@@ -16,6 +16,7 @@ export type DashboardAlert = {
   icon: string;
   title: string;
   description: string;
+  actionLabel: string;
   href: string;
 };
 
@@ -24,19 +25,21 @@ export function buildDashboardAlerts({
   investments,
   wallets,
   reconciliations,
-  currency,
+  formatAmount,
   dueRecurringCount = 0,
   staleReconciliationDays = 30,
   upcomingCollectionDays = 7,
+  t,
 }: {
   planComparison: PlanComparison;
   investments: Investment[];
   wallets: Wallet[];
   reconciliations: WalletReconciliation[];
-  currency: string;
+  formatAmount: (value: number) => string;
   dueRecurringCount?: number;
   staleReconciliationDays?: number;
   upcomingCollectionDays?: number;
+  t: Translator;
 }): DashboardAlert[] {
   const alerts: DashboardAlert[] = [];
 
@@ -45,8 +48,11 @@ export function buildDashboardAlerts({
       id: "plan-over-budget",
       tone: "red",
       icon: "📋",
-      title: "تجاوزت خطة الشهر",
-      description: `المصروفات الفعلية أعلى من المخطط بـ ${formatCurrency(planComparison.expenses.difference, currency)}`,
+      title: t("alertItems.planOverBudgetTitle"),
+      description: t("alertItems.planOverBudgetDesc", {
+        amount: formatAmount(planComparison.expenses.difference),
+      }),
+      actionLabel: t("alertItems.planOverBudgetAction"),
       href: "/plan",
     });
   }
@@ -75,14 +81,18 @@ export function buildDashboardAlerts({
       icon: "📈",
       title:
         status === "due_today"
-          ? `ميعاد قبض ${investment.name} اليوم`
+          ? t("alertItems.investmentDueTodayTitle", { name: investment.name })
           : status === "overdue"
-            ? `ميعاد قبض ${investment.name} فات`
-            : `ميعاد قبض ${investment.name} قريب`,
+            ? t("alertItems.investmentOverdueTitle", { name: investment.name })
+            : t("alertItems.investmentDueSoonTitle", { name: investment.name }),
       description:
         days != null && days > 0
-          ? `بعد ${days} يوم • ${formatCurrency(Number(investment.cost_basis), currency)}`
+          ? t("alertItems.investmentDueSoonDesc", {
+              days: String(days),
+              amount: formatAmount(Number(investment.cost_basis)),
+            })
           : `${investment.icon} ${investment.name}`,
+      actionLabel: t("alertItems.investmentAction"),
       href: "/investments",
     });
   }
@@ -113,13 +123,15 @@ export function buildDashboardAlerts({
       id: "wallet-reconciliation",
       tone: "amber",
       icon: "🔄",
-      title: "محافظ تحتاج تحديث رصيد",
+      title: t("alertItems.walletReconcileTitle"),
       description:
         walletsNeedingReconciliation.length === 1
-          ? `${names} — لم يُحدَّث الرصيد مؤخراً`
-          : `${walletsNeedingReconciliation.length} محافظ • ${names}${
-              walletsNeedingReconciliation.length > 2 ? "..." : ""
-            }`,
+          ? t("alertItems.walletReconcileSingleDesc", { name: names })
+          : t("alertItems.walletReconcileMultiDesc", {
+              count: String(walletsNeedingReconciliation.length),
+              names: `${names}${walletsNeedingReconciliation.length > 2 ? "..." : ""}`,
+            }),
+      actionLabel: t("alertItems.walletReconcileAction"),
       href: "/wallets",
     });
   }
@@ -129,8 +141,9 @@ export function buildDashboardAlerts({
       id: "recurring-due",
       tone: "amber",
       icon: "🔁",
-      title: "عمليات متكررة مستحقة",
-      description: `${dueRecurringCount} عملية جاهزة للتسجيل`,
+      title: t("alertItems.recurringDueTitle"),
+      description: t("alertItems.recurringDueDesc", { count: String(dueRecurringCount) }),
+      actionLabel: t("alertItems.recurringDueAction"),
       href: "/expenses",
     });
   }

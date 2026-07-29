@@ -1,24 +1,20 @@
-import { buildDashboardAlerts } from "@/lib/alerts";
-import { buildPlanComparison } from "@/lib/plan";
+import { loadMonthPlanComparison } from "@/lib/plan/load-month-comparison";
 import { summarizeInvestments } from "@/lib/investments/utils";
 import { summarizeSavingsGoals } from "@/lib/savings/utils";
+import type { Locale } from "@/i18n/config";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   Category,
   Investment,
-  MonthlyPlan,
   PlanComparison,
-  PlanItem,
   Profile,
   SavingsGoal,
   Transaction,
   Wallet,
-  WalletReconciliation,
 } from "@/lib/types/database";
-import { formatCurrency, getMonthRange } from "@/lib/utils/format";
+import { getMonthRange } from "@/lib/utils/format";
 import { summarizeTransactions } from "@/lib/utils/summary";
 import { summarizePortfolioWealth } from "@/lib/wallets";
-import type { DashboardAlert } from "@/lib/alerts/dashboard";
 
 export type DashboardData = {
   profile: Pick<Profile, "full_name" | "currency"> | null;
@@ -29,8 +25,6 @@ export type DashboardData = {
   investmentSummary: ReturnType<typeof summarizeInvestments>;
   savingsSummary: ReturnType<typeof summarizeSavingsGoals>;
   planComparison: PlanComparison;
-  planStatus: string;
-  alerts: DashboardAlert[];
   acceptedFriends: number;
   dueRecurringCount: number;
   categoryCount: number;
@@ -40,9 +34,16 @@ export type DashboardData = {
   topCategory: ReturnType<typeof summarizeTransactions>["byCategory"][number] | undefined;
 };
 
+function filterMonthTransactions(transactions: Transaction[] | null | undefined) {
+  return ((transactions ?? []) as Transaction[]).filter(
+    (transaction) => transaction.type !== "transfer",
+  );
+}
+
 export async function loadDashboardData(
   supabase: SupabaseClient,
   userId: string | undefined,
+  _locale: Locale = "ar",
 ): Promise<DashboardData> {
   const month = getMonthRange();
   const today = new Date().toISOString().slice(0, 10);
@@ -54,10 +55,8 @@ export async function loadDashboardData(
     { data: allTransactions },
     { data: investments },
     { data: categoryRows },
-    { data: planRow },
     { data: friendships },
     { data: dueRecurringRows },
-    { data: reconciliationRows },
     { data: savingsGoalRows },
   ] = await Promise.all([
     supabase.from("profiles").select("currency, full_name").maybeSingle(),
@@ -70,7 +69,6 @@ export async function loadDashboardData(
     supabase.from("transactions").select("id, wallet_id, amount, type, transfer_role"),
     supabase.from("investments").select("*"),
     supabase.from("categories").select("*").order("sort_order", { ascending: true }),
-    supabase.from("monthly_plans").select("*").eq("plan_month", month.start).maybeSingle(),
     userId
       ? supabase
           .from("friendships")
@@ -84,11 +82,6 @@ export async function loadDashboardData(
       .eq("is_active", true)
       .lte("next_due_date", today),
     supabase
-      .from("wallet_reconciliations")
-      .select("*, wallets(name, icon, color)")
-      .order("reconciled_at", { ascending: false })
-      .limit(50),
-    supabase
       .from("savings_goals")
       .select("*")
       .eq("is_completed", false)
@@ -96,9 +89,7 @@ export async function loadDashboardData(
   ]);
 
   const currency = profile?.currency ?? "EGP";
-  const monthTransactions = ((transactions ?? []) as Transaction[]).filter(
-    (transaction) => transaction.type !== "transfer",
-  );
+  const monthTransactions = filterMonthTransactions(transactions);
   const categories = (categoryRows ?? []) as Category[];
   const summary = summarizeTransactions(monthTransactions);
   const portfolio = summarizePortfolioWealth(
@@ -108,44 +99,12 @@ export async function loadDashboardData(
   );
   const investmentSummary = summarizeInvestments((investments ?? []) as Investment[]);
   const savingsSummary = summarizeSavingsGoals((savingsGoalRows ?? []) as SavingsGoal[]);
-
-  let planItems: PlanItem[] = [];
-  const typedPlan = (planRow as MonthlyPlan | null) ?? null;
-
-  if (typedPlan) {
-    const { data: planItemRows } = await supabase
-      .from("plan_items")
-      .select("*")
-      .eq("plan_id", typedPlan.id);
-
-    planItems = (planItemRows ?? []) as PlanItem[];
-  }
-
-  const planComparison = buildPlanComparison({
+  const planComparison = await loadMonthPlanComparison(
+    supabase,
+    month.start,
     categories,
-    plan: typedPlan,
-    planItems,
-    transactions: monthTransactions,
-  });
-
-  const planDiff = planComparison.expenses.difference;
-  const planStatus =
-    !planComparison.hasPlan
-      ? "لم تُحفظ خطة لهذا الشهر"
-      : planDiff === 0
-        ? "المصروفات مطابقة للخطة"
-        : planDiff > 0
-          ? `تجاوزت الخطة بـ ${formatCurrency(planDiff, currency)}`
-          : `أقل من الخطة بـ ${formatCurrency(Math.abs(planDiff), currency)}`;
-
-  const alerts = buildDashboardAlerts({
-    planComparison,
-    investments: (investments ?? []) as Investment[],
-    wallets: (wallets ?? []) as Wallet[],
-    reconciliations: (reconciliationRows ?? []) as WalletReconciliation[],
-    currency,
-    dueRecurringCount: dueRecurringRows?.length ?? 0,
-  });
+    monthTransactions,
+  );
 
   return {
     profile: profile as Pick<Profile, "full_name" | "currency"> | null,
@@ -156,8 +115,6 @@ export async function loadDashboardData(
     investmentSummary,
     savingsSummary,
     planComparison,
-    planStatus,
-    alerts,
     acceptedFriends: friendships?.length ?? 0,
     dueRecurringCount: dueRecurringRows?.length ?? 0,
     categoryCount: categories.length,

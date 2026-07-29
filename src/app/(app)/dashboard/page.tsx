@@ -11,7 +11,7 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const data = await loadDashboardData(supabase, user?.id);
+  const data = await loadDashboardData(supabase, user?.id, locale);
   const monthLabel = getMonthRange(new Date(), locale).label;
 
   return <DashboardView monthLabel={monthLabel} data={data} />;

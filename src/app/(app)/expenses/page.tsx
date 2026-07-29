@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import ExpensesToolbar from "@/components/expenses/ExpensesToolbar";
 import ExpensesSummaryCard from "@/components/expenses/ExpensesSummaryCard";
 import RecurringDueSection from "@/components/expenses/RecurringDueSection";
 import RecurringTransactionFormModal from "@/components/expenses/RecurringTransactionFormModal";
@@ -139,22 +140,13 @@ function ExpensesPageContent() {
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => setShowTransactionModal(true)}
-              className="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700"
-            >
-              + {t("expenses.addExpense")}
-            </button>
-            <button
-              type="button"
-              onClick={recurring.openFormModal}
-              className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-medium text-emerald-800 transition hover:bg-emerald-100"
-            >
-              + {t("expenses.addRecurring")}
-            </button>
-          </div>
+          <ExpensesToolbar
+            transactions={transactions}
+            wallets={wallets}
+            currency={currency}
+            onAddTransaction={() => setShowTransactionModal(true)}
+            onAddRecurring={recurring.openFormModal}
+          />
         </div>
 
         <TransactionFiltersPanel

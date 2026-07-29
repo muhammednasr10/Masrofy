@@ -230,28 +230,24 @@ const WalletMobileCard = memo(function WalletMobileCard({
         </span>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <p className="flex items-center gap-1 font-medium text-slate-900">
-                {wallet.is_default ? (
-                  <span className="text-amber-500" title="المحفظة الافتراضية">
-                    ⭐
-                  </span>
-                ) : null}
-                <span className="truncate">{wallet.name}</span>
-              </p>
-              <p className="text-xs text-slate-500">{typeLabel}</p>
-            </div>
+          <p className="flex flex-wrap items-center gap-1 font-medium text-slate-900">
+            {wallet.is_default ? (
+              <span className="text-amber-500" title="المحفظة الافتراضية">
+                ⭐
+              </span>
+            ) : null}
+            <span className="wrap-text">{wallet.name}</span>
+          </p>
+          <p className="mt-0.5 text-sm text-slate-500">{typeLabel}</p>
 
-            <div className="shrink-0 text-left">
-              <WalletBalanceCell
-                wallet={wallet}
-                transactions={shared.transactions}
-                investments={shared.investments}
-                currency={shared.currency}
-                aggregatedSummary={aggregatedSummary}
-              />
-            </div>
+          <div className="mt-3">
+            <WalletBalanceCell
+              wallet={wallet}
+              transactions={shared.transactions}
+              investments={shared.investments}
+              currency={shared.currency}
+              aggregatedSummary={aggregatedSummary}
+            />
           </div>
 
           {hasChildren ? (
@@ -265,13 +261,13 @@ const WalletMobileCard = memo(function WalletMobileCard({
           ) : null}
 
           {!hasChildren && !isInvestment && transactionNet !== 0 ? (
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-sm text-slate-500">
               {formatCurrency(transactionNet, shared.currency)} من العمليات
             </p>
           ) : null}
 
           {isReconcilable ? (
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-sm leading-6 text-slate-500">
               {lastReconciliation
                 ? `آخر تحديث: ${formatDate(lastReconciliation.reconciled_at)}`
                 : "لم يُحدَّث الرصيد بعد"}

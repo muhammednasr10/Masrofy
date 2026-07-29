@@ -30,12 +30,14 @@ function WalletBalanceCellComponent({
   if (aggregatedSummary) {
     return (
       <div className="space-y-1">
-        <p className="font-semibold text-slate-900">
+        <p className="amount-text text-slate-900">
           {formatCurrency(aggregatedSummary.assetTotal, currency)}
         </p>
-        <p className="text-xs text-slate-500">مجموع المحافظ الفرعية (بدون كريديت)</p>
+        <p className="wrap-text text-sm leading-6 text-slate-500">
+          مجموع المحافظ الفرعية (بدون كريديت)
+        </p>
         {aggregatedSummary.creditNotes.map((note) => (
-          <p key={note.walletName} className="text-xs text-amber-700">
+          <p key={note.walletName} className="wrap-text text-sm leading-6 text-amber-700">
             ملاحظة: {note.walletName} — مستحق {formatCurrency(note.owed, currency)}
             {note.limit != null
               ? ` • متاح ${formatCurrency(note.available ?? 0, currency)}`
@@ -52,14 +54,16 @@ function WalletBalanceCellComponent({
 
     return (
       <div className="space-y-1">
-        <p className="font-semibold text-red-600">مستحق: {formatCurrency(owed, currency)}</p>
+        <p className="wrap-text font-semibold text-red-600">
+          مستحق: {formatCurrency(owed, currency)}
+        </p>
         {wallet.credit_limit != null ? (
           <>
-            <p className="text-xs text-slate-500">
+            <p className="wrap-text text-sm text-slate-500">
               الحد: {formatCurrency(Number(wallet.credit_limit), currency)}
             </p>
             {available != null ? (
-              <p className="text-xs text-emerald-700">
+              <p className="wrap-text text-sm text-emerald-700">
                 متاح: {formatCurrency(available, currency)}
               </p>
             ) : null}
@@ -72,16 +76,16 @@ function WalletBalanceCellComponent({
   if (isInvestmentWallet(wallet)) {
     return (
       <div className="space-y-1">
-        <p className="font-semibold text-slate-900">
+        <p className="amount-text text-slate-900">
           {formatCurrency(calculateWalletBalance(wallet, transactions, investments), currency)}
         </p>
-        <p className="text-xs text-slate-500">يُحدَّث من صفحة الاستثمار</p>
+        <p className="text-sm text-slate-500">يُحدَّث من صفحة الاستثمار</p>
       </div>
     );
   }
 
   return (
-    <p className="font-semibold text-slate-900">
+    <p className="amount-text text-slate-900">
       {formatCurrency(calculateWalletBalance(wallet, transactions, investments), currency)}
     </p>
   );

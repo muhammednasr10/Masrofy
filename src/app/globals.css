@@ -33,6 +33,11 @@ html {
   svg {
     max-width: 100%;
   }
+
+  main {
+    overflow-wrap: anywhere;
+    word-wrap: break-word;
+  }
 }
 
 @layer utilities {
@@ -41,6 +46,26 @@ html {
     overflow-x: auto;
     overscroll-behavior-x: contain;
     -webkit-overflow-scrolling: touch;
+  }
+
+  .wrap-text {
+    overflow-wrap: anywhere;
+    word-wrap: break-word;
+  }
+
+  .amount-text {
+    overflow-wrap: anywhere;
+    word-wrap: break-word;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    font-weight: 600;
+  }
+
+  @media (min-width: 640px) {
+    .amount-text {
+      font-size: 1.5rem;
+      line-height: 2rem;
+    }
   }
 }
 

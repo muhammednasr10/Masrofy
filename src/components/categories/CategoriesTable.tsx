@@ -34,64 +34,113 @@ export default function CategoriesTable({
   }
 
   return (
-    <div className="mt-6 x-scroll rounded-2xl border border-slate-100">
-      <table className="min-w-full text-sm">
-        <thead>
-          <tr className="border-b border-slate-200 bg-slate-50 text-slate-500">
-            <th className="px-4 py-3 text-right font-medium">الفئة</th>
-            <th className="px-4 py-3 text-right font-medium">النوع</th>
-            <th className="px-4 py-3 text-right font-medium">تحت</th>
-            <th className="px-4 py-3 text-right font-medium">إجراءات</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(({ category, depth }) => (
-            <tr key={category.id} className="border-b border-slate-100 last:border-0">
-              <td className="px-4 py-4">
-                <div
-                  className="flex items-center gap-3"
-                  style={{ paddingRight: `${depth}rem` }}
-                >
-                  <span
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-base"
-                    style={{ backgroundColor: `${category.color}22` }}
-                  >
-                    {category.icon}
-                  </span>
-                  <span className="font-medium text-slate-900">
-                    {depth > 0 ? `↳ ${category.name}` : category.name}
-                  </span>
-                </div>
-              </td>
-              <td className="px-4 py-4 text-slate-600">
-                {isSubCategory(category) ? "فرعية" : "رئيسية"}
-              </td>
-              <td className="px-4 py-4 text-slate-600">
-                {getParentName(category, categories)}
-              </td>
-              <td className="px-4 py-4">
-                <div className="flex items-center gap-1">
-                  {!isSubCategory(category) ? (
-                    <CategoryIconButton
-                      icon="➕"
-                      label="إضافة فئة فرعية"
-                      onClick={() => onAddSubCategory(category.id)}
-                      tone="emerald"
-                    />
-                  ) : null}
-                  <CategoryIconButton
-                    icon="🗑️"
-                    label="حذف"
-                    onClick={() => onDelete(category)}
-                    tone="red"
-                  />
-                </div>
-              </td>
+    <>
+      <div className="mt-6 space-y-3 md:hidden">
+        {rows.map(({ category, depth }) => (
+          <article
+            key={category.id}
+            className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm"
+            style={{ marginRight: `${depth * 0.75}rem` }}
+          >
+            <div className="flex items-start gap-3">
+              <span
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg"
+                style={{ backgroundColor: `${category.color}22` }}
+              >
+                {category.icon}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="wrap-text font-medium text-slate-900">
+                  {depth > 0 ? `↳ ${category.name}` : category.name}
+                </p>
+                <p className="mt-1 text-sm text-slate-500">
+                  {isSubCategory(category) ? "فئة فرعية" : "فئة رئيسية"}
+                </p>
+                <p className="mt-1 wrap-text text-sm leading-6 text-slate-600">
+                  تحت: {getParentName(category, categories)}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
+              {!isSubCategory(category) ? (
+                <CategoryIconButton
+                  icon="➕"
+                  label="إضافة فئة فرعية"
+                  onClick={() => onAddSubCategory(category.id)}
+                  tone="emerald"
+                />
+              ) : null}
+              <CategoryIconButton
+                icon="🗑️"
+                label="حذف"
+                onClick={() => onDelete(category)}
+                tone="red"
+              />
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <div className="mt-6 hidden x-scroll rounded-2xl border border-slate-100 md:block">
+        <table className="min-w-full text-sm">
+          <thead>
+            <tr className="border-b border-slate-200 bg-slate-50 text-slate-500">
+              <th className="px-4 py-3 text-right font-medium">الفئة</th>
+              <th className="px-4 py-3 text-right font-medium">النوع</th>
+              <th className="px-4 py-3 text-right font-medium">تحت</th>
+              <th className="px-4 py-3 text-right font-medium">إجراءات</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {rows.map(({ category, depth }) => (
+              <tr key={category.id} className="border-b border-slate-100 last:border-0">
+                <td className="px-4 py-4">
+                  <div
+                    className="flex items-center gap-3"
+                    style={{ paddingRight: `${depth}rem` }}
+                  >
+                    <span
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-base"
+                      style={{ backgroundColor: `${category.color}22` }}
+                    >
+                      {category.icon}
+                    </span>
+                    <span className="font-medium text-slate-900">
+                      {depth > 0 ? `↳ ${category.name}` : category.name}
+                    </span>
+                  </div>
+                </td>
+                <td className="px-4 py-4 text-slate-600">
+                  {isSubCategory(category) ? "فرعية" : "رئيسية"}
+                </td>
+                <td className="px-4 py-4 text-slate-600">
+                  {getParentName(category, categories)}
+                </td>
+                <td className="px-4 py-4">
+                  <div className="flex items-center gap-1">
+                    {!isSubCategory(category) ? (
+                      <CategoryIconButton
+                        icon="➕"
+                        label="إضافة فئة فرعية"
+                        onClick={() => onAddSubCategory(category.id)}
+                        tone="emerald"
+                      />
+                    ) : null}
+                    <CategoryIconButton
+                      icon="🗑️"
+                      label="حذف"
+                      onClick={() => onDelete(category)}
+                      tone="red"
+                    />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 

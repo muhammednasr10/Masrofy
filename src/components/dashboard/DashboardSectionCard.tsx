@@ -45,10 +45,10 @@ export default function DashboardSectionCard({
       </div>
 
       <h3 className="mt-4 text-lg font-semibold text-slate-900">{title}</h3>
-      <p className="mt-1 text-sm text-slate-500">{description}</p>
-      <p className="mt-4 text-2xl font-semibold text-slate-900">{primaryValue}</p>
+      <p className="mt-1 wrap-text text-sm leading-6 text-slate-500">{description}</p>
+      <p className="amount-text mt-4 text-slate-900">{primaryValue}</p>
       {secondaryValue ? (
-        <p className="mt-1 text-sm text-slate-600">{secondaryValue}</p>
+        <p className="mt-1 wrap-text text-sm leading-6 text-slate-600">{secondaryValue}</p>
       ) : null}
     </Link>
   );

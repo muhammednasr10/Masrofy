@@ -11,16 +11,11 @@ import {
   calculateWalletBalance,
   getActualBalanceLabel,
   getRecordedBalanceLabel,
-  getReconcilableWallets,
+  getReconcilableWalletsForFocus,
   getReconciliationAdjustmentLabel,
   isCreditWallet,
 } from "@/lib/wallets";
 import { FormEvent, useMemo, useState } from "react";
-
-type InventoryRow = {
-  walletId: string;
-  actualBalance: string;
-};
 
 type WalletInventoryModalProps = {
   wallets: Wallet[];
@@ -39,36 +34,41 @@ export default function WalletInventoryModal({
   onClose,
   onComplete,
 }: WalletInventoryModalProps) {
-  const reconcilableWallets = useMemo(() => getReconcilableWallets(wallets), [wallets]);
-  const walletRows = useMemo(
-    () =>
-      buildWalletDisplayRows(reconcilableWallets).filter(({ wallet }) =>
-        focusWalletId ? wallet.id === focusWalletId : true,
-      ),
-    [reconcilableWallets, focusWalletId],
+  const reconcilableWallets = useMemo(
+    () => getReconcilableWalletsForFocus(wallets, focusWalletId),
+    [wallets, focusWalletId],
   );
 
-  const [rows, setRows] = useState<InventoryRow[]>(() =>
-    walletRows.map(({ wallet }) => ({
-      walletId: wallet.id,
-      actualBalance: String(calculateWalletBalance(wallet, transactions)),
-    })),
+  const walletRows = useMemo(
+    () => buildWalletDisplayRows(reconcilableWallets),
+    [reconcilableWallets],
   );
+
+  const [actualBalanceEdits, setActualBalanceEdits] = useState<Record<string, string>>({});
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  function getActualBalanceInput(wallet: Wallet) {
+    const edited = actualBalanceEdits[wallet.id];
+
+    if (edited !== undefined) {
+      return edited;
+    }
+
+    return String(calculateWalletBalance(wallet, transactions));
+  }
+
   const previews = useMemo(() => {
     return walletRows.map(({ wallet }) => {
-      const row = rows.find((item) => item.walletId === wallet.id);
-      const actualBalance = Number(row?.actualBalance) || 0;
+      const actualBalance = Number(getActualBalanceInput(wallet)) || 0;
 
       return {
         wallet,
         ...buildReconciliationPreview(wallet, transactions, actualBalance),
       };
     });
-  }, [walletRows, rows, transactions]);
+  }, [walletRows, actualBalanceEdits, transactions]);
 
   const summary = useMemo(() => {
     const mismatched = previews.filter((preview) => !preview.isMatched);
@@ -82,10 +82,15 @@ export default function WalletInventoryModal({
     };
   }, [previews]);
 
+  const focusWallet = focusWalletId
+    ? wallets.find((wallet) => wallet.id === focusWalletId)
+    : null;
+
   function updateActualBalance(walletId: string, actualBalance: string) {
-    setRows((current) =>
-      current.map((row) => (row.walletId === walletId ? { ...row, actualBalance } : row)),
-    );
+    setActualBalanceEdits((current) => ({
+      ...current,
+      [walletId]: actualBalance,
+    }));
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -118,217 +123,174 @@ export default function WalletInventoryModal({
   return (
     <ModalShell onClose={onClose} maxWidthClassName="sm:max-w-4xl">
       <div className="flex items-start justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-semibold text-slate-900">
-              {focusWalletId ? "تحديث رصيد المحفظة" : "تحديث أرصدة المحافظ"}
-            </h2>
-            <p className="mt-1 text-sm text-slate-500">
-              أدخل الرصيد الفعلي من البنك أو الكاش. أي فرق يُسجَّل تلقائياً كإيراد غير معروف أو مصروف
-              غير معروف.
+        <div>
+          <h2 className="text-xl font-semibold text-slate-900">
+            {focusWalletId ? "تحديث رصيد المحفظة" : "تحديث أرصدة المحافظ"}
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">
+            {focusWallet && walletRows.length > 1
+              ? `حدّث المحافظ الفرعية التابعة لـ ${focusWallet.name}.`
+              : "أدخل الرصيد الفعلي من البنك أو الكاش في الخانة أدناه."}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-full px-3 py-1 text-sm text-slate-500 transition hover:bg-slate-100"
+        >
+          إغلاق
+        </button>
+      </div>
+
+      <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+        {walletRows.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-amber-200 bg-amber-50 px-4 py-5 text-sm text-amber-900">
+            <p className="font-medium">لا توجد محفظة قابلة للتحديث هنا.</p>
+            <p className="mt-2 leading-7 text-amber-800">
+              {focusWallet
+                ? "المحفظة الرئيسية تجمع أرصدة المحافظ الفرعية. افتح المحافظ الفرعية من الجدول وحدّث كل واحدة على حدة."
+                : "أضف محفظة بنك أو كاش أولاً، أو حدّث المحافظ الفرعية داخل البنوك."}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full px-3 py-1 text-sm text-slate-500 transition hover:bg-slate-100"
-          >
-            إغلاق
-          </button>
-        </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm font-medium text-slate-700">أدخل الرصيد الفعلي</p>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          <SummaryChip label="المحافظ" value={String(summary.total)} tone="neutral" />
-          <SummaryChip label="متطابقة" value={String(summary.matched)} tone="success" />
-          <SummaryChip label="فيها فرق" value={String(summary.mismatched)} tone="warning" />
-        </div>
-
-          {summary.mismatched > 0 ? (
-            <div className="mt-4 space-y-2">
-              <p className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                إجمالي الفروقات: {formatCurrency(summary.totalDifference, currency)}
-              </p>
-              <p className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                الفروقات تُسجَّل تلقائياً: زيادة الرصيد → إيراد غير معروف، نقص الرصيد → مصروف غير
-                معروف.
-              </p>
-            </div>
-          ) : (
-          <p className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-            كل المحافظ متطابقة مع الواقع حتى الآن.
-          </p>
-        )}
-
-        <form onSubmit={handleSubmit} className="mt-6 space-y-6">
-          <div className="space-y-3 md:hidden">
             {walletRows.map(({ wallet, depth }) => {
               const preview = previews.find((item) => item.wallet.id === wallet.id);
-              const row = rows.find((item) => item.walletId === wallet.id);
 
-              if (!preview || !row) {
+              if (!preview) {
                 return null;
               }
+
+              const actualBalanceLabel = getActualBalanceLabel(wallet);
+              const isCredit = isCreditWallet(wallet);
 
               return (
                 <article
                   key={wallet.id}
-                  className="rounded-2xl border border-slate-100 p-4"
+                  className="rounded-2xl border-2 border-emerald-100 bg-emerald-50/40 p-4"
                   style={{ marginRight: `${depth * 0.75}rem` }}
                 >
-                  <div className="flex items-center gap-2">
-                    <span>{wallet.icon}</span>
-                    <div>
-                      <p className="font-medium text-slate-900">{wallet.name}</p>
-                      <p className="text-xs text-slate-500">{getRecordedBalanceLabel(wallet)}</p>
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-xl shadow-sm">
+                      {wallet.icon}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-slate-900">{wallet.name}</p>
+                      <p className="mt-0.5 text-xs text-slate-500">{getRecordedBalanceLabel(wallet)}</p>
                     </div>
                   </div>
-                  <div className="mt-3 grid grid-cols-2 gap-3">
+
+                  <label className="mt-4 block space-y-2">
+                    <span className="text-sm font-semibold text-emerald-900">
+                      {actualBalanceLabel}
+                    </span>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      step="0.01"
+                      required
+                      value={getActualBalanceInput(wallet)}
+                      onChange={(event) => updateActualBalance(wallet.id, event.target.value)}
+                      placeholder="0.00"
+                      className="w-full rounded-2xl border-2 border-emerald-200 bg-white px-4 py-3.5 text-lg font-semibold text-slate-900 outline-none focus:border-emerald-500"
+                    />
+                    {isCredit ? (
+                      <span className="block text-xs leading-6 text-slate-600">
+                        أدخل المبلغ المستحق على الكارت كما يظهر في تطبيق البنك.
+                      </span>
+                    ) : (
+                      <span className="block text-xs leading-6 text-slate-600">
+                        أدخل الرصيد الحالي في حسابك أو محفظتك.
+                      </span>
+                    )}
+                  </label>
+
+                  <div className="mt-4 grid grid-cols-2 gap-3 rounded-2xl bg-white/80 p-3 text-sm">
                     <div>
-                      <p className="text-xs text-slate-500">المسجّل</p>
-                      <p className="font-medium text-slate-700">
+                      <p className="text-xs text-slate-500">المسجّل في التطبيق</p>
+                      <p className="mt-1 font-medium text-slate-700">
                         {formatCurrency(preview.recordedBalance, currency)}
                       </p>
                     </div>
                     <div>
                       <p className="text-xs text-slate-500">الفرق</p>
-                      <DifferenceBadge difference={preview.difference} currency={currency} />
-                      {getReconciliationAdjustmentLabel(
-                        preview.difference,
-                        isCreditWallet(wallet),
-                      ) ? (
+                      <div className="mt-1">
+                        <DifferenceBadge difference={preview.difference} currency={currency} />
+                      </div>
+                      {getReconciliationAdjustmentLabel(preview.difference, isCredit) ? (
                         <p className="mt-1 text-xs text-amber-700">
-                          سيُسجَّل:{" "}
-                          {getReconciliationAdjustmentLabel(
-                            preview.difference,
-                            isCreditWallet(wallet),
-                          )}{" "}
+                          سيُسجَّل: {getReconciliationAdjustmentLabel(preview.difference, isCredit)}{" "}
                           ({formatCurrency(Math.abs(preview.difference), currency)})
                         </p>
                       ) : null}
                     </div>
                   </div>
-                  <label className="mt-3 block space-y-1">
-                    <span className="text-xs font-medium text-slate-700">
-                      {getActualBalanceLabel(wallet)}
-                    </span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={row.actualBalance}
-                      onChange={(event) => updateActualBalance(wallet.id, event.target.value)}
-                      className="w-full rounded-xl border border-slate-200 px-3 py-3 outline-none focus:border-emerald-500"
-                    />
-                  </label>
                 </article>
               );
             })}
           </div>
+        )}
 
-          <div className="hidden overflow-x-auto rounded-2xl border border-slate-100 md:block">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-slate-500">
-                  <th className="px-3 py-3 text-right font-medium">المحفظة</th>
-                  <th className="px-3 py-3 text-right font-medium">المسجّل</th>
-                  <th className="px-3 py-3 text-right font-medium">الفعلي</th>
-                  <th className="px-3 py-3 text-right font-medium">الفرق</th>
-                </tr>
-              </thead>
-              <tbody>
-                {walletRows.map(({ wallet, depth }) => {
-                  const preview = previews.find((item) => item.wallet.id === wallet.id);
-                  const row = rows.find((item) => item.walletId === wallet.id);
+        {walletRows.length > 0 ? (
+          <>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <SummaryChip label="المحافظ" value={String(summary.total)} tone="neutral" />
+              <SummaryChip label="متطابقة" value={String(summary.matched)} tone="success" />
+              <SummaryChip label="فيها فرق" value={String(summary.mismatched)} tone="warning" />
+            </div>
 
-                  if (!preview || !row) {
-                    return null;
-                  }
+            {summary.mismatched > 0 ? (
+              <div className="space-y-2">
+                <p className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  إجمالي الفروقات: {formatCurrency(summary.totalDifference, currency)}
+                </p>
+                <p className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                  الفروقات تُسجَّل تلقائياً: زيادة الرصيد → إيراد غير معروف، نقص الرصيد → مصروف غير
+                  معروف.
+                </p>
+              </div>
+            ) : (
+              <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                كل المحافظ متطابقة مع الواقع حتى الآن. غيّر الرصيد الفعلي إذا كان مختلفاً.
+              </p>
+            )}
+          </>
+        ) : null}
 
-                  return (
-                    <tr key={wallet.id} className="border-b border-slate-100 last:border-0">
-                      <td className="px-3 py-4">
-                        <div
-                          className="flex items-center gap-2"
-                          style={{ paddingRight: `${depth * 1.25}rem` }}
-                        >
-                          <span>{wallet.icon}</span>
-                          <div>
-                            <p className="font-medium text-slate-900">{wallet.name}</p>
-                            <p className="text-xs text-slate-500">
-                              {getRecordedBalanceLabel(wallet)}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-3 py-4 font-medium text-slate-700">
-                        {formatCurrency(preview.recordedBalance, currency)}
-                      </td>
-                      <td className="px-3 py-4">
-                        <label className="block space-y-1">
-                          <span className="sr-only">{getActualBalanceLabel(wallet)}</span>
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={row.actualBalance}
-                            onChange={(event) =>
-                              updateActualBalance(wallet.id, event.target.value)
-                            }
-                            className="w-full min-w-[120px] rounded-xl border border-slate-200 px-3 py-2 outline-none focus:border-emerald-500"
-                          />
-                        </label>
-                      </td>
-                      <td className="px-3 py-4">
-                        <DifferenceBadge difference={preview.difference} currency={currency} />
-                        {getReconciliationAdjustmentLabel(
-                          preview.difference,
-                          isCreditWallet(wallet),
-                        ) ? (
-                          <p className="mt-1 text-xs text-amber-700">
-                            {getReconciliationAdjustmentLabel(
-                              preview.difference,
-                              isCreditWallet(wallet),
-                            )}{" "}
-                            ({formatCurrency(Math.abs(preview.difference), currency)})
-                          </p>
-                        ) : null}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+        <label className="block space-y-2">
+          <span className="text-sm font-medium text-slate-700">ملاحظة (اختياري)</span>
+          <input
+            type="text"
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            placeholder="مثال: تحديث بعد كشف حساب البنك"
+            className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
+          />
+        </label>
 
-          <label className="block space-y-2">
-            <span className="text-sm font-medium text-slate-700">ملاحظة (اختياري)</span>
-            <input
-              type="text"
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-              placeholder="مثال: تحديث بعد كشف حساب البنك"
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
-            />
-          </label>
+        {error ? (
+          <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
+        ) : null}
 
-          {error ? (
-            <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
-          ) : null}
-
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="submit"
-              disabled={saving || walletRows.length === 0}
-              className="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60"
-            >
-              {saving ? "جاري التحديث..." : "حفظ التحديث"}
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
-            >
-              إلغاء
-            </button>
-          </div>
-        </form>
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="submit"
+            disabled={saving || walletRows.length === 0}
+            className="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60"
+          >
+            {saving ? "جاري التحديث..." : "حفظ التحديث"}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+          >
+            إلغاء
+          </button>
+        </div>
+      </form>
     </ModalShell>
   );
 }

@@ -28,6 +28,10 @@
     "categories": "Categories",
     "account": "Account"
   },
+  "dashboard": {
+    "showBalances": "Show balances",
+    "hideBalances": "Hide balances"
+  },
   "auth": {
     "loginTitle": "Sign in",
     "loginSubtitle": "Access your account to track monthly spending.",

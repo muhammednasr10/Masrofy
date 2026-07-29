@@ -28,6 +28,10 @@
     "categories": "الفئات",
     "account": "الحساب"
   },
+  "dashboard": {
+    "showBalances": "إظهار الأرصدة",
+    "hideBalances": "إخفاء الأرصدة"
+  },
   "auth": {
     "loginTitle": "تسجيل الدخول",
     "loginSubtitle": "ادخل لحسابك لمتابعة مصروفاتك الشهرية.",

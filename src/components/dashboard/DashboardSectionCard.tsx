@@ -8,6 +8,7 @@ type DashboardSectionCardProps = {
   primaryValue: string;
   secondaryValue?: string;
   tone?: "emerald" | "red" | "indigo" | "amber" | "slate" | "sky";
+  className?: string;
 };
 
 const toneClasses = {
@@ -27,11 +28,12 @@ export default function DashboardSectionCard({
   primaryValue,
   secondaryValue,
   tone = "emerald",
+  className = "",
 }: DashboardSectionCardProps) {
   return (
     <Link
       href={href}
-      className={`group block rounded-3xl border border-white bg-gradient-to-br ${toneClasses[tone]} p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md`}
+      className={`group block rounded-3xl border border-white bg-gradient-to-br ${toneClasses[tone]} p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${className}`}
     >
       <div className="flex items-start justify-between gap-3">
         <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/80 text-2xl shadow-sm">

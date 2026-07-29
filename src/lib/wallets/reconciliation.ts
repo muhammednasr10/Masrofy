@@ -8,6 +8,7 @@ import {
 import {
   buildWalletDisplayRows,
   getAggregatedSubWalletSummary,
+  getWalletDescendantIds,
   type ParentWalletBalanceSummary,
   walletHasChildren,
 } from "@/lib/wallets/hierarchy";
@@ -34,6 +35,21 @@ export function getReconcilableWallets(wallets: Wallet[]) {
   return wallets.filter(
     (wallet) => !walletHasChildren(wallet.id, wallets) && !isInvestmentWallet(wallet),
   );
+}
+
+export function getReconcilableWalletsForFocus(wallets: Wallet[], focusWalletId: string | null) {
+  const reconcilableWallets = getReconcilableWallets(wallets);
+
+  if (!focusWalletId) {
+    return reconcilableWallets;
+  }
+
+  if (walletHasChildren(focusWalletId, wallets)) {
+    const descendantIds = new Set(getWalletDescendantIds(focusWalletId, wallets));
+    return reconcilableWallets.filter((wallet) => descendantIds.has(wallet.id));
+  }
+
+  return reconcilableWallets.filter((wallet) => wallet.id === focusWalletId);
 }
 
 export function buildReconciliationPreview(

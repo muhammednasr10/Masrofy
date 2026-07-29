@@ -154,6 +154,20 @@ export function getDirectChildWallets(parentId: string, wallets: Wallet[]) {
   );
 }
 
+export function getWalletDescendantIds(walletId: string, wallets: Wallet[]) {
+  const ids: string[] = [];
+
+  function walk(parentId: string) {
+    for (const child of getDirectChildWallets(parentId, wallets)) {
+      ids.push(child.id);
+      walk(child.id);
+    }
+  }
+
+  walk(walletId);
+  return ids;
+}
+
 export type WalletSelectGroup = {
   parent: Wallet;
   children: Wallet[];

@@ -72,7 +72,7 @@ export default function ReportsPage() {
 
       <FeedbackBanner error={error} message={null} />
 
-      <nav className="flex gap-2 overflow-x-auto pb-1">
+      <nav className="x-scroll flex max-w-full gap-2 pb-1">
         {reportLinks.map((link) => (
           <a
             key={link.href}

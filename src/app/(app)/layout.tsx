@@ -12,9 +12,9 @@ export default function AppLayout({
     <OnboardingGate>
       <PwaInstallProvider>
         <OfflineProvider>
-          <div className="min-h-full bg-gradient-to-b from-emerald-50 to-slate-50">
+          <div className="min-h-full w-full overflow-x-hidden bg-gradient-to-b from-emerald-50 to-slate-50">
             <AppNav />
-            <main className="mx-auto max-w-5xl px-3 py-4 sm:px-4 sm:py-8">
+            <main className="mx-auto w-full min-w-0 max-w-5xl overflow-x-hidden px-3 py-4 sm:px-4 sm:py-8">
               {children}
             </main>
           </div>

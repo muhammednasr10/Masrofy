@@ -168,8 +168,10 @@ export default function DashboardView({ monthLabel, data }: DashboardViewProps) 
   return (
     <DashboardBalanceVisibilityProvider>
       <div className="space-y-6">
-        <section className="flex items-center justify-between gap-3">
-          <h1 className="text-2xl font-semibold text-slate-900 sm:text-3xl">{monthLabel}</h1>
+        <section className="flex min-w-0 items-center justify-between gap-3">
+          <h1 className="min-w-0 truncate text-2xl font-semibold text-slate-900 sm:text-3xl">
+            {monthLabel}
+          </h1>
           <div className="flex shrink-0 items-center gap-2">
             <DashboardBalanceToggleButton />
             <DashboardAddExpenseButton />

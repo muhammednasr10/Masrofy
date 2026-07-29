@@ -42,7 +42,7 @@ export default function WalletReconciliationHistory({
   }
 
   return (
-    <div className="mt-4 overflow-x-auto">
+    <div className="mt-4 x-scroll">
       <table className="min-w-full text-sm">
         <thead>
           <tr className="border-b border-slate-200 text-slate-500">

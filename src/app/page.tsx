@@ -3,8 +3,8 @@ import SiteFooter from "@/components/layout/SiteFooter";
 
 export default function Home() {
   return (
-    <div className="min-h-full bg-gradient-to-b from-emerald-100 via-white to-slate-50">
-      <main className="mx-auto flex min-h-full max-w-5xl flex-col justify-center px-4 py-16">
+    <div className="min-h-full w-full overflow-x-hidden bg-gradient-to-b from-emerald-100 via-white to-slate-50">
+      <main className="mx-auto flex min-h-full w-full min-w-0 max-w-5xl flex-col justify-center px-4 py-16">
         <section className="max-w-2xl">
           <p className="text-sm font-medium text-emerald-700">Masrofy</p>
           <h1 className="mt-3 text-4xl font-semibold leading-tight text-slate-900 sm:text-5xl">

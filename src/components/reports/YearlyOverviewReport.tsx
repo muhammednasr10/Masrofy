@@ -46,7 +46,7 @@ export default function YearlyOverviewReport({
         </article>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-slate-100">
+      <div className="x-scroll rounded-2xl border border-slate-100">
         <table className="min-w-full text-sm">
           <thead>
             <tr className="border-b border-slate-200 bg-slate-50 text-slate-500">

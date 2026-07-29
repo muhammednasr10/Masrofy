@@ -105,7 +105,7 @@ export default function WalletsTable({
         ))}
       </div>
 
-      <div className="mt-4 hidden overflow-x-auto md:block">
+      <div className="mt-4 hidden x-scroll md:block">
         <table className="min-w-full text-sm">
           <thead>
             <tr className="border-b border-slate-200 text-slate-500">

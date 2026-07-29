@@ -34,7 +34,7 @@ export default function CategoriesTable({
   }
 
   return (
-    <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-100">
+    <div className="mt-6 x-scroll rounded-2xl border border-slate-100">
       <table className="min-w-full text-sm">
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50 text-slate-500">

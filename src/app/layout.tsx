@@ -49,7 +49,7 @@ export default async function RootLayout({
 
   return (
     <html lang={lang} dir={dir} className={`${cairo.variable} h-full`}>
-      <body className="min-h-full bg-slate-50 font-sans text-slate-900 antialiased">
+      <body className="min-h-full w-full overflow-x-hidden bg-slate-50 font-sans text-slate-900 antialiased">
         <LocaleProvider initialLocale={locale} initialMessages={messages}>
           <PwaRegister />
           {children}

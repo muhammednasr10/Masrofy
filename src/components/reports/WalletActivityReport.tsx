@@ -53,7 +53,7 @@ export default function WalletActivityReport({
         ))}
       </div>
 
-      <div className="hidden overflow-x-auto md:block">
+      <div className="hidden x-scroll md:block">
         <table className="min-w-full text-sm">
           <thead>
             <tr className="border-b border-slate-200 text-slate-500">

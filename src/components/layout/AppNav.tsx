@@ -68,8 +68,8 @@ export function AppNav() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-emerald-100 bg-white/95 backdrop-blur safe-top">
-        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">
+      <header className="sticky top-0 z-40 w-full overflow-x-hidden border-b border-emerald-100 bg-white/95 backdrop-blur safe-top">
+        <div className="mx-auto flex w-full min-w-0 max-w-7xl items-center gap-2 px-3 py-3 sm:gap-3 sm:px-4">
           <button
             type="button"
             onClick={() => setSidebarOpen(true)}

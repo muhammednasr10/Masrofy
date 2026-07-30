@@ -7,9 +7,11 @@ import PlanMonthPicker from "@/components/plan/PlanMonthPicker";
 import PlanOverviewCards from "@/components/plan/PlanOverviewCards";
 import CategoryFormModal from "@/components/categories/CategoryFormModal";
 import { FeedbackBanner } from "@/components/wallets/FeedbackBanner";
+import { useTranslations } from "@/components/i18n/LocaleProvider";
 import { usePlanPage } from "@/hooks/usePlanPage";
 
 export default function PlanPage() {
+  const t = useTranslations();
   const {
     loading,
     saving,
@@ -48,7 +50,7 @@ export default function PlanPage() {
   } = usePlanPage();
 
   if (loading) {
-    return <p className="text-sm text-slate-500">جاري تحميل الخطة...</p>;
+    return <p className="text-sm text-slate-500">{t("plan.loading")}</p>;
   }
 
   return (

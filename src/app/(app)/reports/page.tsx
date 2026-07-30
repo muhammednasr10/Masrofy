@@ -15,21 +15,11 @@ import InvestmentsSummaryCard from "@/components/investments/InvestmentsSummaryC
 import WalletReconciliationHistory from "@/components/wallets/WalletReconciliationHistory";
 import WalletsSummaryCard from "@/components/wallets/WalletsSummaryCard";
 import { FeedbackBanner } from "@/components/wallets/FeedbackBanner";
+import { useTranslations } from "@/components/i18n/LocaleProvider";
 import { useReportsPage } from "@/hooks/useReportsPage";
 
-const reportLinks = [
-  { href: "#cash-flow", label: "التدفق النقدي" },
-  { href: "#categories", label: "الفئات" },
-  { href: "#wallets-activity", label: "المحافظ" },
-  { href: "#plan", label: "الخطة" },
-  { href: "#trend", label: "الاتجاه" },
-  { href: "#year", label: "السنة" },
-  { href: "#wealth", label: "الثروة" },
-  { href: "#investments", label: "الاستثمار" },
-  { href: "#reconciliation", label: "الجرد" },
-];
-
 export default function ReportsPage() {
+  const t = useTranslations();
   const {
     loading,
     error,
@@ -50,18 +40,28 @@ export default function ReportsPage() {
     reconciliations,
   } = useReportsPage();
 
+  const reportLinks = [
+    { href: "#cash-flow", label: t("reports.navCashFlow") },
+    { href: "#categories", label: t("reports.navCategories") },
+    { href: "#wallets-activity", label: t("reports.navWallets") },
+    { href: "#plan", label: t("reports.navPlan") },
+    { href: "#trend", label: t("reports.navTrend") },
+    { href: "#year", label: t("reports.navYear") },
+    { href: "#wealth", label: t("reports.navWealth") },
+    { href: "#investments", label: t("reports.navInvestments") },
+    { href: "#reconciliation", label: t("reports.navReconciliation") },
+  ];
+
   if (loading) {
-    return <p className="text-sm text-slate-500">جاري تحميل التقارير...</p>;
+    return <p className="text-sm text-slate-500">{t("reports.loading")}</p>;
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-sm text-emerald-700">تحليلات مالية</p>
-        <h1 className="text-2xl font-semibold text-slate-900 sm:text-3xl">التقارير</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          كل التقارير اللي ممكن تحتاجها في مكان واحد — اختر الشهر واستعرض الملخصات.
-        </p>
+        <p className="text-sm text-emerald-700">{t("reports.eyebrow")}</p>
+        <h1 className="text-2xl font-semibold text-slate-900 sm:text-3xl">{t("reports.title")}</h1>
+        <p className="mt-1 text-sm text-slate-500">{t("reports.subtitle")}</p>
       </div>
 
       <PlanMonthPicker
@@ -87,8 +87,8 @@ export default function ReportsPage() {
       <div className="space-y-6">
         <ReportSection
           id="cash-flow"
-          title="ملخص التدفق النقدي"
-          description="إجمالي الدخل والمصروفات وصافي الشهر المختار."
+          title={t("reports.cashFlowTitle")}
+          description={t("reports.cashFlowDesc")}
         >
           <ExpensesSummaryCard
             monthLabel={monthLabel}
@@ -101,24 +101,24 @@ export default function ReportsPage() {
 
         <ReportSection
           id="categories"
-          title="المصروفات حسب الفئة"
-          description="توزيع مصروفات الشهر على الفئات مع النسب."
+          title={t("reports.categoriesTitle")}
+          description={t("reports.categoriesDesc")}
         >
           <CategoryBreakdownReport summary={monthSummary} currency={currency} />
         </ReportSection>
 
         <ReportSection
           id="wallets-activity"
-          title="حركة المحافظ"
-          description="مصروفات ودخل كل محفظة خلال الشهر المختار."
+          title={t("reports.walletsTitle")}
+          description={t("reports.walletsDesc")}
         >
           <WalletActivityReport rows={walletActivity} currency={currency} />
         </ReportSection>
 
         <ReportSection
           id="plan"
-          title="الخطة مقابل الواقع"
-          description="مقارنة ما خططت له مع ما تم تسجيله فعليًا."
+          title={t("reports.planTitle")}
+          description={t("reports.planDesc")}
         >
           <div className="space-y-6">
             <PlanOverviewCards comparison={planComparison} currency={currency} />
@@ -128,24 +128,24 @@ export default function ReportsPage() {
 
         <ReportSection
           id="trend"
-          title="اتجاه آخر 6 أشهر"
-          description="مقارنة سريعة للدخل والمصروفات على مدار الأشهر الأخيرة."
+          title={t("reports.trendTitle")}
+          description={t("reports.trendDesc")}
         >
           <MonthlyTrendReport rows={recentTrend} currency={currency} />
         </ReportSection>
 
         <ReportSection
           id="year"
-          title={`ملخص سنة ${planYear}`}
-          description="جدول شهري بإجماليات السنة الحالية."
+          title={t("reports.yearTitle", { year: String(planYear) })}
+          description={t("reports.yearDesc")}
         >
           <YearlyOverviewReport overview={yearlyOverview} currency={currency} />
         </ReportSection>
 
         <ReportSection
           id="wealth"
-          title="الثروة والمحافظ"
-          description="صافي ثروتك الحالي وتفاصيل أرصدة المحافظ."
+          title={t("reports.wealthTitle")}
+          description={t("reports.wealthDesc")}
         >
           <div className="space-y-6">
             <WalletsSummaryCard summary={portfolioSummary} currency={currency} />
@@ -155,8 +155,8 @@ export default function ReportsPage() {
 
         <ReportSection
           id="investments"
-          title="ملخص الاستثمارات"
-          description="قيمة المحفظة الاستثمارية والأرباح/الخسائر لكل استثمار."
+          title={t("reports.investmentsTitle")}
+          description={t("reports.investmentsDesc")}
         >
           <div className="space-y-6">
             <InvestmentsSummaryCard
@@ -176,8 +176,8 @@ export default function ReportsPage() {
 
         <ReportSection
           id="reconciliation"
-          title="سجل الجرد"
-          description="تاريخ مقارنة الأرصدة المسجّلة بالواقع."
+          title={t("reports.reconciliationTitle")}
+          description={t("reports.reconciliationDesc")}
         >
           <WalletReconciliationHistory reconciliations={reconciliations} currency={currency} />
         </ReportSection>

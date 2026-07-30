@@ -11,6 +11,7 @@ type WalletSnapshot = ReturnType<typeof getSelectedWalletSnapshot>;
 
 type TransactionFormModalProps = {
   open: boolean;
+  mode?: "add" | "edit";
   categories: Category[];
   wallets: Wallet[];
   currency: string;
@@ -37,6 +38,7 @@ type TransactionFormModalProps = {
 
 export default function TransactionFormModal({
   open,
+  mode = "add",
   onClose,
   ...formProps
 }: TransactionFormModalProps) {
@@ -50,8 +52,12 @@ export default function TransactionFormModal({
     <ModalShell onClose={onClose} maxWidthClassName="sm:max-w-lg">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-xl font-semibold text-slate-900">{t("expenses.addModalTitle")}</h2>
-          <p className="mt-1 text-sm text-slate-500">{t("expenses.addModalSubtitle")}</p>
+          <h2 className="text-xl font-semibold text-slate-900">
+            {mode === "edit" ? t("expenses.editModalTitle") : t("expenses.addModalTitle")}
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">
+            {mode === "edit" ? t("expenses.editModalSubtitle") : t("expenses.addModalSubtitle")}
+          </p>
         </div>
         <button
           type="button"

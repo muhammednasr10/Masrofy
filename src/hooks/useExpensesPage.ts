@@ -15,7 +15,9 @@ import {
   getSelectedWalletSnapshot,
   loadExpensesPageData,
   removeTransactionFromSnapshot,
+  updateTransactionInSnapshot,
 } from "@/lib/expenses";
+import type { ParsedImportRow } from "@/lib/expenses/import-csv";
 import { usePageFeedback } from "@/hooks/usePageFeedback";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useSyncCompleteListener } from "@/hooks/useSyncCompleteListener";
@@ -62,6 +64,7 @@ export function useExpensesPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [usingOfflineCache, setUsingOfflineCache] = useState(false);
+  const [editingTransactionId, setEditingTransactionId] = useState<string | null>(null);
 
   const applySnapshot = useCallback(
     (
@@ -256,6 +259,50 @@ export function useExpensesPage() {
     ],
   );
 
+  function resetTransactionForm() {
+    setAmount("");
+    setNote("");
+    setReceiptFile(null);
+    setType("expense");
+    setTransactionDate(new Date().toISOString().slice(0, 10));
+    setEditingTransactionId(null);
+
+    if (categories[0]) {
+      setCategoryId(categories[0].id);
+    }
+
+    const defaultWallet = wallets.find((wallet) => wallet.is_default) ?? wallets[0];
+    if (defaultWallet) {
+      setWalletId(defaultWallet.id);
+    }
+  }
+
+  function openEditTransaction(transaction: OfflineTransaction) {
+    if (transaction.type === "transfer") {
+      setError("لا يمكن تعديل عمليات التحويل من هنا.");
+      return;
+    }
+
+    if (transaction.offlinePending) {
+      setError("لا يمكن تعديل عملية محفوظة محلياً قبل مزامنتها.");
+      return;
+    }
+
+    clearFeedback();
+    setEditingTransactionId(transaction.id);
+    setAmount(String(transaction.amount));
+    setCategoryId(transaction.category_id ?? "");
+    setWalletId(transaction.wallet_id);
+    setType(transaction.type === "income" ? "income" : "expense");
+    setNote(transaction.note ?? "");
+    setTransactionDate(transaction.transaction_date);
+    setReceiptFile(null);
+  }
+
+  function closeTransactionModal() {
+    resetTransactionForm();
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
@@ -268,6 +315,7 @@ export function useExpensesPage() {
     }
 
     const supabase = createClient();
+    const isEditing = Boolean(editingTransactionId);
 
     try {
       const user = await requireAuthenticatedUser(supabase);
@@ -279,6 +327,65 @@ export function useExpensesPage() {
         note: note.trim() || null,
         transaction_date: transactionDate,
       };
+
+      if (isEditing) {
+        if (!isBrowserOnline()) {
+          setError("تعديل العمليات يحتاج اتصالاً بالإنترنت.");
+          return;
+        }
+
+        const { data, error: updateError } = await supabase
+          .from("transactions")
+          .update(payload)
+          .eq("id", editingTransactionId)
+          .select("*, categories(name, icon, color), wallets(name, icon, color)")
+          .single();
+
+        if (updateError) {
+          throw updateError;
+        }
+
+        const updatedTransaction = data as Transaction;
+
+        if (receiptFile) {
+          const signedUrl = await uploadTransactionReceipt(
+            supabase,
+            user.id,
+            updatedTransaction.id,
+            receiptFile,
+          );
+
+          if (signedUrl) {
+            setAttachmentUrls((current) => ({
+              ...current,
+              [updatedTransaction.id]: signedUrl,
+            }));
+          }
+        }
+
+        const nextSnapshot = updateTransactionInSnapshot(
+          {
+            currency,
+            categories,
+            wallets,
+            transactions,
+            monthTransactions,
+            balanceTransactions,
+          },
+          updatedTransaction,
+          month.start,
+          month.end,
+        );
+
+        setTransactions(nextSnapshot.transactions);
+        setMonthTransactions(nextSnapshot.monthTransactions);
+        setBalanceTransactions(nextSnapshot.balanceTransactions);
+        void persistSnapshot(nextSnapshot);
+        resetTransactionForm();
+        setMessage("تم تحديث العملية بنجاح.");
+        router.refresh();
+        return;
+      }
 
       if (!isBrowserOnline()) {
         if (receiptFile) {
@@ -297,9 +404,7 @@ export function useExpensesPage() {
             wallets,
           ),
         );
-        setAmount("");
-        setNote("");
-        setReceiptFile(null);
+        resetTransactionForm();
         setMessage("تم الحفظ محلياً — سيتم رفع العملية عند عودة الإنترنت.");
         return;
       }
@@ -336,13 +441,92 @@ export function useExpensesPage() {
       }
 
       ingestTransaction(savedTransaction);
-      setAmount("");
-      setNote("");
-      setReceiptFile(null);
+      resetTransactionForm();
       setMessage("تم حفظ العملية بنجاح.");
       router.refresh();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "تعذر حفظ العملية.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleImportTransactions(rows: ParsedImportRow[], importWalletId: string) {
+    clearFeedback();
+
+    if (!importWalletId) {
+      setError("يجب اختيار محفظة للاستيراد.");
+      return;
+    }
+
+    if (!isBrowserOnline()) {
+      setError("استيراد العمليات يحتاج اتصالاً بالإنترنت.");
+      return;
+    }
+
+    if (rows.length === 0) {
+      setError("لا توجد عمليات صالحة للاستيراد.");
+      return;
+    }
+
+    setSubmitting(true);
+
+    const supabase = createClient();
+
+    try {
+      const user = await requireAuthenticatedUser(supabase);
+
+      const inserts = rows.map((row) => ({
+        user_id: user.id,
+        wallet_id: importWalletId,
+        category_id:
+          row.categoryName != null
+            ? categories.find(
+                (category) =>
+                  category.name.trim().toLowerCase() === row.categoryName?.trim().toLowerCase(),
+              )?.id ?? null
+            : null,
+        amount: row.amount,
+        type: row.type,
+        note: row.note,
+        transaction_date: row.transaction_date,
+      }));
+
+      const { data, error: insertError } = await supabase
+        .from("transactions")
+        .insert(inserts)
+        .select("*, categories(name, icon, color), wallets(name, icon, color)");
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      let nextSnapshot = {
+        currency,
+        categories,
+        wallets,
+        transactions,
+        monthTransactions,
+        balanceTransactions,
+      };
+
+      for (const savedTransaction of (data ?? []) as Transaction[]) {
+        nextSnapshot = appendTransactionToSnapshot(
+          nextSnapshot,
+          savedTransaction,
+          month.start,
+          month.end,
+        );
+      }
+
+      setTransactions(nextSnapshot.transactions);
+      setMonthTransactions(nextSnapshot.monthTransactions);
+      setBalanceTransactions(nextSnapshot.balanceTransactions);
+      void persistSnapshot(nextSnapshot);
+      setMessage(`تم استيراد ${(data ?? []).length} عملية بنجاح.`);
+      router.refresh();
+    } catch (importError) {
+      setError(importError instanceof Error ? importError.message : "تعذر استيراد العمليات.");
     } finally {
       setSubmitting(false);
     }
@@ -444,6 +628,10 @@ export function useExpensesPage() {
     setTransactionDate,
     handleSubmit,
     handleDelete,
+    handleImportTransactions,
+    openEditTransaction,
+    closeTransactionModal,
+    editingTransactionId,
     ingestTransaction,
     ingestCategory,
   };

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
+import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
 import HeaderAlertsBell from "@/components/layout/HeaderAlertsBell";
 import HeaderPwaInstallButton from "@/components/layout/HeaderPwaInstallButton";
 import SidebarPwaInstallButton from "@/components/layout/SidebarPwaInstallButton";
@@ -111,6 +112,7 @@ export function AppNav() {
           </nav>
 
           <div className="ms-auto flex shrink-0 items-center gap-2 md:ms-0">
+            <LanguageSwitcher compact persistProfile />
             <HeaderPwaInstallButton />
             <HeaderAlertsBell />
 
@@ -182,6 +184,9 @@ export function AppNav() {
             </nav>
 
             <div className="border-t border-emerald-50 p-4 space-y-2">
+              <div className="rounded-2xl border border-slate-100 px-4 py-3">
+                <LanguageSwitcher persistProfile />
+              </div>
               <SidebarPwaInstallButton onOpen={() => setSidebarOpen(false)} />
               <button
                 type="button"

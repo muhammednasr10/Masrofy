@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "@/components/i18n/LocaleProvider";
 import type { Wallet } from "@/lib/types/database";
 import WalletSelect from "@/components/wallets/WalletSelect";
 
@@ -24,19 +25,21 @@ export default function WalletsToolbar({
   onOpenTransfer,
   onOpenAdd,
 }: WalletsToolbarProps) {
+  const t = useTranslations();
+
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
       {wallets.length > 0 ? (
         <label className="flex w-full items-center gap-2 rounded-2xl border border-emerald-200 bg-white px-3 py-2 shadow-sm sm:w-auto">
           <span
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-lg"
-            title="المحفظة الافتراضية"
+            title={t("wallets.defaultWallet")}
             aria-hidden
           >
             ⭐
           </span>
           <div className="min-w-0 flex-1 sm:min-w-[180px]">
-            <p className="text-xs text-slate-500">المحفظة الافتراضية</p>
+            <p className="text-xs text-slate-500">{t("wallets.defaultWallet")}</p>
             <WalletSelect
               wallets={wallets}
               value={defaultWalletId}
@@ -53,7 +56,7 @@ export default function WalletsToolbar({
           onClick={onOpenInventory}
           className="w-full rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm font-medium text-amber-800 transition hover:bg-amber-100 sm:w-auto"
         >
-          🔄 تحديث أرصدة المحافظ
+          {t("wallets.updateBalances")}
         </button>
       ) : null}
 
@@ -63,7 +66,7 @@ export default function WalletsToolbar({
           onClick={onOpenTransfer}
           className="w-full rounded-2xl border border-indigo-200 bg-indigo-50 px-5 py-3 text-sm font-medium text-indigo-800 transition hover:bg-indigo-100 sm:w-auto"
         >
-          ↔ تحويل
+          {t("wallets.transfer")}
         </button>
       ) : null}
 
@@ -72,7 +75,7 @@ export default function WalletsToolbar({
         onClick={onOpenAdd}
         className="w-full rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700 sm:w-auto"
       >
-        + إضافة محفظة
+        {t("wallets.addWallet")}
       </button>
     </div>
   );

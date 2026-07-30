@@ -57,3 +57,35 @@ export function removeTransactionFromSnapshot(
     ),
   };
 }
+
+export function updateTransactionInSnapshot(
+  snapshot: ExpensesPageSnapshot,
+  updatedTransaction: OfflineTransaction,
+  monthStart: string,
+  monthEnd: string,
+): ExpensesPageSnapshot {
+  const nextTransactions = snapshot.transactions.map((item) =>
+    item.id === updatedTransaction.id ? updatedTransaction : item,
+  );
+  const nextBalanceTransactions = snapshot.balanceTransactions.map((item) =>
+    item.id === updatedTransaction.id
+      ? {
+          id: updatedTransaction.id,
+          wallet_id: updatedTransaction.wallet_id,
+          amount: updatedTransaction.amount,
+          type: updatedTransaction.type,
+          transfer_role: updatedTransaction.transfer_role,
+        }
+      : item,
+  );
+  const nextMonthTransactions = nextTransactions.filter(
+    (item) => item.transaction_date >= monthStart && item.transaction_date <= monthEnd,
+  );
+
+  return {
+    ...snapshot,
+    transactions: nextTransactions,
+    monthTransactions: nextMonthTransactions,
+    balanceTransactions: nextBalanceTransactions,
+  };
+}

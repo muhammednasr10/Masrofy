@@ -10,6 +10,7 @@ import WalletReconciliationHistory from "@/components/wallets/WalletReconciliati
 import WalletsSummaryCard from "@/components/wallets/WalletsSummaryCard";
 import WalletsTable from "@/components/wallets/WalletsTable";
 import WalletsToolbar from "@/components/wallets/WalletsToolbar";
+import { useTranslations } from "@/components/i18n/LocaleProvider";
 import { useWalletsPage } from "@/hooks/useWalletsPage";
 
 const WalletInventoryModal = dynamic(
@@ -18,6 +19,7 @@ const WalletInventoryModal = dynamic(
 );
 
 export default function WalletsPage() {
+  const t = useTranslations();
   const {
     loading,
     currency,
@@ -70,7 +72,7 @@ export default function WalletsPage() {
   } = useWalletsPage();
 
   if (loading) {
-    return <p className="text-sm text-slate-500">جاري تحميل المحافظ...</p>;
+    return <p className="text-sm text-slate-500">{t("wallets.loading")}</p>;
   }
 
   return (

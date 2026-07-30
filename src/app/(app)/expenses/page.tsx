@@ -61,6 +61,10 @@ function ExpensesPageContent() {
     setTransactionDate,
     handleSubmit,
     handleDelete,
+    handleImportTransactions,
+    openEditTransaction,
+    closeTransactionModal,
+    editingTransactionId,
     ingestTransaction,
     ingestCategory,
   } = useExpensesPage();
@@ -87,10 +91,11 @@ function ExpensesPageContent() {
   useEffect(() => {
     if (wasSubmittingRef.current && !submitting && message && !error && showTransactionModal) {
       setShowTransactionModal(false);
+      closeTransactionModal();
     }
 
     wasSubmittingRef.current = submitting;
-  }, [submitting, message, error, showTransactionModal]);
+  }, [submitting, message, error, showTransactionModal, closeTransactionModal]);
 
   if (loading || recurring.loading) {
     return <p className="text-sm text-slate-500">{t("expenses.loading")}</p>;
@@ -144,8 +149,13 @@ function ExpensesPageContent() {
             transactions={transactions}
             wallets={wallets}
             currency={currency}
-            onAddTransaction={() => setShowTransactionModal(true)}
+            submitting={submitting}
+            onAddTransaction={() => {
+              closeTransactionModal();
+              setShowTransactionModal(true);
+            }}
             onAddRecurring={recurring.openFormModal}
+            onImport={handleImportTransactions}
           />
         </div>
 
@@ -164,6 +174,10 @@ function ExpensesPageContent() {
           currency={currency}
           attachmentUrls={attachmentUrls}
           onDelete={handleDelete}
+          onEdit={(transaction) => {
+            openEditTransaction(transaction);
+            setShowTransactionModal(true);
+          }}
         />
       </section>
 
@@ -176,6 +190,7 @@ function ExpensesPageContent() {
 
       <TransactionFormModal
         open={showTransactionModal}
+        mode={editingTransactionId ? "edit" : "add"}
         categories={categories}
         wallets={wallets}
         currency={currency}
@@ -196,7 +211,10 @@ function ExpensesPageContent() {
         onReceiptChange={setReceiptFile}
         onTransactionDateChange={setTransactionDate}
         onSubmit={handleSubmit}
-        onClose={() => setShowTransactionModal(false)}
+        onClose={() => {
+          setShowTransactionModal(false);
+          closeTransactionModal();
+        }}
         onCategoryCreated={ingestCategory}
       />
 

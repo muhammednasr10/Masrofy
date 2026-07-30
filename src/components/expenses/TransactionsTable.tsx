@@ -30,12 +30,14 @@ export default function TransactionsTable({
   currency,
   attachmentUrls,
   onDelete,
+  onEdit,
 }: {
   transactions: OfflineTransaction[];
   wallets: Wallet[];
   currency: string;
   attachmentUrls: Record<string, string>;
   onDelete: (id: string) => void;
+  onEdit: (transaction: OfflineTransaction) => void;
 }) {
   const t = useTranslations();
   const { formatCurrency, formatDate } = useFormat();
@@ -118,7 +120,16 @@ export default function TransactionsTable({
                 ) : null}
               </div>
 
-              <div className="mt-4 border-t border-slate-100 pt-3">
+              <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
+                {transaction.type !== "transfer" && !transaction.offlinePending ? (
+                  <button
+                    type="button"
+                    onClick={() => onEdit(transaction)}
+                    className="rounded-full px-3 py-1.5 text-sm text-emerald-700 transition hover:bg-emerald-50"
+                  >
+                    {t("common.edit")}
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   onClick={() => onDelete(transaction.id)}
@@ -207,13 +218,24 @@ export default function TransactionsTable({
                     )}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3">
-                    <button
-                      type="button"
-                      onClick={() => onDelete(transaction.id)}
-                      className="rounded-full px-3 py-1 text-slate-500 transition hover:bg-red-50 hover:text-red-600"
-                    >
-                      {t("common.delete")}
-                    </button>
+                    <div className="flex items-center gap-1">
+                      {transaction.type !== "transfer" && !transaction.offlinePending ? (
+                        <button
+                          type="button"
+                          onClick={() => onEdit(transaction)}
+                          className="rounded-full px-3 py-1 text-slate-500 transition hover:bg-emerald-50 hover:text-emerald-700"
+                        >
+                          {t("common.edit")}
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => onDelete(transaction.id)}
+                        className="rounded-full px-3 py-1 text-slate-500 transition hover:bg-red-50 hover:text-red-600"
+                      >
+                        {t("common.delete")}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );

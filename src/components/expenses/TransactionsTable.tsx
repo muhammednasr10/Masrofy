@@ -237,6 +237,7 @@ export default function TransactionsTable({
           <tbody className="divide-y divide-slate-100 bg-white">
             {transactions.map((transaction) => {
               const walletLabel = getWalletLabel(wallets, transaction, t("expenses.noWallet"));
+              const canEdit = transaction.type !== "transfer" && !transaction.offlinePending;
 
               return (
                 <tr key={transaction.id} className="hover:bg-slate-50/80">
@@ -294,21 +295,23 @@ export default function TransactionsTable({
                       <span className="text-slate-400">—</span>
                     )}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3">
-                    <div className="flex items-center gap-1">
-                      {transaction.type !== "transfer" && !transaction.offlinePending ? (
+                  <td className="min-w-[9rem] whitespace-nowrap px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      {canEdit ? (
                         <button
                           type="button"
                           onClick={() => onEdit(transaction)}
-                          className="rounded-full px-3 py-1 text-slate-500 transition hover:bg-emerald-50 hover:text-emerald-700"
+                          className="rounded-full px-3 py-1.5 text-sm font-medium text-emerald-700 transition hover:bg-emerald-50"
                         >
                           {t("common.edit")}
                         </button>
-                      ) : null}
+                      ) : (
+                        <span className="px-1 text-xs text-slate-400">—</span>
+                      )}
                       <button
                         type="button"
                         onClick={() => onDelete(transaction.id)}
-                        className="rounded-full px-3 py-1 text-slate-500 transition hover:bg-red-50 hover:text-red-600"
+                        className="rounded-full px-3 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-50"
                       >
                         {t("common.delete")}
                       </button>

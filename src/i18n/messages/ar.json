@@ -280,8 +280,15 @@
   },
   "alerts": {
     "title": "التنبيهات",
-    "subtitle": "تنبيهات مهمة — اضغط للانتقال واتخاذ إجراء",
-    "empty": "لا توجد تنبيهات حالياً"
+    "subtitle": "عمليات مستحقة وتنبيهات مهمة",
+    "empty": "لا توجد تنبيهات حالياً",
+    "dueSectionTitle": "عمليات مستحقة",
+    "dueSectionDesc": "سجّل العملية في حسابك أو أجّلها للموعد التالي",
+    "registerDue": "تسجيل",
+    "postponeDue": "تأجيل",
+    "dueOn": "مستحق: {date}",
+    "alreadyRegistered": "تم تسجيل هذه الدفعة مسبقًا",
+    "authRequired": "يجب تسجيل الدخول أولاً"
   },
   "alertItems": {
     "planOverBudgetTitle": "تجاوزت خطة المصروفات",

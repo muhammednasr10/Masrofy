@@ -4,7 +4,6 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ExpensesToolbar from "@/components/expenses/ExpensesToolbar";
 import ExpensesSummaryCard from "@/components/expenses/ExpensesSummaryCard";
-import RecurringDueSection from "@/components/expenses/RecurringDueSection";
 import RecurringTransactionFormModal from "@/components/expenses/RecurringTransactionFormModal";
 import RecurringTransactionsSection from "@/components/expenses/RecurringTransactionsSection";
 import TransactionFiltersPanel from "@/components/expenses/TransactionFiltersPanel";
@@ -122,14 +121,6 @@ function ExpensesPageContent() {
       <FeedbackBanner
         error={error ?? recurring.error}
         message={message ?? recurring.message}
-      />
-
-      <RecurringDueSection
-        dueRecurrings={recurring.dueRecurrings}
-        currency={currency}
-        actingId={recurring.actingId}
-        onRegister={recurring.registerDue}
-        onSkip={recurring.skipDue}
       />
 
       <section className="rounded-3xl border border-white bg-white p-4 shadow-sm sm:p-6">

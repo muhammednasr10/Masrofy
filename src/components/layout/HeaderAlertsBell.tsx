@@ -7,7 +7,16 @@ import { useHeaderAlerts } from "@/hooks/useHeaderAlerts";
 
 export default function HeaderAlertsBell() {
   const t = useTranslations();
-  const alerts = useHeaderAlerts();
+  const {
+    alerts,
+    dueRecurrings,
+    currency,
+    actingId,
+    actionError,
+    totalCount,
+    registerDue,
+    skipDue,
+  } = useHeaderAlerts();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -48,14 +57,25 @@ export default function HeaderAlertsBell() {
         aria-label={t("alerts.title")}
       >
         <span aria-hidden>🔔</span>
-        {alerts.length > 0 ? (
+        {totalCount > 0 ? (
           <span className="absolute -end-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-            {alerts.length > 9 ? "9+" : alerts.length}
+            {totalCount > 9 ? "9+" : totalCount}
           </span>
         ) : null}
       </button>
 
-      {open ? <AlertsDropdownPanel alerts={alerts} onClose={() => setOpen(false)} /> : null}
+      {open ? (
+        <AlertsDropdownPanel
+          alerts={alerts}
+          dueRecurrings={dueRecurrings}
+          currency={currency}
+          actingId={actingId}
+          actionError={actionError}
+          onRegisterDue={registerDue}
+          onSkipDue={skipDue}
+          onClose={() => setOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }

@@ -26,7 +26,6 @@ export function buildDashboardAlerts({
   wallets,
   reconciliations,
   formatAmount,
-  dueRecurringCount = 0,
   staleReconciliationDays = 30,
   upcomingCollectionDays = 7,
   t,
@@ -36,7 +35,6 @@ export function buildDashboardAlerts({
   wallets: Wallet[];
   reconciliations: WalletReconciliation[];
   formatAmount: (value: number) => string;
-  dueRecurringCount?: number;
   staleReconciliationDays?: number;
   upcomingCollectionDays?: number;
   t: Translator;
@@ -133,18 +131,6 @@ export function buildDashboardAlerts({
             }),
       actionLabel: t("alertItems.walletReconcileAction"),
       href: "/wallets",
-    });
-  }
-
-  if (dueRecurringCount > 0) {
-    alerts.push({
-      id: "recurring-due",
-      tone: "amber",
-      icon: "🔁",
-      title: t("alertItems.recurringDueTitle"),
-      description: t("alertItems.recurringDueDesc", { count: String(dueRecurringCount) }),
-      actionLabel: t("alertItems.recurringDueAction"),
-      href: "/expenses",
     });
   }
 

@@ -280,8 +280,15 @@
   },
   "alerts": {
     "title": "Notifications",
-    "subtitle": "Important alerts — tap to go and take action",
-    "empty": "No alerts right now"
+    "subtitle": "Due transactions and important alerts",
+    "empty": "No alerts right now",
+    "dueSectionTitle": "Due transactions",
+    "dueSectionDesc": "Record the transaction or postpone it to the next due date",
+    "registerDue": "Record",
+    "postponeDue": "Postpone",
+    "dueOn": "Due: {date}",
+    "alreadyRegistered": "This payment was already recorded",
+    "authRequired": "Please sign in first"
   },
   "alertItems": {
     "planOverBudgetTitle": "Over monthly spending plan",

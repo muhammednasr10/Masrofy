@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   const localeParam = searchParams.get("locale");
   const locale: Locale = localeParam === "en" ? "en" : "ar";
 
-  const alerts = await loadHeaderAlerts(supabase, user?.id, locale);
+  const panel = await loadHeaderAlerts(supabase, user?.id, locale);
 
-  return Response.json({ alerts });
+  return Response.json(panel);
 }

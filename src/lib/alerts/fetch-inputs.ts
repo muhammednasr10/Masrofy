@@ -4,6 +4,7 @@ import type {
   Category,
   Investment,
   PlanComparison,
+  RecurringTransaction,
   Transaction,
   Wallet,
   WalletReconciliation,
@@ -16,7 +17,7 @@ export type AlertInputs = {
   investments: Investment[];
   wallets: Wallet[];
   reconciliations: WalletReconciliation[];
-  dueRecurringCount: number;
+  dueRecurrings: RecurringTransaction[];
 };
 
 function filterMonthTransactions(transactions: Transaction[] | null | undefined) {
@@ -51,9 +52,10 @@ export async function fetchAlertInputs(
     supabase.from("categories").select("*").order("sort_order", { ascending: true }),
     supabase
       .from("recurring_transactions")
-      .select("id")
+      .select("*, categories(name, icon, color), wallets(name, icon, color)")
       .eq("is_active", true)
-      .lte("next_due_date", today),
+      .lte("next_due_date", today)
+      .order("next_due_date", { ascending: true }),
     supabase
       .from("wallet_reconciliations")
       .select("*, wallets(name, icon, color)")
@@ -76,6 +78,6 @@ export async function fetchAlertInputs(
     investments: (investments ?? []) as Investment[],
     wallets: (wallets ?? []) as Wallet[],
     reconciliations: (reconciliationRows ?? []) as WalletReconciliation[],
-    dueRecurringCount: dueRecurringRows?.length ?? 0,
+    dueRecurrings: (dueRecurringRows ?? []) as RecurringTransaction[],
   };
 }

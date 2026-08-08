@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import DueRecurringAlertsList from "@/components/layout/DueRecurringAlertsList";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import type { DashboardAlert } from "@/lib/alerts/dashboard";
+import type { RecurringTransaction } from "@/lib/types/database";
 
 const toneClasses = {
   red: "border-red-200 bg-red-50 text-red-800 hover:bg-red-100",
@@ -12,26 +14,60 @@ const toneClasses = {
 
 type AlertsDropdownPanelProps = {
   alerts: DashboardAlert[];
+  dueRecurrings: RecurringTransaction[];
+  currency: string;
+  actingId: string | null;
+  actionError: string | null;
+  onRegisterDue: (recurring: RecurringTransaction) => void;
+  onSkipDue: (recurring: RecurringTransaction) => void;
   onClose: () => void;
 };
 
-export default function AlertsDropdownPanel({ alerts, onClose }: AlertsDropdownPanelProps) {
+export default function AlertsDropdownPanel({
+  alerts,
+  dueRecurrings,
+  currency,
+  actingId,
+  actionError,
+  onRegisterDue,
+  onSkipDue,
+  onClose,
+}: AlertsDropdownPanelProps) {
   const t = useTranslations();
+  const totalCount = alerts.length + dueRecurrings.length;
 
   return (
-    <div className="absolute end-0 top-full z-50 mt-2 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
+    <div className="absolute end-0 top-full z-50 mt-2 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
       <div className="border-b border-slate-100 px-4 py-3">
         <p className="text-sm font-semibold text-slate-900">
           {t("alerts.title")}
-          {alerts.length > 0 ? ` (${alerts.length})` : ""}
+          {totalCount > 0 ? ` (${totalCount})` : ""}
         </p>
         <p className="mt-0.5 text-xs text-slate-500">{t("alerts.subtitle")}</p>
       </div>
 
-      {alerts.length === 0 ? (
+      <DueRecurringAlertsList
+        dueRecurrings={dueRecurrings}
+        currency={currency}
+        actingId={actingId}
+        onRegister={onRegisterDue}
+        onSkip={onSkipDue}
+      />
+
+      {actionError ? (
+        <p className="border-b border-red-100 bg-red-50 px-4 py-2 text-xs text-red-700">
+          {actionError === "already_registered"
+            ? t("alerts.alreadyRegistered")
+            : actionError === "auth_required"
+              ? t("alerts.authRequired")
+              : actionError}
+        </p>
+      ) : null}
+
+      {alerts.length === 0 && dueRecurrings.length === 0 ? (
         <p className="px-4 py-6 text-center text-sm text-slate-500">{t("alerts.empty")}</p>
-      ) : (
-        <ul className="max-h-80 space-y-2 overflow-y-auto p-3">
+      ) : alerts.length > 0 ? (
+        <ul className="max-h-72 space-y-2 overflow-y-auto p-3">
           {alerts.map((alert) => (
             <li key={alert.id}>
               <Link
@@ -51,7 +87,7 @@ export default function AlertsDropdownPanel({ alerts, onClose }: AlertsDropdownP
             </li>
           ))}
         </ul>
-      )}
+      ) : null}
     </div>
   );
 }

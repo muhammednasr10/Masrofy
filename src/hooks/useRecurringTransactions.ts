@@ -3,11 +3,11 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
-  advanceRecurringDueDate,
   buildRecurringPayload,
   emptyRecurringForm,
   getDueRecurringTransactions,
-  isRecurringExpired,
+  registerRecurringDueTransaction,
+  skipRecurringDueTransaction,
   type RecurringFormState,
 } from "@/lib/recurring";
 import type { Category, RecurringTransaction, Transaction, Wallet } from "@/lib/types/database";
@@ -151,65 +151,26 @@ export function useRecurringTransactions({
         return;
       }
 
-      const { data: existing } = await supabase
-        .from("transactions")
-        .select("id")
-        .eq("recurring_transaction_id", recurring.id)
-        .eq("transaction_date", recurring.next_due_date)
-        .maybeSingle();
+      const result = await registerRecurringDueTransaction(supabase, user.id, recurring);
 
-      if (existing) {
-        setError("تم تسجيل هذه الدفعة مسبقًا.");
-        setActingId(null);
-        return;
-      }
-
-      const nextDueDate = advanceRecurringDueDate(recurring);
-      const shouldDeactivate = isRecurringExpired({ ...recurring, next_due_date: nextDueDate });
-
-      const { data: transaction, error: insertError } = await supabase
-        .from("transactions")
-        .insert({
-          user_id: user.id,
-          wallet_id: recurring.wallet_id,
-          category_id: recurring.category_id,
-          recurring_transaction_id: recurring.id,
-          amount: recurring.amount,
-          type: recurring.type,
-          note: recurring.note,
-          transaction_date: recurring.next_due_date,
-        })
-        .select("*, categories(name, icon, color), wallets(name, icon, color)")
-        .single();
-
-      if (insertError) {
-        setError(insertError.message);
-        setActingId(null);
-        return;
-      }
-
-      const { data: updatedRecurring, error: updateError } = await supabase
-        .from("recurring_transactions")
-        .update({
-          next_due_date: nextDueDate,
-          is_active: shouldDeactivate ? false : recurring.is_active,
-        })
-        .eq("id", recurring.id)
-        .select("*, categories(name, icon, color), wallets(name, icon, color)")
-        .single();
-
-      if (updateError) {
-        setError(updateError.message);
+      if (!result.ok) {
+        setError(result.error === "already_registered" ? "تم تسجيل هذه الدفعة مسبقًا." : result.error);
         setActingId(null);
         return;
       }
 
       setRecurrings((current) =>
         current
-          .map((item) => (item.id === recurring.id ? (updatedRecurring as RecurringTransaction) : item))
+          .map((item) =>
+            item.id === recurring.id ? result.updatedRecurring : item,
+          )
           .sort((a, b) => a.next_due_date.localeCompare(b.next_due_date)),
       );
-      onTransactionCreated?.(transaction as Transaction);
+
+      if (result.transaction) {
+        onTransactionCreated?.(result.transaction);
+      }
+
       setMessage(`تم تسجيل «${recurring.title}» بنجاح.`);
       setActingId(null);
     },
@@ -222,28 +183,17 @@ export function useRecurringTransactions({
     setMessage(null);
 
     const supabase = createClient();
-    const nextDueDate = advanceRecurringDueDate(recurring);
-    const shouldDeactivate = isRecurringExpired({ ...recurring, next_due_date: nextDueDate });
+    const result = await skipRecurringDueTransaction(supabase, recurring);
 
-    const { data, error: updateError } = await supabase
-      .from("recurring_transactions")
-      .update({
-        next_due_date: nextDueDate,
-        is_active: shouldDeactivate ? false : recurring.is_active,
-      })
-      .eq("id", recurring.id)
-      .select("*, categories(name, icon, color), wallets(name, icon, color)")
-      .single();
-
-    if (updateError) {
-      setError(updateError.message);
+    if (!result.ok) {
+      setError(result.error);
       setActingId(null);
       return;
     }
 
     setRecurrings((current) =>
       current
-        .map((item) => (item.id === recurring.id ? (data as RecurringTransaction) : item))
+        .map((item) => (item.id === recurring.id ? result.updatedRecurring : item))
         .sort((a, b) => a.next_due_date.localeCompare(b.next_due_date)),
     );
     setMessage(`تم تأجيل «${recurring.title}» للموعد التالي.`);

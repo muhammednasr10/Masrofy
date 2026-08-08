@@ -94,19 +94,91 @@ export function getCategoryPathLabel(
   category: Pick<Category, "id" | "name" | "icon" | "parent_category_id">,
   categories: Category[],
 ) {
-  const parentId = getCategoryParentId(category);
+  return getCategoryFullPathLabel(category, categories);
+}
 
-  if (!parentId) {
-    return `${category.icon} ${category.name}`;
+export function getCategoryFullPathLabel(
+  category: Pick<Category, "id" | "name" | "icon" | "parent_category_id">,
+  categories: Category[],
+  separator = " › ",
+) {
+  const byId = new Map(categories.map((item) => [item.id, item]));
+  const chain: Array<Pick<Category, "name" | "icon">> = [];
+  let current: Pick<Category, "id" | "name" | "icon" | "parent_category_id"> | undefined =
+    category;
+
+  while (current) {
+    chain.unshift({ name: current.name, icon: current.icon });
+
+    const parentId = getCategoryParentId(current);
+
+    if (!parentId) {
+      break;
+    }
+
+    current = byId.get(parentId);
+
+    if (chain.length > 50) {
+      break;
+    }
   }
 
-  const parent = categories.find((item) => item.id === parentId);
+  return chain.map((item) => `${item.icon} ${item.name}`).join(separator);
+}
 
-  if (!parent) {
-    return `${category.icon} ${category.name}`;
+export function getCategoryDescendantIds(rootId: string, categories: Category[]) {
+  const byParent = new Map<string, Category[]>();
+
+  for (const category of normalizeCategories(categories)) {
+    const parentId = getCategoryParentId(category);
+
+    if (!parentId) {
+      continue;
+    }
+
+    const siblings = byParent.get(parentId);
+
+    if (siblings) {
+      siblings.push(category);
+    } else {
+      byParent.set(parentId, [category]);
+    }
   }
 
-  return `${parent.icon} ${parent.name} › ${category.icon} ${category.name}`;
+  const ids = new Set<string>();
+
+  function walk(categoryId: string) {
+    for (const child of byParent.get(categoryId) ?? []) {
+      ids.add(child.id);
+      walk(child.id);
+    }
+  }
+
+  walk(rootId);
+  return ids;
+}
+
+export function buildCategoryParentOptions(
+  categories: Category[],
+  excludeCategoryId?: string | null,
+) {
+  const excludeIds = new Set<string>();
+
+  if (excludeCategoryId) {
+    excludeIds.add(excludeCategoryId);
+
+    for (const id of getCategoryDescendantIds(excludeCategoryId, categories)) {
+      excludeIds.add(id);
+    }
+  }
+
+  return buildCategoryDisplayRows(categories)
+    .filter(({ category }) => !excludeIds.has(category.id))
+    .map(({ category, depth }) => ({
+      category,
+      depth,
+      label: `${depth > 0 ? `${"—".repeat(depth)} ` : ""}${category.icon} ${category.name}`,
+    }));
 }
 
 export function getNextCategorySortOrder(

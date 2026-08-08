@@ -112,7 +112,7 @@ export default function PlanPage() {
       {categoryForm.form ? (
         <CategoryFormModal
           form={categoryForm.form}
-          parentOptions={categoryForm.parentOptions}
+          categories={categories}
           submitting={categoryForm.submitting}
           error={categoryForm.error}
           onChange={categoryForm.setForm}

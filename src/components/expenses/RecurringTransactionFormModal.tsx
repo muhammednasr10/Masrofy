@@ -3,7 +3,7 @@
 import { FormEvent } from "react";
 import ModalShell from "@/components/ui/ModalShell";
 import WalletSelect from "@/components/wallets/WalletSelect";
-import CategorySelect from "@/components/categories/CategorySelect";
+import CategorySearchSelect from "@/components/categories/CategorySearchSelect";
 import { recurringFrequencyOptions } from "@/lib/constants/recurring-options";
 import type { Category, TransactionType, Wallet } from "@/lib/types/database";
 import type { RecurringFormState } from "@/lib/recurring";
@@ -100,12 +100,13 @@ export default function RecurringTransactionFormModal({
           <span className="text-sm font-medium text-slate-700">
             الفئة{form.type === "income" ? " (اختياري)" : ""}
           </span>
-          <CategorySelect
+          <CategorySearchSelect
             categories={categories}
             value={form.categoryId}
             onChange={(categoryId) => onChange({ ...form, categoryId })}
             allowEmpty={form.type === "income"}
-            className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
+            required={form.type === "expense"}
+            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus-within:border-emerald-500"
           />
         </label>
 

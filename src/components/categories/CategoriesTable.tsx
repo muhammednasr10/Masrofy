@@ -1,7 +1,8 @@
 "use client";
 
-import { buildCategoryDisplayRows, isSubCategory } from "@/lib/categories";
+import { buildCategoryDisplayRows, getCategoryFullPathLabel } from "@/lib/categories";
 import type { Category } from "@/lib/types/database";
+import { useTranslations } from "@/components/i18n/LocaleProvider";
 
 type CategoriesTableProps = {
   categories: Category[];
@@ -9,13 +10,18 @@ type CategoriesTableProps = {
   onDelete: (category: Category) => void;
 };
 
-function getParentName(category: Category, categories: Category[]) {
+function getParentPath(category: Category, categories: Category[]) {
   if (!category.parent_category_id) {
     return "—";
   }
 
   const parent = categories.find((item) => item.id === category.parent_category_id);
-  return parent ? `${parent.icon} ${parent.name}` : "—";
+
+  if (!parent) {
+    return "—";
+  }
+
+  return getCategoryFullPathLabel(parent, categories);
 }
 
 export default function CategoriesTable({
@@ -23,12 +29,13 @@ export default function CategoriesTable({
   onAddSubCategory,
   onDelete,
 }: CategoriesTableProps) {
+  const t = useTranslations();
   const rows = buildCategoryDisplayRows(categories);
 
   if (rows.length === 0) {
     return (
       <p className="mt-6 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-        مفيش فئات لسه. اضغط «إضافة فئة» للبدء.
+        {t("categories.empty")}
       </p>
     );
   }
@@ -40,7 +47,7 @@ export default function CategoriesTable({
           <article
             key={category.id}
             className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm"
-            style={{ marginRight: `${depth * 0.75}rem` }}
+            style={{ marginInlineStart: `${depth * 0.75}rem` }}
           >
             <div className="flex items-start gap-3">
               <span
@@ -54,26 +61,24 @@ export default function CategoriesTable({
                   {depth > 0 ? `↳ ${category.name}` : category.name}
                 </p>
                 <p className="mt-1 text-sm text-slate-500">
-                  {isSubCategory(category) ? "فئة فرعية" : "فئة رئيسية"}
+                  {depth === 0 ? t("categories.typeRoot") : t("categories.typeSub")}
                 </p>
                 <p className="mt-1 wrap-text text-sm leading-6 text-slate-600">
-                  تحت: {getParentName(category, categories)}
+                  {t("categories.under")}: {getParentPath(category, categories)}
                 </p>
               </div>
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
-              {!isSubCategory(category) ? (
-                <CategoryIconButton
-                  icon="➕"
-                  label="إضافة فئة فرعية"
-                  onClick={() => onAddSubCategory(category.id)}
-                  tone="emerald"
-                />
-              ) : null}
+              <CategoryIconButton
+                icon="➕"
+                label={t("categories.addSub")}
+                onClick={() => onAddSubCategory(category.id)}
+                tone="emerald"
+              />
               <CategoryIconButton
                 icon="🗑️"
-                label="حذف"
+                label={t("common.delete")}
                 onClick={() => onDelete(category)}
                 tone="red"
               />
@@ -86,10 +91,10 @@ export default function CategoriesTable({
         <table className="min-w-full text-sm">
           <thead>
             <tr className="border-b border-slate-200 bg-slate-50 text-slate-500">
-              <th className="px-4 py-3 text-right font-medium">الفئة</th>
-              <th className="px-4 py-3 text-right font-medium">النوع</th>
-              <th className="px-4 py-3 text-right font-medium">تحت</th>
-              <th className="px-4 py-3 text-right font-medium">إجراءات</th>
+              <th className="px-4 py-3 text-start font-medium">{t("categories.columnName")}</th>
+              <th className="px-4 py-3 text-start font-medium">{t("categories.columnType")}</th>
+              <th className="px-4 py-3 text-start font-medium">{t("categories.columnParent")}</th>
+              <th className="px-4 py-3 text-start font-medium">{t("categories.columnActions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -98,7 +103,7 @@ export default function CategoriesTable({
                 <td className="px-4 py-4">
                   <div
                     className="flex items-center gap-3"
-                    style={{ paddingRight: `${depth}rem` }}
+                    style={{ paddingInlineStart: `${depth}rem` }}
                   >
                     <span
                       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-base"
@@ -112,24 +117,22 @@ export default function CategoriesTable({
                   </div>
                 </td>
                 <td className="px-4 py-4 text-slate-600">
-                  {isSubCategory(category) ? "فرعية" : "رئيسية"}
+                  {depth === 0 ? t("categories.typeRootShort") : t("categories.typeSubShort")}
                 </td>
                 <td className="px-4 py-4 text-slate-600">
-                  {getParentName(category, categories)}
+                  {getParentPath(category, categories)}
                 </td>
                 <td className="px-4 py-4">
                   <div className="flex items-center gap-1">
-                    {!isSubCategory(category) ? (
-                      <CategoryIconButton
-                        icon="➕"
-                        label="إضافة فئة فرعية"
-                        onClick={() => onAddSubCategory(category.id)}
-                        tone="emerald"
-                      />
-                    ) : null}
+                    <CategoryIconButton
+                      icon="➕"
+                      label={t("categories.addSub")}
+                      onClick={() => onAddSubCategory(category.id)}
+                      tone="emerald"
+                    />
                     <CategoryIconButton
                       icon="🗑️"
-                      label="حذف"
+                      label={t("common.delete")}
                       onClick={() => onDelete(category)}
                       tone="red"
                     />

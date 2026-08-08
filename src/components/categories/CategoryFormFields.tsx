@@ -4,26 +4,31 @@ import {
   categoryColorOptions,
   categoryIconOptions,
 } from "@/lib/constants/category-options";
+import { buildCategoryParentOptions } from "@/lib/categories";
 import type { CategoryFormState } from "@/lib/categories/form";
 import type { Category } from "@/lib/types/database";
+import { useTranslations } from "@/components/i18n/LocaleProvider";
 
 type CategoryFormFieldsProps = {
   form: CategoryFormState;
-  parentOptions: Category[];
+  categories: Category[];
   onChange: (form: CategoryFormState) => void;
   idPrefix?: string;
 };
 
 export default function CategoryFormFields({
   form,
-  parentOptions,
+  categories,
   onChange,
   idPrefix = "category",
 }: CategoryFormFieldsProps) {
+  const t = useTranslations();
+  const parentOptions = buildCategoryParentOptions(categories);
+
   return (
     <div className="mt-6 space-y-5">
       <label className="block space-y-2">
-        <span className="text-sm font-medium text-slate-700">الفئة الرئيسية</span>
+        <span className="text-sm font-medium text-slate-700">{t("categories.parentLabel")}</span>
         <select
           value={form.parentCategoryId ?? ""}
           onChange={(event) =>
@@ -34,17 +39,17 @@ export default function CategoryFormFields({
           }
           className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
         >
-          <option value="">بدون — فئة رئيسية</option>
-          {parentOptions.map((category) => (
+          <option value="">{t("categories.parentNone")}</option>
+          {parentOptions.map(({ category, label }) => (
             <option key={category.id} value={category.id}>
-              {category.icon} {category.name}
+              {label}
             </option>
           ))}
         </select>
       </label>
 
       <label className="block space-y-2">
-        <span className="text-sm font-medium text-slate-700">اسم الفئة</span>
+        <span className="text-sm font-medium text-slate-700">{t("categories.nameLabel")}</span>
         <input
           id={`${idPrefix}-name`}
           type="text"
@@ -57,7 +62,7 @@ export default function CategoryFormFields({
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-slate-700">الأيقونة</span>
+          <span className="text-sm font-medium text-slate-700">{t("categories.iconLabel")}</span>
           <span className="rounded-xl bg-slate-100 px-3 py-1 text-lg">{form.icon}</span>
         </div>
         <div className="max-h-44 overflow-y-auto rounded-2xl border border-slate-200 p-3">
@@ -72,7 +77,7 @@ export default function CategoryFormFields({
                     ? "bg-emerald-100 ring-2 ring-emerald-500"
                     : "bg-slate-50 hover:bg-emerald-50"
                 }`}
-                aria-label={`أيقونة ${option}`}
+                aria-label={`${t("categories.iconLabel")} ${option}`}
               >
                 {option}
               </button>
@@ -83,7 +88,7 @@ export default function CategoryFormFields({
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-slate-700">اللون</span>
+          <span className="text-sm font-medium text-slate-700">{t("categories.colorLabel")}</span>
           <span
             className="h-6 w-6 rounded-full border border-slate-200"
             style={{ backgroundColor: form.color }}
@@ -119,8 +124,8 @@ export default function CategoryFormFields({
           {form.icon}
         </span>
         <div>
-          <p className="text-sm text-slate-500">معاينة</p>
-          <p className="font-medium text-slate-900">{form.name.trim() || "اسم الفئة"}</p>
+          <p className="text-sm text-slate-500">{t("categories.preview")}</p>
+          <p className="font-medium text-slate-900">{form.name.trim() || t("categories.nameLabel")}</p>
         </div>
       </div>
     </div>

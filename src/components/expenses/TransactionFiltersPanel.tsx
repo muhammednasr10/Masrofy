@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import CategorySelect from "@/components/categories/CategorySelect";
+import CategorySearchSelect from "@/components/categories/CategorySearchSelect";
 import WalletSelect from "@/components/wallets/WalletSelect";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import type { Category, Wallet } from "@/lib/types/database";
@@ -132,13 +132,13 @@ export default function TransactionFiltersPanel({
 
             <label className="block space-y-2">
               <span className="text-sm text-slate-600">{t("expenses.category")}</span>
-              <CategorySelect
+              <CategorySearchSelect
                 categories={categories}
                 value={filters.categoryId}
                 onChange={(categoryId) => onChange({ ...filters, categoryId })}
                 allowEmpty
                 emptyLabel={t("expenses.allCategories")}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-emerald-500"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus-within:border-emerald-500"
               />
             </label>
 

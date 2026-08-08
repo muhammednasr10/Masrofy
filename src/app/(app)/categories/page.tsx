@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import CategoriesTable from "@/components/categories/CategoriesTable";
 import CategoryFormModal from "@/components/categories/CategoryFormModal";
 import { createClient } from "@/lib/supabase/client";
@@ -8,8 +8,8 @@ import {
   buildCategoryPayload,
   categoryHasChildren,
   emptyCategoryForm,
+  getCategoryDescendantIds,
   getNextCategorySortOrder,
-  getParentCategories,
 } from "@/lib/categories";
 import type { CategoryFormState } from "@/lib/categories/form";
 import type { Category } from "@/lib/types/database";
@@ -20,11 +20,6 @@ export default function CategoriesPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const parentOptions = useMemo(
-    () => getParentCategories(categories),
-    [categories],
-  );
 
   useEffect(() => {
     async function loadCategories() {
@@ -111,12 +106,11 @@ export default function CategoriesPage() {
       return;
     }
 
-    setCategories((current) =>
-      current.filter(
-        (item) =>
-          item.id !== category.id && item.parent_category_id !== category.id,
-      ),
-    );
+    setCategories((current) => {
+      const removeIds = new Set([category.id, ...getCategoryDescendantIds(category.id, current)]);
+
+      return current.filter((item) => !removeIds.has(item.id));
+    });
   }
 
   if (loading) {
@@ -157,7 +151,7 @@ export default function CategoriesPage() {
       {form ? (
         <CategoryFormModal
           form={form}
-          parentOptions={parentOptions}
+          categories={categories}
           submitting={submitting}
           error={error}
           onChange={setForm}

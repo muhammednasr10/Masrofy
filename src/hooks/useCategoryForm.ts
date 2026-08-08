@@ -1,12 +1,11 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
   buildCategoryPayload,
   emptyCategoryForm,
   getNextCategorySortOrder,
-  getParentCategories,
 } from "@/lib/categories";
 import type { CategoryFormState } from "@/lib/categories/form";
 import type { Category } from "@/lib/types/database";
@@ -15,11 +14,6 @@ export function useCategoryForm(categories: Category[], onCreated?: (category: C
   const [form, setForm] = useState<CategoryFormState | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const parentOptions = useMemo(
-    () => getParentCategories(categories),
-    [categories],
-  );
 
   function openForm(parentCategoryId: string | null = null) {
     setForm(emptyCategoryForm(parentCategoryId));
@@ -74,7 +68,6 @@ export function useCategoryForm(categories: Category[], onCreated?: (category: C
     form,
     submitting,
     error,
-    parentOptions,
     openForm,
     closeForm,
     setForm,

@@ -1,16 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 import CategoryFormModal from "@/components/categories/CategoryFormModal";
 import WalletSelect from "@/components/wallets/WalletSelect";
-import CategorySelect from "@/components/categories/CategorySelect";
+import CategorySearchSelect from "@/components/categories/CategorySearchSelect";
 import SelectedWalletPanel from "@/components/expenses/SelectedWalletPanel";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import { createClient } from "@/lib/supabase/client";
 import {
   emptyCategoryForm,
-  getParentCategories,
   insertCategory,
   type CategoryFormState,
 } from "@/lib/categories";
@@ -77,10 +76,9 @@ export default function TransactionForm({
   const [categorySubmitting, setCategorySubmitting] = useState(false);
   const [categoryError, setCategoryError] = useState<string | null>(null);
 
-  const parentOptions = useMemo(() => getParentCategories(categories), [categories]);
-
   function openCategoryForm() {
-    setCategoryForm(emptyCategoryForm());
+    const selected = categories.find((category) => category.id === categoryId);
+    setCategoryForm(emptyCategoryForm(selected?.id ?? null));
     setCategoryError(null);
   }
 
@@ -180,12 +178,13 @@ export default function TransactionForm({
             {t("expenses.addCategory")}
           </button>
         </div>
-        <CategorySelect
+        <CategorySearchSelect
           categories={categories}
           value={categoryId}
           onChange={onCategoryChange}
           allowEmpty={type === "income"}
-          className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
+          required={type === "expense"}
+          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus-within:border-emerald-500"
         />
       </div>
 
@@ -255,7 +254,7 @@ export default function TransactionForm({
       {categoryForm ? (
         <CategoryFormModal
           form={categoryForm}
-          parentOptions={parentOptions}
+          categories={categories}
           submitting={categorySubmitting}
           error={categoryError}
           onChange={setCategoryForm}

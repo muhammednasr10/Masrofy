@@ -32,6 +32,8 @@
   "dashboard": {
     "showBalances": "إظهار الأرصدة",
     "hideBalances": "إخفاء الأرصدة",
+    "summaryWallets": "المحافظ فيها {amount}",
+    "summaryExpenses": "المصروفات {amount}",
     "openCard": "فتح ←",
     "walletsTitle": "المحافظ",
     "walletsDesc": "أرصدة البنوك والكاش والبطاقات",

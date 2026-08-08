@@ -1,12 +1,5 @@
-"use client";
-
-import DashboardAddExpenseButton from "@/components/dashboard/DashboardAddExpenseButton";
-import DashboardCards from "@/components/dashboard/DashboardCards";
 import DashboardCategoryReport from "@/components/dashboard/DashboardCategoryReport";
-import {
-  DashboardBalanceToggleButton,
-  DashboardBalanceVisibilityProvider,
-} from "@/components/dashboard/DashboardBalanceVisibility";
+import DashboardSummary from "@/components/dashboard/DashboardSummary";
 import type { DashboardData } from "@/lib/dashboard";
 
 type DashboardViewProps = {
@@ -16,20 +9,12 @@ type DashboardViewProps = {
 
 export default function DashboardView({ monthLabel, data }: DashboardViewProps) {
   return (
-    <DashboardBalanceVisibilityProvider>
-      <div className="space-y-6">
-        <section className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="wrap-text text-xl font-semibold text-slate-900 sm:text-3xl">{monthLabel}</h1>
-          <div className="flex shrink-0 items-center justify-end gap-2">
-            <DashboardBalanceToggleButton />
-            <DashboardAddExpenseButton />
-          </div>
-        </section>
+    <div className="space-y-6">
+      <h1 className="wrap-text text-xl font-semibold text-slate-900 sm:text-3xl">{monthLabel}</h1>
 
-        <DashboardCards data={data} />
+      <DashboardSummary data={data} />
 
-        <DashboardCategoryReport data={data} />
-      </div>
-    </DashboardBalanceVisibilityProvider>
+      <DashboardCategoryReport data={data} />
+    </div>
   );
 }

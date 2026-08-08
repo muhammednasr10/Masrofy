@@ -32,6 +32,8 @@
   "dashboard": {
     "showBalances": "Show balances",
     "hideBalances": "Hide balances",
+    "summaryWallets": "Wallets: {amount}",
+    "summaryExpenses": "Expenses: {amount}",
     "openCard": "Open →",
     "walletsTitle": "Wallets",
     "walletsDesc": "Bank, cash, and card balances",

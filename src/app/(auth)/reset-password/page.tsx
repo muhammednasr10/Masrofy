@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import PasswordInput from "@/components/ui/PasswordInput";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -83,25 +84,23 @@ export default function ResetPasswordPage() {
           <form onSubmit={handleSubmit} className="mt-8 space-y-4">
           <label className="block space-y-2">
             <span className="text-sm font-medium text-slate-700">كلمة المرور الجديدة</span>
-            <input
-              type="password"
+            <PasswordInput
               required
               minLength={6}
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-emerald-500"
+              onChange={setPassword}
+              autoComplete="new-password"
             />
           </label>
 
           <label className="block space-y-2">
             <span className="text-sm font-medium text-slate-700">تأكيد كلمة المرور</span>
-            <input
-              type="password"
+            <PasswordInput
               required
               minLength={6}
               value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-emerald-500"
+              onChange={setConfirmPassword}
+              autoComplete="new-password"
             />
           </label>
 

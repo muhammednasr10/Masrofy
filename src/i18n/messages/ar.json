@@ -75,7 +75,10 @@
     "accountTitle": "الحساب",
     "accountDesc": "الإعدادات والملف الشخصي",
     "accountDefault": "حسابك",
-    "accountCurrency": "العملة: {currency}"
+    "accountCurrency": "العملة: {currency}",
+    "categoryReportTitle": "مصروفات الشهر حسب الفئة",
+    "categoryReportDesc": "مرتبة من الأعلى إلى الأقل حسب المبلغ المصروف",
+    "categoryReportLink": "عرض التقرير الكامل"
   },
   "auth": {
     "loginTitle": "تسجيل الدخول",
@@ -83,6 +86,8 @@
     "registerTitle": "إنشاء حساب",
     "email": "البريد الإلكتروني",
     "password": "كلمة المرور",
+    "showPassword": "إظهار كلمة المرور",
+    "hidePassword": "إخفاء كلمة المرور",
     "name": "الاسم",
     "forgotPassword": "نسيت كلمة المرور؟",
     "loginButton": "دخول",
@@ -197,6 +202,10 @@
     "formReceipt": "مرفق (إيصال / فاتورة)",
     "formSaving": "جاري الحفظ...",
     "formSave": "حفظ",
+    "formSaveChanges": "حفظ التعديلات",
+    "tapToEdit": "اضغط على العملية للتعديل",
+    "editOfflineBlocked": "بانتظار المزامنة",
+    "editTransferBlocked": "غير قابل للتعديل",
     "needWallet": "محتاج تضيف محفظة الأول عشان تسجّل مصروفات أو دخل.",
     "addCategory": "+ فئة جديدة",
     "categoryLoginRequired": "يجب تسجيل الدخول أولاً.",
@@ -247,7 +256,13 @@
     "investmentsTitle": "ملخص الاستثمارات",
     "investmentsDesc": "قيمة المحفظة الاستثمارية والأرباح/الخسائر لكل استثمار.",
     "reconciliationTitle": "سجل الجرد",
-    "reconciliationDesc": "تاريخ مقارنة الأرصدة المسجّلة بالواقع."
+    "reconciliationDesc": "تاريخ مقارنة الأرصدة المسجّلة بالواقع.",
+    "categoryEmpty": "لا توجد مصروفات في هذه الفترة.",
+    "categoryColumn": "الفئة",
+    "amountColumn": "المبلغ",
+    "percentColumn": "النسبة",
+    "distributionColumn": "التوزيع",
+    "categoryPercentOfExpenses": "{percent}% من المصروفات"
   },
   "offline": {
     "offlineMessage": "أنت غير متصل — يمكنك إضافة مصروفات محلياً وسيتم رفعها عند عودة الإنترنت.",

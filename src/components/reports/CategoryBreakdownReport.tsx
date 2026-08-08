@@ -1,17 +1,24 @@
 "use client";
 
+import { useTranslations } from "@/components/i18n/LocaleProvider";
+import { useFormat } from "@/hooks/useFormat";
 import type { MonthlySummary } from "@/lib/types/database";
-import { formatCurrency } from "@/lib/utils/format";
 
 export default function CategoryBreakdownReport({
   summary,
   currency,
+  formatAmount,
 }: {
   summary: MonthlySummary;
   currency: string;
+  formatAmount?: (value: number) => string;
 }) {
+  const t = useTranslations();
+  const { formatCurrency } = useFormat();
+  const displayAmount = formatAmount ?? ((value: number) => formatCurrency(value, currency));
+
   if (summary.byCategory.length === 0) {
-    return <p className="text-sm text-slate-500">لا توجد مصروفات في هذه الفترة.</p>;
+    return <p className="text-sm text-slate-500">{t("reports.categoryEmpty")}</p>;
   }
 
   const maxTotal = summary.byCategory[0]?.total ?? 1;
@@ -26,8 +33,8 @@ export default function CategoryBreakdownReport({
                 <span>{category.icon}</span>
                 <span className="truncate">{category.name}</span>
               </span>
-              <span className="shrink-0 font-semibold text-slate-900">
-                {formatCurrency(category.total, currency)}
+              <span className="amount-text shrink-0 font-semibold text-slate-900">
+                {displayAmount(category.total)}
               </span>
             </div>
             <div className="mt-2 h-2 rounded-full bg-white">
@@ -40,7 +47,9 @@ export default function CategoryBreakdownReport({
               />
             </div>
             <p className="mt-1 text-xs text-slate-500">
-              {((category.total / summary.totalExpenses) * 100).toFixed(1)}% من المصروفات
+              {t("reports.categoryPercentOfExpenses", {
+                percent: ((category.total / summary.totalExpenses) * 100).toFixed(1),
+              })}
             </p>
           </article>
         ))}
@@ -50,10 +59,10 @@ export default function CategoryBreakdownReport({
         <table className="min-w-full text-sm">
           <thead>
             <tr className="border-b border-slate-200 text-slate-500">
-              <th className="px-3 py-3 text-right font-medium">الفئة</th>
-              <th className="px-3 py-3 text-right font-medium">المبلغ</th>
-              <th className="px-3 py-3 text-right font-medium">النسبة</th>
-              <th className="px-3 py-3 text-right font-medium">التوزيع</th>
+              <th className="px-3 py-3 text-start font-medium">{t("reports.categoryColumn")}</th>
+              <th className="px-3 py-3 text-start font-medium">{t("reports.amountColumn")}</th>
+              <th className="px-3 py-3 text-start font-medium">{t("reports.percentColumn")}</th>
+              <th className="px-3 py-3 text-start font-medium">{t("reports.distributionColumn")}</th>
             </tr>
           </thead>
           <tbody>
@@ -65,8 +74,8 @@ export default function CategoryBreakdownReport({
                     {category.name}
                   </span>
                 </td>
-                <td className="px-3 py-4 font-medium text-slate-900">
-                  {formatCurrency(category.total, currency)}
+                <td className="amount-text px-3 py-4 font-medium text-slate-900">
+                  {displayAmount(category.total)}
                 </td>
                 <td className="px-3 py-4 text-slate-600">
                   {((category.total / summary.totalExpenses) * 100).toFixed(1)}%

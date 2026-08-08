@@ -2,6 +2,7 @@
 
 import DashboardAddExpenseButton from "@/components/dashboard/DashboardAddExpenseButton";
 import DashboardCards from "@/components/dashboard/DashboardCards";
+import DashboardCategoryReport from "@/components/dashboard/DashboardCategoryReport";
 import {
   DashboardBalanceToggleButton,
   DashboardBalanceVisibilityProvider,
@@ -26,6 +27,8 @@ export default function DashboardView({ monthLabel, data }: DashboardViewProps) 
         </section>
 
         <DashboardCards data={data} />
+
+        <DashboardCategoryReport data={data} />
       </div>
     </DashboardBalanceVisibilityProvider>
   );

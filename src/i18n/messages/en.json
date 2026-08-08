@@ -75,7 +75,10 @@
     "accountTitle": "Account",
     "accountDesc": "Settings and profile",
     "accountDefault": "Your account",
-    "accountCurrency": "Currency: {currency}"
+    "accountCurrency": "Currency: {currency}",
+    "categoryReportTitle": "Monthly spending by category",
+    "categoryReportDesc": "Sorted highest to lowest by amount spent",
+    "categoryReportLink": "View full report"
   },
   "auth": {
     "loginTitle": "Sign in",
@@ -83,6 +86,8 @@
     "registerTitle": "Create account",
     "email": "Email",
     "password": "Password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
     "name": "Name",
     "forgotPassword": "Forgot password?",
     "loginButton": "Sign in",
@@ -197,6 +202,10 @@
     "formReceipt": "Receipt / invoice",
     "formSaving": "Saving...",
     "formSave": "Save",
+    "formSaveChanges": "Save changes",
+    "tapToEdit": "Tap the transaction to edit",
+    "editOfflineBlocked": "Pending sync",
+    "editTransferBlocked": "Not editable",
     "needWallet": "Add a wallet first to record expenses or income.",
     "addCategory": "+ New category",
     "categoryLoginRequired": "You must sign in first.",
@@ -247,7 +256,13 @@
     "investmentsTitle": "Investments summary",
     "investmentsDesc": "Portfolio value and profit/loss per investment.",
     "reconciliationTitle": "Reconciliation history",
-    "reconciliationDesc": "History of recorded vs actual wallet balances."
+    "reconciliationDesc": "History of recorded vs actual wallet balances.",
+    "categoryEmpty": "No expenses in this period.",
+    "categoryColumn": "Category",
+    "amountColumn": "Amount",
+    "percentColumn": "Share",
+    "distributionColumn": "Distribution",
+    "categoryPercentOfExpenses": "{percent}% of expenses"
   },
   "offline": {
     "offlineMessage": "You are offline — add expenses locally and they will sync when back online.",

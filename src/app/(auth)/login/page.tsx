@@ -6,6 +6,7 @@ import { FormEvent, useState } from "react";
 import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import SiteFooter from "@/components/layout/SiteFooter";
+import PasswordInput from "@/components/ui/PasswordInput";
 import { createClient } from "@/lib/supabase/client";
 import { getSupabaseConfigHint, translateAuthError } from "@/lib/supabase/auth-errors";
 
@@ -68,13 +69,12 @@ export default function LoginPage() {
                   {t("auth.forgotPassword")}
                 </Link>
               </div>
-              <input
-                type="password"
+              <PasswordInput
                 required
                 minLength={6}
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-emerald-500"
+                onChange={setPassword}
+                autoComplete="current-password"
               />
             </label>
 

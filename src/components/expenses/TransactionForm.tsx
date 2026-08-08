@@ -32,6 +32,9 @@ type TransactionFormProps = {
   receiptFile: File | null;
   submitting: boolean;
   selectedWalletSnapshot: WalletSnapshot;
+  formId?: string;
+  mode?: "add" | "edit";
+  showSubmit?: boolean;
   onAmountChange: (value: string) => void;
   onCategoryChange: (value: string) => void;
   onWalletChange: (value: string) => void;
@@ -56,6 +59,9 @@ export default function TransactionForm({
   receiptFile,
   submitting,
   selectedWalletSnapshot,
+  formId = "transaction-form",
+  mode = "add",
+  showSubmit = true,
   onAmountChange,
   onCategoryChange,
   onWalletChange,
@@ -130,7 +136,7 @@ export default function TransactionForm({
 
   return (
     <>
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form id={formId} onSubmit={onSubmit} className="space-y-4">
       <label className="block space-y-2">
         <span className="text-sm font-medium text-slate-700">{t("expenses.formType")}</span>
         <select
@@ -141,19 +147,6 @@ export default function TransactionForm({
           <option value="expense">{t("expenses.typeExpense")}</option>
           <option value="income">{t("expenses.typeIncome")}</option>
         </select>
-      </label>
-
-      <label className="block space-y-2">
-        <span className="text-sm font-medium text-slate-700">{t("expenses.formAmount")}</span>
-        <input
-          type="number"
-          min="0.01"
-          step="0.01"
-          required
-          value={amount}
-          onChange={(event) => onAmountChange(event.target.value)}
-          className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
-        />
       </label>
 
       <div className="space-y-2">
@@ -197,6 +190,19 @@ export default function TransactionForm({
       </div>
 
       <label className="block space-y-2">
+        <span className="text-sm font-medium text-slate-700">{t("expenses.formAmount")}</span>
+        <input
+          type="number"
+          min="0.01"
+          step="0.01"
+          required
+          value={amount}
+          onChange={(event) => onAmountChange(event.target.value)}
+          className="amount-text w-full rounded-2xl border border-slate-200 px-4 py-3 text-base outline-none focus:border-emerald-500"
+        />
+      </label>
+
+      <label className="block space-y-2">
         <span className="text-sm font-medium text-slate-700">{t("expenses.formDate")}</span>
         <input
           type="date"
@@ -231,13 +237,19 @@ export default function TransactionForm({
         ) : null}
       </label>
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="w-full rounded-2xl bg-emerald-600 px-4 py-3 font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60"
-      >
-        {submitting ? t("expenses.formSaving") : t("expenses.formSave")}
-      </button>
+      {showSubmit ? (
+        <button
+          type="submit"
+          disabled={submitting}
+          className="hidden w-full rounded-2xl bg-emerald-600 px-4 py-3 font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60 sm:block"
+        >
+          {submitting
+            ? t("expenses.formSaving")
+            : mode === "edit"
+              ? t("expenses.formSaveChanges")
+              : t("expenses.formSave")}
+        </button>
+      ) : null}
       </form>
 
       {categoryForm ? (

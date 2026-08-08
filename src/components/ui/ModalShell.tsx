@@ -26,7 +26,7 @@ export default function ModalShell({
         aria-label="إغلاق"
       />
       <section
-        className={`relative max-h-[92dvh] w-full max-w-full overflow-x-hidden overflow-y-auto rounded-t-3xl border border-white bg-white p-4 shadow-xl sm:max-h-[90vh] sm:rounded-3xl sm:p-6 ${maxWidthClassName}`}
+        className={`relative max-h-[92dvh] w-full max-w-full overflow-x-hidden overflow-y-auto overscroll-contain rounded-t-3xl border border-white bg-white p-4 shadow-xl safe-bottom sm:max-h-[90vh] sm:rounded-3xl sm:p-6 ${maxWidthClassName}`}
       >
         {children}
       </section>

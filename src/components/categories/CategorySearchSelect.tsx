@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import {
   buildCategorySearchIndex,
@@ -101,7 +101,7 @@ export default function CategorySearchSelect({
     setQuery("");
   }
 
-  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+  function handleKeyDown(event: ReactKeyboardEvent<HTMLInputElement>) {
     if (!open && (event.key === "ArrowDown" || event.key === "Enter")) {
       setOpen(true);
       return;

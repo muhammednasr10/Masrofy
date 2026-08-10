@@ -292,7 +292,7 @@ export function useExpensesPage() {
     setEditingTransactionId(transaction.id);
     setAmount(String(transaction.amount));
     setCategoryId(transaction.category_id ?? "");
-    setWalletId(transaction.wallet_id);
+    setWalletId(transaction.wallet_id ?? "");
     setType(transaction.type === "income" ? "income" : "expense");
     setNote(transaction.note ?? "");
     setTransactionDate(transaction.transaction_date);

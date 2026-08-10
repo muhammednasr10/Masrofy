@@ -37,3 +37,29 @@ export function isMisconfiguredSupabaseUrl(rawUrl: string | undefined) {
 
   return /\/rest\/v1\/?$/i.test(rawUrl.trim());
 }
+
+export function getSupabaseUrlValidationError(rawUrl: string | undefined) {
+  const normalized = normalizeSupabaseUrl(rawUrl);
+
+  if (!normalized) {
+    return "NEXT_PUBLIC_SUPABASE_URL غير مُعدّ على Vercel.";
+  }
+
+  if (isMisconfiguredSupabaseUrl(rawUrl)) {
+    return "NEXT_PUBLIC_SUPABASE_URL يحتوي على /rest/v1 — استخدم رابط المشروع فقط مثل https://xxx.supabase.co";
+  }
+
+  let hostname = "";
+
+  try {
+    hostname = new URL(normalized).hostname.toLowerCase();
+  } catch {
+    return "NEXT_PUBLIC_SUPABASE_URL غير صالح.";
+  }
+
+  if (!hostname.endsWith(".supabase.co")) {
+    return "NEXT_PUBLIC_SUPABASE_URL يجب أن يكون رابط Supabase (https://xxx.supabase.co) وليس رابط Vercel.";
+  }
+
+  return null;
+}

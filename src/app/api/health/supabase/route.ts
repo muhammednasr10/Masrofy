@@ -1,14 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
-import { isMisconfiguredSupabaseUrl } from "@/lib/supabase/env";
+import { getSupabaseUrlValidationError } from "@/lib/supabase/env";
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  if (isMisconfiguredSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL)) {
+  const configError = getSupabaseUrlValidationError(process.env.NEXT_PUBLIC_SUPABASE_URL);
+
+  if (configError) {
     return NextResponse.json(
       {
         connected: false,
-        message:
-          "NEXT_PUBLIC_SUPABASE_URL includes /rest/v1. Use the project URL only, e.g. https://xyz.supabase.co",
+        message: configError,
       },
       { status: 500 },
     );

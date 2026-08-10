@@ -10,6 +10,10 @@ export function translateAuthError(message: string) {
     return authErrorMessages[message];
   }
 
+  if (/unexpected token '<'|<!doctype/i.test(message)) {
+    return "خطأ في إعدادات Supabase على Vercel: تأكد أن NEXT_PUBLIC_SUPABASE_URL = https://xxx.supabase.co (بدون /rest/v1) وليس رابط الموقع.";
+  }
+
   if (/invalid path specified in request url/i.test(message)) {
     return "خطأ في إعدادات Supabase: تأكد أن NEXT_PUBLIC_SUPABASE_URL هو رابط المشروع فقط (https://xxx.supabase.co) بدون /rest/v1.";
   }
@@ -18,9 +22,5 @@ export function translateAuthError(message: string) {
 }
 
 export function getSupabaseConfigHint() {
-  if (isMisconfiguredSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL)) {
-    return "إعداد Supabase URL غير صحيح في Vercel. احذف /rest/v1 من المتغير.";
-  }
-
-  return null;
+  return getSupabaseUrlValidationError(process.env.NEXT_PUBLIC_SUPABASE_URL);
 }

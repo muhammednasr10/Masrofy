@@ -3,7 +3,7 @@ import {
   getSafeNextPath,
   getAuthCallbackUrl,
 } from "@/lib/supabase/site-url";
-import { isMisconfiguredSupabaseUrl, normalizeSupabaseUrl } from "@/lib/supabase/env";
+import { isMisconfiguredSupabaseUrl, normalizeSupabaseUrl, getSupabaseUrlValidationError } from "@/lib/supabase/env";
 
 describe("normalizeSupabaseUrl", () => {
   it("strips trailing /rest/v1 from pasted dashboard URLs", () => {
@@ -24,6 +24,19 @@ describe("isMisconfiguredSupabaseUrl", () => {
   it("detects /rest/v1 suffix", () => {
     expect(isMisconfiguredSupabaseUrl("https://abc.supabase.co/rest/v1")).toBe(true);
     expect(isMisconfiguredSupabaseUrl("https://abc.supabase.co")).toBe(false);
+  });
+});
+
+describe("getSupabaseUrlValidationError", () => {
+  it("rejects vercel app URLs", () => {
+    expect(getSupabaseUrlValidationError("https://masrofy-sigma.vercel.app")).toMatch(
+      /supabase/i,
+    );
+  });
+
+  it("accepts valid supabase project URLs", () => {
+    expect(getSupabaseUrlValidationError("https://abc.supabase.co")).toBeNull();
+    expect(getSupabaseUrlValidationError("https://abc.supabase.co/rest/v1")).toMatch(/rest\/v1/i);
   });
 });
 

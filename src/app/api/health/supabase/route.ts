@@ -1,14 +1,33 @@
 import { createClient } from "@/lib/supabase/server";
-import { getSupabaseUrlValidationError } from "@/lib/supabase/env";
+import {
+  getSupabaseUrlValidationError,
+  normalizeSupabaseUrl,
+} from "@/lib/supabase/env";
 import { NextResponse } from "next/server";
 
+function getConfiguredSupabaseHost() {
+  const normalized = normalizeSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
+
+  if (!normalized) {
+    return null;
+  }
+
+  try {
+    return new URL(normalized).hostname;
+  } catch {
+    return "invalid-url";
+  }
+}
+
 export async function GET() {
+  const configuredHost = getConfiguredSupabaseHost();
   const configError = getSupabaseUrlValidationError(process.env.NEXT_PUBLIC_SUPABASE_URL);
 
   if (configError) {
     return NextResponse.json(
       {
         connected: false,
+        configuredHost,
         message: configError,
       },
       { status: 500 },
@@ -22,6 +41,7 @@ export async function GET() {
     return NextResponse.json(
       {
         connected: false,
+        configuredHost,
         message:
           walletsError.code === "PGRST125"
             ? "Invalid Supabase URL path. Set NEXT_PUBLIC_SUPABASE_URL to https://your-project.supabase.co without /rest/v1."
@@ -65,6 +85,7 @@ export async function GET() {
 
   return NextResponse.json({
     connected: true,
+    configuredHost,
     message: "Supabase is connected and Masrofy schema is ready.",
   });
 }

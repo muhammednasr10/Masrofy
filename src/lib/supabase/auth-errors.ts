@@ -1,4 +1,4 @@
-import { isMisconfiguredSupabaseUrl } from "@/lib/supabase/env";
+import { getSupabaseUrlValidationError } from "@/lib/supabase/env";
 
 const authErrorMessages: Record<string, string> = {
   "Invalid login credentials": "البريد أو كلمة المرور غير صحيحة.",

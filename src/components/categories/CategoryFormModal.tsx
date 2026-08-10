@@ -29,12 +29,17 @@ export default function CategoryFormModal({
   zIndexClassName,
 }: CategoryFormModalProps) {
   const t = useTranslations();
-  const title = form.parentCategoryId
-    ? t("categories.addSubTitle")
-    : t("categories.addTitle");
-  const description = form.parentCategoryId
-    ? t("categories.addSubDesc")
-    : t("categories.addDesc");
+  const isEditing = Boolean(form.editingCategoryId);
+  const title = isEditing
+    ? t("categories.editTitle")
+    : form.parentCategoryId
+      ? t("categories.addSubTitle")
+      : t("categories.addTitle");
+  const description = isEditing
+    ? t("categories.editDesc")
+    : form.parentCategoryId
+      ? t("categories.addSubDesc")
+      : t("categories.addDesc");
 
   return (
     <ModalShell onClose={onClose} maxWidthClassName="sm:max-w-lg" zIndexClassName={zIndexClassName}>
@@ -76,7 +81,11 @@ export default function CategoryFormModal({
               disabled={submitting}
               className="flex-1 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60"
             >
-              {submitting ? t("categories.saving") : t("categories.save")}
+              {submitting
+                ? t("categories.saving")
+                : isEditing
+                  ? t("categories.saveChanges")
+                  : t("categories.save")}
             </button>
           </div>
         </form>

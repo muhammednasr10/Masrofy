@@ -7,9 +7,11 @@ import { createClient } from "@/lib/supabase/client";
 import {
   buildCategoryPayload,
   categoryHasChildren,
+  categoryToFormState,
   emptyCategoryForm,
   getCategoryDescendantIds,
   getNextCategorySortOrder,
+  updateCategory,
 } from "@/lib/categories";
 import type { CategoryFormState } from "@/lib/categories/form";
 import type { Category } from "@/lib/types/database";
@@ -41,6 +43,11 @@ export default function CategoriesPage() {
     setError(null);
   }
 
+  function openEditForm(category: Category) {
+    setForm(categoryToFormState(category));
+    setError(null);
+  }
+
   function closeForm() {
     setForm(null);
     setError(null);
@@ -57,6 +64,24 @@ export default function CategoriesPage() {
     setError(null);
 
     const supabase = createClient();
+
+    if (form.editingCategoryId) {
+      const result = await updateCategory(supabase, form);
+
+      if (result.error || !result.category) {
+        setError(result.error ?? "تعذّر حفظ التعديلات.");
+        setSubmitting(false);
+        return;
+      }
+
+      setCategories((current) =>
+        current.map((item) => (item.id === result.category!.id ? result.category! : item)),
+      );
+      closeForm();
+      setSubmitting(false);
+      return;
+    }
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -144,6 +169,7 @@ export default function CategoriesPage() {
         <CategoriesTable
           categories={categories}
           onAddSubCategory={(parentCategoryId) => openForm(parentCategoryId)}
+          onEdit={openEditForm}
           onDelete={handleDelete}
         />
       </section>

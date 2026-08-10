@@ -23,7 +23,10 @@ export default function CategoryFormFields({
   idPrefix = "category",
 }: CategoryFormFieldsProps) {
   const t = useTranslations();
-  const parentOptions = buildCategoryParentOptions(categories);
+  const parentOptions = buildCategoryParentOptions(
+    categories,
+    form.editingCategoryId,
+  );
 
   return (
     <div className="mt-6 space-y-5">
@@ -65,7 +68,7 @@ export default function CategoryFormFields({
           <span className="text-sm font-medium text-slate-700">{t("categories.iconLabel")}</span>
           <span className="rounded-xl bg-slate-100 px-3 py-1 text-lg">{form.icon}</span>
         </div>
-        <div className="max-h-44 overflow-y-auto rounded-2xl border border-slate-200 p-3">
+        <div className="max-h-56 overflow-y-auto rounded-2xl border border-slate-200 p-3">
           <div className="grid grid-cols-8 gap-2">
             {categoryIconOptions.map((option) => (
               <button

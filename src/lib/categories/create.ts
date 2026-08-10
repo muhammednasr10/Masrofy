@@ -1,5 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { buildCategoryPayload, type CategoryFormState } from "@/lib/categories/form";
+import {
+  buildCategoryPayload,
+  buildCategoryUpdatePayload,
+  type CategoryFormState,
+} from "@/lib/categories/form";
 import { getNextCategorySortOrder } from "@/lib/categories/hierarchy";
 import type { Category } from "@/lib/types/database";
 
@@ -13,6 +17,28 @@ export async function insertCategory(
   const { data, error } = await supabase
     .from("categories")
     .insert(buildCategoryPayload(form, userId, sortOrder))
+    .select("*")
+    .single();
+
+  if (error) {
+    return { category: null, error: error.message };
+  }
+
+  return { category: data as Category, error: null };
+}
+
+export async function updateCategory(
+  supabase: SupabaseClient,
+  form: CategoryFormState,
+): Promise<{ category: Category | null; error: string | null }> {
+  if (!form.editingCategoryId) {
+    return { category: null, error: "missing_category_id" };
+  }
+
+  const { data, error } = await supabase
+    .from("categories")
+    .update(buildCategoryUpdatePayload(form))
+    .eq("id", form.editingCategoryId)
     .select("*")
     .single();
 

@@ -7,6 +7,7 @@ import { useTranslations } from "@/components/i18n/LocaleProvider";
 type CategoriesTableProps = {
   categories: Category[];
   onAddSubCategory: (parentCategoryId: string) => void;
+  onEdit: (category: Category) => void;
   onDelete: (category: Category) => void;
 };
 
@@ -27,6 +28,7 @@ function getParentPath(category: Category, categories: Category[]) {
 export default function CategoriesTable({
   categories,
   onAddSubCategory,
+  onEdit,
   onDelete,
 }: CategoriesTableProps) {
   const t = useTranslations();
@@ -70,6 +72,12 @@ export default function CategoriesTable({
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
+              <CategoryIconButton
+                icon="✏️"
+                label={t("common.edit")}
+                onClick={() => onEdit(category)}
+                tone="slate"
+              />
               <CategoryIconButton
                 icon="➕"
                 label={t("categories.addSub")}
@@ -125,6 +133,12 @@ export default function CategoriesTable({
                 <td className="px-4 py-4">
                   <div className="flex items-center gap-1">
                     <CategoryIconButton
+                      icon="✏️"
+                      label={t("common.edit")}
+                      onClick={() => onEdit(category)}
+                      tone="slate"
+                    />
+                    <CategoryIconButton
                       icon="➕"
                       label={t("categories.addSub")}
                       onClick={() => onAddSubCategory(category.id)}
@@ -149,6 +163,7 @@ export default function CategoriesTable({
 
 const iconToneClasses = {
   emerald: "bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
+  slate: "bg-slate-100 text-slate-600 hover:bg-slate-200",
   red: "bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-600",
 };
 

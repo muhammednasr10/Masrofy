@@ -59,11 +59,12 @@ export default function AlertsDropdownPanel({
 }: AlertsDropdownPanelProps) {
   const t = useTranslations();
   const totalCount = alerts.length + dueRecurrings.length;
-  const [style, setStyle] = useState(() =>
-    anchorRef.current
-      ? getPanelStyle(anchorRef.current)
-      : { top: 8, left: 8, width: 320, maxHeight: "90dvh" },
-  );
+  const [style, setStyle] = useState({
+    top: 8 as number | string,
+    left: 8 as number,
+    width: 320 as number,
+    maxHeight: "90dvh" as string,
+  });
 
   useLayoutEffect(() => {
     function updatePosition() {

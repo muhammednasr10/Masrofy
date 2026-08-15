@@ -1,4 +1,4 @@
-const CACHE_NAME = "masrofy-shell-v4";
+const CACHE_NAME = "masrofy-shell-v5";
 const SHELL_URLS = [
   "/",
   "/dashboard",

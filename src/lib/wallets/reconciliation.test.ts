@@ -76,4 +76,11 @@ describe("reconcilable wallet display", () => {
   it("creates a positive net for extra cash", () => {
     expect(getInventoryNetAdjustment([{ wallet: cash, difference: 250 }])).toBe(250);
   });
+
+  it("still lists sub-wallets if the parent is missing from the payload", () => {
+    const rows = buildInventoryDisplayRows([debit, credit, cash]);
+
+    expect(rows.map((row) => row.wallet.id).sort()).toEqual(["cash", "credit", "debit"]);
+    expect(rows.every((row) => row.editable)).toBe(true);
+  });
 });

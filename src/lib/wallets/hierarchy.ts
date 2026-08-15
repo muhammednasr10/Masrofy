@@ -5,7 +5,6 @@ import {
   getCreditOwed,
   isCreditWallet,
 } from "@/lib/wallets/balance";
-import { isInvestmentWallet } from "@/lib/wallets/investment-link";
 import { getWalletParentId, normalizeWallets } from "@/lib/wallets/normalize";
 
 export function isSubWallet(wallet: Pick<Wallet, "parent_wallet_id">): boolean {
@@ -31,15 +30,32 @@ export function buildWalletDisplayRows(wallets: Wallet[]) {
   }
 
   const rows: Array<{ wallet: Wallet; depth: number }> = [];
+  const seen = new Set<string>();
 
   function walk(parentId: string | null, depth: number) {
     for (const wallet of byParent.get(parentId) ?? []) {
+      if (seen.has(wallet.id)) {
+        continue;
+      }
+
+      seen.add(wallet.id);
       rows.push({ wallet, depth });
       walk(wallet.id, depth + 1);
     }
   }
 
   walk(null, 0);
+
+  for (const wallet of normalizeWallets(wallets)) {
+    if (seen.has(wallet.id)) {
+      continue;
+    }
+
+    seen.add(wallet.id);
+    rows.push({ wallet, depth: 0 });
+    walk(wallet.id, 1);
+  }
+
   return rows;
 }
 

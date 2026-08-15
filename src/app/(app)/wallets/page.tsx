@@ -1,7 +1,7 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import InternalTransfersList from "@/components/wallets/InternalTransfersList";
+import WalletInventoryModal from "@/components/wallets/WalletInventoryModal";
 import WalletTransferModal from "@/components/wallets/WalletTransferModal";
 import { FeedbackBanner } from "@/components/wallets/FeedbackBanner";
 import WalletFormFields from "@/components/wallets/WalletFormFields";
@@ -12,11 +12,6 @@ import WalletsTable from "@/components/wallets/WalletsTable";
 import WalletsToolbar from "@/components/wallets/WalletsToolbar";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import { useWalletsPage } from "@/hooks/useWalletsPage";
-
-const WalletInventoryModal = dynamic(
-  () => import("@/components/wallets/WalletInventoryModal"),
-  { ssr: false },
-);
 
 export default function WalletsPage() {
   const t = useTranslations();
@@ -29,7 +24,6 @@ export default function WalletsPage() {
     reconciliations,
     internalTransfers,
     transferableWallets,
-    walletRows,
     tableRows,
     parentWallets,
     takenInvestmentIds,

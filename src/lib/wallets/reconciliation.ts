@@ -60,14 +60,31 @@ export function buildInventoryDisplayRows(wallets: Wallet[], focusWalletId: stri
     ? new Set([focusWalletId, ...getWalletDescendantIds(focusWalletId, wallets)])
     : null;
 
-  return buildWalletDisplayRows(wallets)
+  const parentNameById = new Map(wallets.map((wallet) => [wallet.id, wallet.name]));
+  const rows = buildWalletDisplayRows(wallets)
     .filter((row) => (allowedIds ? allowedIds.has(row.wallet.id) : true))
     .map((row) => ({
       ...row,
       editable: reconcilableIds.has(row.wallet.id),
-      parentName:
-        wallets.find((wallet) => wallet.id === getWalletParentId(row.wallet))?.name ?? null,
+      parentName: parentNameById.get(getWalletParentId(row.wallet) ?? "") ?? null,
     }));
+
+  const seenIds = new Set(rows.map((row) => row.wallet.id));
+
+  for (const wallet of wallets) {
+    if (seenIds.has(wallet.id) || (allowedIds && !allowedIds.has(wallet.id))) {
+      continue;
+    }
+
+    rows.push({
+      wallet,
+      depth: getWalletParentId(wallet) ? 1 : 0,
+      editable: reconcilableIds.has(wallet.id),
+      parentName: parentNameById.get(getWalletParentId(wallet) ?? "") ?? null,
+    });
+  }
+
+  return rows;
 }
 
 export function buildReconciliationPreview(

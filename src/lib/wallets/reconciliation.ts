@@ -75,6 +75,19 @@ export function buildReconciliationPreview(
   };
 }
 
+export function getReconciliationWealthDelta(wallet: Pick<Wallet, "card_kind">, difference: number) {
+  return isCreditWallet(wallet) ? -difference : difference;
+}
+
+export function getInventoryNetAdjustment(
+  previews: Array<{ wallet: Pick<Wallet, "card_kind">; difference: number }>,
+) {
+  return previews.reduce(
+    (total, preview) => total + getReconciliationWealthDelta(preview.wallet, preview.difference),
+    0,
+  );
+}
+
 export function getLatestReconciliationsByWallet(reconciliations: WalletReconciliation[]) {
   const latest = new Map<string, WalletReconciliation>();
 

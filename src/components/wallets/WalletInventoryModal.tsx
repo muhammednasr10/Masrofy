@@ -10,9 +10,9 @@ import {
   buildReconciliationPreview,
   calculateWalletBalance,
   getActualBalanceLabel,
+  getInventoryNetAdjustment,
   getRecordedBalanceLabel,
   getReconcilableWalletsForFocus,
-  getReconciliationAdjustmentLabel,
   isCreditWallet,
 } from "@/lib/wallets";
 import { FormEvent, useMemo, useState } from "react";
@@ -72,13 +72,13 @@ export default function WalletInventoryModal({
 
   const summary = useMemo(() => {
     const mismatched = previews.filter((preview) => !preview.isMatched);
-    const totalDifference = previews.reduce((sum, preview) => sum + preview.difference, 0);
+    const netAdjustment = getInventoryNetAdjustment(previews);
 
     return {
       total: previews.length,
       matched: previews.length - mismatched.length,
       mismatched: mismatched.length,
-      totalDifference,
+      netAdjustment,
     };
   }, [previews]);
 
@@ -101,23 +101,18 @@ export default function WalletInventoryModal({
     const supabase = createClient();
     const trimmedNote = note.trim() || null;
 
-    for (const preview of previews) {
-      if (preview.isMatched) {
-        continue;
-      }
+    const { error: reconcileError } = await supabase.rpc("reconcile_wallets_batch", {
+      p_items: previews.map((preview) => ({
+        wallet_id: preview.wallet.id,
+        actual_balance: preview.actualBalance,
+      })),
+      p_note: trimmedNote,
+    });
 
-      const { error: reconcileError } = await supabase.rpc("reconcile_wallet", {
-        p_wallet_id: preview.wallet.id,
-        p_actual_balance: preview.actualBalance,
-        p_resolution: "adjustment_tx",
-        p_note: trimmedNote,
-      });
-
-      if (reconcileError) {
-        setError(`${preview.wallet.name}: ${reconcileError.message}`);
-        setSaving(false);
-        return;
-      }
+    if (reconcileError) {
+      setError(reconcileError.message);
+      setSaving(false);
+      return;
     }
 
     await onComplete();
@@ -223,12 +218,6 @@ export default function WalletInventoryModal({
                       <div className="mt-1">
                         <DifferenceBadge difference={preview.difference} currency={currency} />
                       </div>
-                      {getReconciliationAdjustmentLabel(preview.difference, isCredit) ? (
-                        <p className="mt-1 text-xs text-amber-700">
-                          سيُسجَّل: {getReconciliationAdjustmentLabel(preview.difference, isCredit)}{" "}
-                          ({formatCurrency(Math.abs(preview.difference), currency)})
-                        </p>
-                      ) : null}
                     </div>
                   </div>
                 </article>
@@ -248,11 +237,14 @@ export default function WalletInventoryModal({
             {summary.mismatched > 0 ? (
               <div className="space-y-2">
                 <p className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                  إجمالي الفروقات: {formatCurrency(summary.totalDifference, currency)}
+                  صافي الفروقات: {formatCurrency(summary.netAdjustment, currency)}
                 </p>
                 <p className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                  الفروقات تُسجَّل تلقائياً: زيادة الرصيد → إيراد غير معروف، نقص الرصيد → مصروف غير
-                  معروف.
+                  {Math.abs(summary.netAdjustment) < 0.005
+                    ? "صافي الفروقات صفر، لذلك مش هتتسجل عملية إيراد أو مصروف. أرصدة المحافظ هتتظبط للرقم الفعلي."
+                    : summary.netAdjustment > 0
+                      ? `هتتسجل عملية واحدة: إيراد غير معروف بمبلغ ${formatCurrency(Math.abs(summary.netAdjustment), currency)}.`
+                      : `هتتسجل عملية واحدة: مصروف غير معروف بمبلغ ${formatCurrency(Math.abs(summary.netAdjustment), currency)}.`}
                 </p>
               </div>
             ) : (

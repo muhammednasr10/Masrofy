@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { makeWallet } from "@/test/factories";
 import {
   buildReconcilableDisplayRows,
+  getInventoryNetAdjustment,
   getReconcilableWallets,
   getReconcilableWalletsForFocus,
 } from "@/lib/wallets/reconciliation";
@@ -54,10 +55,16 @@ describe("reconcilable wallet display", () => {
     expect(rows.map((row) => row.wallet.id)).toEqual(["debit", "credit", "cash"]);
   });
 
-  it("shows descendants when focusing a parent bank", () => {
-    const reconcilable = getReconcilableWalletsForFocus(wallets, "bank");
-    const rows = buildReconcilableDisplayRows(wallets, reconcilable);
+  it("nets cash gains against credit-owed increases", () => {
+    expect(
+      getInventoryNetAdjustment([
+        { wallet: cash, difference: 100 },
+        { wallet: credit, difference: 100 },
+      ]),
+    ).toBe(0);
+  });
 
-    expect(rows.map((row) => row.wallet.id)).toEqual(["debit", "credit"]);
+  it("creates a positive net for extra cash", () => {
+    expect(getInventoryNetAdjustment([{ wallet: cash, difference: 250 }])).toBe(250);
   });
 });

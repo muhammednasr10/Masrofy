@@ -2,11 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import {
-  buildCategoryPayload,
-  emptyCategoryForm,
-  getNextCategorySortOrder,
-} from "@/lib/categories";
+import { emptyCategoryForm, insertCategory } from "@/lib/categories";
 import type { CategoryFormState } from "@/lib/categories/form";
 import type { Category } from "@/lib/types/database";
 
@@ -46,20 +42,15 @@ export function useCategoryForm(categories: Category[], onCreated?: (category: C
       return;
     }
 
-    const sortOrder = getNextCategorySortOrder(categories, form.parentCategoryId);
-    const { data, error: insertError } = await supabase
-      .from("categories")
-      .insert(buildCategoryPayload(form, user.id, sortOrder))
-      .select("*")
-      .single();
+    const result = await insertCategory(supabase, user.id, form, categories);
 
-    if (insertError) {
-      setError(insertError.message);
+    if (result.error || !result.category) {
+      setError(result.error ?? "تعذّر حفظ الفئة.");
       setSubmitting(false);
       return;
     }
 
-    onCreated?.(data as Category);
+    onCreated?.(result.category);
     closeForm();
     setSubmitting(false);
   }

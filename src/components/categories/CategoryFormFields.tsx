@@ -31,25 +31,61 @@ export default function CategoryFormFields({
   return (
     <div className="mt-6 space-y-5">
       <label className="block space-y-2">
-        <span className="text-sm font-medium text-slate-700">{t("categories.parentLabel")}</span>
-        <select
-          value={form.parentCategoryId ?? ""}
-          onChange={(event) =>
-            onChange({
-              ...form,
-              parentCategoryId: event.target.value || null,
-            })
-          }
-          className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
-        >
-          <option value="">{t("categories.parentNone")}</option>
-          {parentOptions.map(({ category, label }) => (
-            <option key={category.id} value={category.id}>
-              {label}
-            </option>
-          ))}
-        </select>
+        <span className="text-sm font-medium text-slate-700">{t("categories.kindLabel")}</span>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => onChange({ ...form, parentCategoryId: null })}
+            className={`rounded-2xl border px-4 py-3 text-sm font-medium transition ${
+              !form.parentCategoryId
+                ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            {t("categories.typeRoot")}
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              onChange({
+                ...form,
+                parentCategoryId: form.parentCategoryId ?? parentOptions[0]?.category.id ?? null,
+              })
+            }
+            className={`rounded-2xl border px-4 py-3 text-sm font-medium transition ${
+              form.parentCategoryId
+                ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            {t("categories.typeSub")}
+          </button>
+        </div>
       </label>
+
+      {form.parentCategoryId || parentOptions.length > 0 ? (
+        <label className="block space-y-2">
+          <span className="text-sm font-medium text-slate-700">{t("categories.parentLabel")}</span>
+          <select
+            value={form.parentCategoryId ?? ""}
+            required={Boolean(form.parentCategoryId)}
+            onChange={(event) =>
+              onChange({
+                ...form,
+                parentCategoryId: event.target.value || null,
+              })
+            }
+            className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
+          >
+            <option value="">{t("categories.parentNone")}</option>
+            {parentOptions.map(({ category, label }) => (
+              <option key={category.id} value={category.id}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
 
       <label className="block space-y-2">
         <span className="text-sm font-medium text-slate-700">{t("categories.nameLabel")}</span>

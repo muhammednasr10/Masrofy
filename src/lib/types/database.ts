@@ -11,6 +11,7 @@ export type Profile = {
   onboarding_completed: boolean;
   locale: "ar" | "en";
   month_start_day: number;
+  is_admin: boolean;
   created_at: string;
 };
 
@@ -325,4 +326,30 @@ export type PlanComparison = {
   };
   expenseRows: PlanComparisonRow[];
   uncategorizedExpenses: number;
+};
+
+export type DefaultCategory = {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  parent_name: string | null;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+};
+
+export type CategorySuggestion = {
+  id: string;
+  user_id: string;
+  category_id: string | null;
+  name: string;
+  icon: string;
+  color: string;
+  parent_name: string | null;
+  status: "pending" | "approved" | "rejected";
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  created_at: string;
+  profiles?: Pick<Profile, "full_name" | "email"> | null;
 };

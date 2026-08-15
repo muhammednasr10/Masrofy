@@ -24,7 +24,18 @@ export async function insertCategory(
     return { category: null, error: error.message };
   }
 
+  notifyAdminOfCategory(data.id);
   return { category: data as Category, error: null };
+}
+
+function notifyAdminOfCategory(categoryId: string) {
+  void fetch("/api/admin/notify-category-suggestion", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ categoryId }),
+  }).catch(() => {
+    // Notification is best-effort.
+  });
 }
 
 export async function updateCategory(

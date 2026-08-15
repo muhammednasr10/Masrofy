@@ -5,12 +5,11 @@ import CategoriesTable from "@/components/categories/CategoriesTable";
 import CategoryFormModal from "@/components/categories/CategoryFormModal";
 import { createClient } from "@/lib/supabase/client";
 import {
-  buildCategoryPayload,
-  categoryHasChildren,
   categoryToFormState,
   emptyCategoryForm,
+  insertCategory,
+  categoryHasChildren,
   getCategoryDescendantIds,
-  getNextCategorySortOrder,
   updateCategory,
 } from "@/lib/categories";
 import type { CategoryFormState } from "@/lib/categories/form";
@@ -92,20 +91,15 @@ export default function CategoriesPage() {
       return;
     }
 
-    const sortOrder = getNextCategorySortOrder(categories, form.parentCategoryId);
-    const { data, error: insertError } = await supabase
-      .from("categories")
-      .insert(buildCategoryPayload(form, user.id, sortOrder))
-      .select("*")
-      .single();
+    const result = await insertCategory(supabase, user.id, form, categories);
 
-    if (insertError) {
-      setError(insertError.message);
+    if (result.error || !result.category) {
+      setError(result.error ?? "تعذّر حفظ الفئة.");
       setSubmitting(false);
       return;
     }
 
-    setCategories((current) => [...current, data as Category]);
+    setCategories((current) => [...current, result.category!]);
     closeForm();
     setSubmitting(false);
   }
@@ -149,7 +143,7 @@ export default function CategoriesPage() {
           <div>
             <h2 className="text-xl font-semibold text-slate-900">فئاتك</h2>
             <p className="mt-1 text-sm text-slate-500">
-              {categories.length} فئة • رتّب مصروفاتك بفئات رئيسية وفرعية
+              {categories.length} فئة • رئيسية وفرعية. الفئة الجديدة تظهر عندك فوراً، والجديدة على البرنامج بتترراجع للإضافة الافتراضية.
             </p>
           </div>
 

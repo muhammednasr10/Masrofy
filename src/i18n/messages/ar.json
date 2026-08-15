@@ -27,6 +27,7 @@
     "savings": "الادّخار",
     "friends": "العلاقات",
     "categories": "الفئات",
+    "admin": "إدارة الفئات",
     "account": "الحساب"
   },
   "categories": {
@@ -35,7 +36,8 @@
     "toggleList": "عرض قائمة الفئات",
     "noCategory": "بدون فئة",
     "hasSubcategories": "تحتوي على فئات فرعية",
-    "parentLabel": "الفئة الأب (اختياري)",
+    "parentLabel": "الفئة الأب",
+    "kindLabel": "نوع الفئة",
     "parentNone": "بدون — فئة رئيسية",
     "nameLabel": "اسم الفئة",
     "iconLabel": "الأيقونة",
@@ -43,7 +45,7 @@
     "preview": "معاينة",
     "addTitle": "إضافة فئة",
     "addSubTitle": "إضافة فئة فرعية",
-    "addDesc": "أنشئ فئة جديدة أو اختر فئة أب لإنشاء تفرعات متعددة.",
+    "addDesc": "اختَر فئة رئيسية أو فرعية تحت فئة موجودة. الفئة هتتسجل عندك فوراً، ولو جديدة هتتراجع للإضافة في البرنامج.",
     "addSubDesc": "أضف فئة فرعية تحت الفئة المختارة.",
     "save": "حفظ الفئة",
     "saveChanges": "حفظ التعديلات",
@@ -61,6 +63,15 @@
     "columnType": "النوع",
     "columnParent": "تحت",
     "columnActions": "إجراءات"
+  },
+  "admin": {
+    "suggestionsTitle": "مراجعة الفئات الجديدة",
+    "suggestionsDesc": "الفئة بتتحفظ عند صاحبها فوراً. الموافقة بتضيفها للكتالوج الافتراضي للمستخدمين الجدد.",
+    "suggestionsEmpty": "لا توجد اقتراحات حالياً.",
+    "approve": "أضف للافتراضي",
+    "reject": "رفض",
+    "catalogTitle": "الفئات الافتراضية",
+    "catalogDesc": "تظهر في الإعداد الأولي للحسابات الجديدة."
   },
   "dashboard": {
     "showBalances": "إظهار الأرصدة",
@@ -363,7 +374,10 @@
     "walletReconcileAction": "مطابقة المحافظ",
     "recurringDueTitle": "عمليات متكررة مستحقة",
     "recurringDueDesc": "{count} عملية في انتظار التسجيل",
-    "recurringDueAction": "سجّل العمليات"
+    "recurringDueAction": "سجّل العمليات",
+    "categorySuggestionTitle": "اقتراحات فئات بانتظار المراجعة",
+    "categorySuggestionDesc": "{count} فئة جديدة من المستخدمين",
+    "categorySuggestionAction": "راجع الفئات"
   },
   "pwa": {
     "installTitle": "ثبّت مصروفي على جهازك",

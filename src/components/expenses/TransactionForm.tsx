@@ -77,8 +77,7 @@ export default function TransactionForm({
   const [categoryError, setCategoryError] = useState<string | null>(null);
 
   function openCategoryForm() {
-    const selected = categories.find((category) => category.id === categoryId);
-    setCategoryForm(emptyCategoryForm(selected?.id ?? null));
+    setCategoryForm(emptyCategoryForm(null));
     setCategoryError(null);
   }
 

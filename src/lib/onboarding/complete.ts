@@ -1,10 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildDefaultPlanItems } from "@/lib/onboarding/seed-plan";
-import {
-  ONBOARDING_CATEGORY_PRESETS,
-  ONBOARDING_WALLET_TYPES,
-} from "@/lib/onboarding/presets";
+import { ONBOARDING_WALLET_TYPES } from "@/lib/onboarding/presets";
+import { fallbackDefaultCategories, rootCatalogCategories } from "@/lib/categories/catalog";
 import type { OnboardingSetupInput } from "@/lib/onboarding/types";
+import type { DefaultCategory } from "@/lib/types/database";
 import { getMonthRange } from "@/lib/calendar";
 
 export async function completeOnboardingSetup(
@@ -34,23 +33,68 @@ export async function completeOnboardingSetup(
     throw walletError;
   }
 
-  const categoriesToInsert = ONBOARDING_CATEGORY_PRESETS.filter((category) =>
-    input.selectedCategories.includes(category.name),
-  ).map((category, index) => ({
-    user_id: userId,
-    name: category.name,
-    icon: category.icon,
-    color: category.color,
-    sort_order: index,
-  }));
+  const { data: catalogRows } = await supabase
+    .from("default_categories")
+    .select("*")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
 
-  if (categoriesToInsert.length > 0) {
-    const { error: categoriesError } = await supabase
+  const catalog =
+    catalogRows && catalogRows.length > 0
+      ? (catalogRows as DefaultCategory[])
+      : fallbackDefaultCategories();
+
+  const selectedNames = new Set(input.selectedCategories);
+  const roots = rootCatalogCategories(catalog).filter((category) => selectedNames.has(category.name));
+  const selectedRootNames = new Set(roots.map((category) => category.name));
+  const children = catalog.filter(
+    (category) => category.parent_name && selectedRootNames.has(category.parent_name),
+  );
+
+  if (roots.length > 0) {
+    const { data: insertedRoots, error: rootError } = await supabase
       .from("categories")
-      .insert(categoriesToInsert);
+      .insert(
+        roots.map((category, index) => ({
+          user_id: userId,
+          name: category.name,
+          icon: category.icon,
+          color: category.color,
+          sort_order: index,
+        })),
+      )
+      .select("id, name");
 
-    if (categoriesError) {
-      throw categoriesError;
+    if (rootError) {
+      throw rootError;
+    }
+
+    const rootIdByName = new Map((insertedRoots ?? []).map((row) => [row.name as string, row.id as string]));
+    const childRows = children
+      .map((category, index) => {
+        const parentId = category.parent_name ? rootIdByName.get(category.parent_name) : null;
+
+        if (!parentId) {
+          return null;
+        }
+
+        return {
+          user_id: userId,
+          name: category.name,
+          icon: category.icon,
+          color: category.color,
+          parent_category_id: parentId,
+          sort_order: index + 1,
+        };
+      })
+      .filter((row): row is NonNullable<typeof row> => row !== null);
+
+    if (childRows.length > 0) {
+      const { error: childError } = await supabase.from("categories").insert(childRows);
+
+      if (childError) {
+        throw childError;
+      }
     }
   }
 

@@ -34,6 +34,7 @@ export async function loadHeaderAlerts(
     reconciliations: inputs.reconciliations,
     formatAmount,
     t,
+    pendingCategorySuggestions: inputs.pendingCategorySuggestions,
   });
 
   return { alerts, dueRecurrings, currency };

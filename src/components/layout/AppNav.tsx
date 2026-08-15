@@ -28,11 +28,31 @@ export function AppNav() {
   const router = useRouter();
   const t = useTranslations();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  const navLinks = useMemo(
-    () => navLinkKeys.map((link) => ({ ...link, label: t(link.key) })),
-    [t],
-  );
+  useEffect(() => {
+    const supabase = createClient();
+    void supabase
+      .from("profiles")
+      .select("is_admin")
+      .maybeSingle()
+      .then(({ data }) => setIsAdmin(Boolean(data?.is_admin)));
+  }, []);
+
+  const navLinks = useMemo(() => {
+    const links = navLinkKeys.map((link) => ({ ...link, label: t(link.key) }));
+
+    if (isAdmin) {
+      links.splice(links.length - 1, 0, {
+        href: "/admin/categories",
+        key: "nav.admin",
+        icon: "🛡️",
+        label: t("nav.admin"),
+      });
+    }
+
+    return links;
+  }, [isAdmin, t]);
 
   useEffect(() => {
     setSidebarOpen(false);

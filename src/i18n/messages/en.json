@@ -27,6 +27,7 @@
     "savings": "Savings",
     "friends": "Friends",
     "categories": "Categories",
+    "admin": "Category review",
     "account": "Account"
   },
   "categories": {
@@ -35,7 +36,8 @@
     "toggleList": "Toggle category list",
     "noCategory": "No category",
     "hasSubcategories": "Has subcategories",
-    "parentLabel": "Parent category (optional)",
+    "parentLabel": "Parent category",
+    "kindLabel": "Category type",
     "parentNone": "None — top-level category",
     "nameLabel": "Category name",
     "iconLabel": "Icon",
@@ -43,7 +45,7 @@
     "preview": "Preview",
     "addTitle": "Add category",
     "addSubTitle": "Add subcategory",
-    "addDesc": "Create a category or pick a parent to build nested levels.",
+    "addDesc": "Choose a top-level category or nest it under an existing one. It is saved for you immediately, and new names are reviewed for the default catalog.",
     "addSubDesc": "Add a subcategory under the selected parent.",
     "save": "Save category",
     "saveChanges": "Save changes",
@@ -61,6 +63,15 @@
     "columnType": "Type",
     "columnParent": "Under",
     "columnActions": "Actions"
+  },
+  "admin": {
+    "suggestionsTitle": "Review new categories",
+    "suggestionsDesc": "The category is saved for the user immediately. Approving adds it to the default catalog for new accounts.",
+    "suggestionsEmpty": "No pending suggestions.",
+    "approve": "Add to defaults",
+    "reject": "Reject",
+    "catalogTitle": "Default categories",
+    "catalogDesc": "Shown during onboarding for new accounts."
   },
   "dashboard": {
     "showBalances": "Show balances",
@@ -363,7 +374,10 @@
     "walletReconcileAction": "Reconcile wallets",
     "recurringDueTitle": "Recurring transactions due",
     "recurringDueDesc": "{count} transactions waiting to be recorded",
-    "recurringDueAction": "Record transactions"
+    "recurringDueAction": "Record transactions",
+    "categorySuggestionTitle": "Category suggestions pending review",
+    "categorySuggestionDesc": "{count} new categories from users",
+    "categorySuggestionAction": "Review categories"
   },
   "pwa": {
     "installTitle": "Install Masrofy on your device",

@@ -29,6 +29,7 @@ export function buildDashboardAlerts({
   staleReconciliationDays = 30,
   upcomingCollectionDays = 7,
   t,
+  pendingCategorySuggestions = 0,
 }: {
   planComparison: PlanComparison;
   investments: Investment[];
@@ -38,6 +39,7 @@ export function buildDashboardAlerts({
   staleReconciliationDays?: number;
   upcomingCollectionDays?: number;
   t: Translator;
+  pendingCategorySuggestions?: number;
 }): DashboardAlert[] {
   const alerts: DashboardAlert[] = [];
 
@@ -131,6 +133,20 @@ export function buildDashboardAlerts({
             }),
       actionLabel: t("alertItems.walletReconcileAction"),
       href: "/wallets",
+    });
+  }
+
+  if (pendingCategorySuggestions > 0) {
+    alerts.unshift({
+      id: "category-suggestions",
+      tone: "indigo",
+      icon: "🏷️",
+      title: t("alertItems.categorySuggestionTitle"),
+      description: t("alertItems.categorySuggestionDesc", {
+        count: String(pendingCategorySuggestions),
+      }),
+      actionLabel: t("alertItems.categorySuggestionAction"),
+      href: "/admin/categories",
     });
   }
 

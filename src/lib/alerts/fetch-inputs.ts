@@ -12,12 +12,13 @@ import type {
 import { getMonthRange, normalizeMonthStartDay } from "@/lib/calendar";
 
 export type AlertInputs = {
-  profile: { currency?: string | null; locale?: string | null } | null;
+  profile: { currency?: string | null; locale?: string | null; is_admin?: boolean | null } | null;
   planComparison: PlanComparison;
   investments: Investment[];
   wallets: Wallet[];
   reconciliations: WalletReconciliation[];
   dueRecurrings: RecurringTransaction[];
+  pendingCategorySuggestions: number;
 };
 
 function filterMonthTransactions(transactions: Transaction[] | null | undefined) {
@@ -31,7 +32,7 @@ export async function fetchAlertInputs(
 ): Promise<AlertInputs> {
   const { data: profile } = await supabase
     .from("profiles")
-    .select("currency, locale, month_start_day")
+    .select("currency, locale, month_start_day, is_admin")
     .maybeSingle();
   const month = getMonthRange(new Date(), "ar", profile?.month_start_day);
   const today = new Date().toISOString().slice(0, 10);
@@ -75,6 +76,16 @@ export async function fetchAlertInputs(
     normalizeMonthStartDay(profile?.month_start_day),
   );
 
+  let pendingCategorySuggestions = 0;
+
+  if (profile?.is_admin) {
+    const { count } = await supabase
+      .from("category_suggestions")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending");
+    pendingCategorySuggestions = count ?? 0;
+  }
+
   return {
     profile: profile ?? null,
     planComparison,
@@ -82,5 +93,6 @@ export async function fetchAlertInputs(
     wallets: (wallets ?? []) as Wallet[],
     reconciliations: (reconciliationRows ?? []) as WalletReconciliation[],
     dueRecurrings: (dueRecurringRows ?? []) as RecurringTransaction[],
+    pendingCategorySuggestions,
   };
 }

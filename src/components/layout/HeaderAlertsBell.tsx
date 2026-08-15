@@ -2,11 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import AlertsDropdownPanel from "@/components/layout/AlertsDropdownPanel";
-import { useTranslations } from "@/components/i18n/LocaleProvider";
+import { useTranslations, useLocale } from "@/components/i18n/LocaleProvider";
+import { useDueRecurringNotifications } from "@/hooks/useDueRecurringNotifications";
 import { useHeaderAlerts } from "@/hooks/useHeaderAlerts";
 
 export default function HeaderAlertsBell() {
   const t = useTranslations();
+  const { locale } = useLocale();
   const {
     alerts,
     dueRecurrings,
@@ -17,6 +19,7 @@ export default function HeaderAlertsBell() {
     registerDue,
     skipDue,
   } = useHeaderAlerts();
+  useDueRecurringNotifications(dueRecurrings, locale);
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 

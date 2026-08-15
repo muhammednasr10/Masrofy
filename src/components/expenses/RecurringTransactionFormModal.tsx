@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent } from "react";
+import { useTranslations } from "@/components/i18n/LocaleProvider";
 import ModalShell from "@/components/ui/ModalShell";
 import WalletSelect from "@/components/wallets/WalletSelect";
 import CategorySearchSelect from "@/components/categories/CategorySearchSelect";
@@ -9,6 +10,7 @@ import type { Category, TransactionType, Wallet } from "@/lib/types/database";
 import type { RecurringFormState } from "@/lib/recurring";
 
 type RecurringTransactionFormModalProps = {
+  mode?: "add" | "edit";
   form: RecurringFormState;
   wallets: Wallet[];
   categories: Category[];
@@ -19,6 +21,7 @@ type RecurringTransactionFormModalProps = {
 };
 
 export default function RecurringTransactionFormModal({
+  mode = "add",
   form,
   wallets,
   categories,
@@ -27,13 +30,18 @@ export default function RecurringTransactionFormModal({
   onSubmit,
   onClose,
 }: RecurringTransactionFormModalProps) {
+  const t = useTranslations();
+  const isEdit = mode === "edit";
+
   return (
     <ModalShell onClose={onClose} maxWidthClassName="sm:max-w-lg">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-semibold text-slate-900">عملية متكررة جديدة</h2>
+          <h2 className="text-xl font-semibold text-slate-900">
+            {isEdit ? t("expenses.recurringEditTitle") : t("expenses.recurringAddTitle")}
+          </h2>
           <p className="mt-1 text-sm text-slate-500">
-            إيجار، اشتراكات، راتب — سجّلها مرة وتذكّرك كل فترة.
+            {isEdit ? t("expenses.recurringEditDesc") : t("expenses.recurringAddDesc")}
           </p>
         </div>
         <button
@@ -132,7 +140,9 @@ export default function RecurringTransactionFormModal({
 
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block space-y-2">
-            <span className="text-sm font-medium text-slate-700">تاريخ البداية</span>
+            <span className="text-sm font-medium text-slate-700">
+              {isEdit ? t("expenses.recurringNextDue") : t("expenses.recurringStartDate")}
+            </span>
             <input
               type="date"
               required
@@ -170,7 +180,11 @@ export default function RecurringTransactionFormModal({
             disabled={submitting}
             className="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60"
           >
-            {submitting ? "جاري الحفظ..." : "حفظ"}
+            {submitting
+              ? t("expenses.formSaving")
+              : isEdit
+                ? t("expenses.formSaveChanges")
+                : t("expenses.formSave")}
           </button>
           <button
             type="button"

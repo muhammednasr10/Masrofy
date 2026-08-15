@@ -4,6 +4,7 @@ import Link from "next/link";
 import AccountAppSection from "@/components/account/AccountAppSection";
 import AccountDataSection from "@/components/account/AccountDataSection";
 import AccountLanguageSection from "@/components/account/AccountLanguageSection";
+import AccountNotificationsSection from "@/components/account/AccountNotificationsSection";
 import AccountProfileForm from "@/components/account/AccountProfileForm";
 import AccountProfileHeader from "@/components/account/AccountProfileHeader";
 import AccountSecuritySection from "@/components/account/AccountSecuritySection";
@@ -49,6 +50,8 @@ export default function AccountPage() {
       />
 
       <AccountLanguageSection />
+
+      <AccountNotificationsSection />
 
       <AccountSecuritySection
         email={account.email}

@@ -4,9 +4,11 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
   buildRecurringPayload,
+  buildRecurringUpdatePayload,
   emptyRecurringForm,
   getDueRecurringTransactions,
   registerRecurringDueTransaction,
+  recurringToFormState,
   skipRecurringDueTransaction,
   type RecurringFormState,
 } from "@/lib/recurring";
@@ -28,6 +30,7 @@ export function useRecurringTransactions({
   const [submitting, setSubmitting] = useState(false);
   const [actingId, setActingId] = useState<string | null>(null);
   const [showFormModal, setShowFormModal] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<RecurringFormState>(() =>
     emptyRecurringForm(defaultWalletId, categories[0]?.id ?? ""),
   );
@@ -57,6 +60,7 @@ export function useRecurringTransactions({
 
   useEffect(() => {
     if (!showFormModal) {
+      setEditingId(null);
       setForm(emptyRecurringForm(defaultWalletId, categories[0]?.id ?? ""));
     }
   }, [showFormModal, defaultWalletId, categories]);
@@ -70,6 +74,16 @@ export function useRecurringTransactions({
   const openFormModal = useCallback(() => {
     setError(null);
     setMessage(null);
+    setEditingId(null);
+    setForm(emptyRecurringForm(defaultWalletId, categories[0]?.id ?? ""));
+    setShowFormModal(true);
+  }, [defaultWalletId, categories]);
+
+  const openEditModal = useCallback((recurring: RecurringTransaction) => {
+    setError(null);
+    setMessage(null);
+    setEditingId(recurring.id);
+    setForm(recurringToFormState(recurring));
     setShowFormModal(true);
   }, []);
 
@@ -77,7 +91,7 @@ export function useRecurringTransactions({
     setShowFormModal(false);
   }, []);
 
-  const handleCreate = useCallback(
+  const handleSave = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
       setSubmitting(true);
@@ -107,31 +121,39 @@ export function useRecurringTransactions({
         return;
       }
 
-      const { data, error: insertError } = await supabase
-        .from("recurring_transactions")
-        .insert({
-          user_id: user.id,
-          ...buildRecurringPayload(form),
-        })
+      const query = editingId
+        ? supabase
+            .from("recurring_transactions")
+            .update(buildRecurringUpdatePayload(form))
+            .eq("id", editingId)
+        : supabase.from("recurring_transactions").insert({
+            user_id: user.id,
+            ...buildRecurringPayload(form),
+          });
+
+      const { data, error: saveError } = await query
         .select("*, categories(name, icon, color), wallets(name, icon, color)")
         .single();
 
-      if (insertError) {
-        setError(insertError.message);
+      if (saveError) {
+        setError(saveError.message);
         setSubmitting(false);
         return;
       }
 
+      const saved = data as RecurringTransaction;
+
       setRecurrings((current) =>
-        [...current, data as RecurringTransaction].sort((a, b) =>
-          a.next_due_date.localeCompare(b.next_due_date),
-        ),
+        (editingId
+          ? current.map((item) => (item.id === editingId ? saved : item))
+          : [...current, saved]
+        ).sort((a, b) => a.next_due_date.localeCompare(b.next_due_date)),
       );
-      setMessage("تمت إضافة العملية المتكررة.");
+      setMessage(editingId ? "تم حفظ تعديلات العملية المتكررة." : "تمت إضافة العملية المتكررة.");
       closeFormModal();
       setSubmitting(false);
     },
-    [form, closeFormModal],
+    [form, editingId, closeFormModal],
   );
 
   const registerDue = useCallback(
@@ -248,14 +270,16 @@ export function useRecurringTransactions({
     loading,
     submitting,
     actingId,
+    editingId,
     showFormModal,
     form,
     error,
     message,
     setForm,
     openFormModal,
+    openEditModal,
     closeFormModal,
-    handleCreate,
+    handleSave,
     registerDue,
     skipDue,
     toggleActive,

@@ -170,7 +170,14 @@
     "pwaInstallShort": "تثبيت",
     "pwaInstallShortIos": "إضافة",
     "pwaHowToInstall": "كيف أثبت التطبيق؟",
-    "pwaUnavailable": "التثبيت متاح من Chrome أو Edge على Android، أو Safari على iPhone."
+    "pwaUnavailable": "التثبيت متاح من Chrome أو Edge على Android، أو Safari على iPhone.",
+    "notificationsTitle": "إشعارات الاستحقاق",
+    "notificationsSubtitle": "نبّهك لما الإيجار أو الاشتراك أو أي عملية متكررة تستحق — حتى لو التطبيق مش مفتوح.",
+    "notificationsEnable": "تفعيل الإشعارات",
+    "notificationsDisable": "إيقاف الإشعارات",
+    "notificationsEnabled": "الإشعارات مفعّلة على هذا الجهاز.",
+    "notificationsBlocked": "الإشعارات محظورة من المتصفح. فعّلها من إعدادات الموقع ثم أعد المحاولة.",
+    "notificationsUnsupported": "هذا المتصفح لا يدعم الإشعارات."
   },
   "expenses": {
     "loading": "جاري تحميل المصروفات...",
@@ -252,7 +259,18 @@
     "addCategory": "+ فئة جديدة",
     "categoryLoginRequired": "يجب تسجيل الدخول أولاً.",
     "categorySaveFailed": "تعذر حفظ الفئة.",
-    "manageWallets": "إدارة المحافظ"
+    "manageWallets": "إدارة المحافظ",
+    "recurringMarkDone": "تم — تسجيل كمصروف أو دخل",
+    "recurringPause": "إيقاف",
+    "recurringResume": "تفعيل",
+    "recurringDelete": "حذف",
+    "recurringEdit": "تعديل",
+    "recurringAddTitle": "عملية متكررة جديدة",
+    "recurringAddDesc": "إيجار، اشتراكات، راتب — سجّلها مرة وتذكّرك كل فترة.",
+    "recurringEditTitle": "تعديل العملية المتكررة",
+    "recurringEditDesc": "عدّل المبلغ أو المحفظة أو الموعد القادم بدون ما تمسح العملية.",
+    "recurringNextDue": "الموعد القادم",
+    "recurringStartDate": "تاريخ البداية"
   },
   "wallets": {
     "loading": "جاري تحميل المحافظ...",
@@ -321,7 +339,9 @@
     "postponeDue": "تأجيل",
     "dueOn": "مستحق: {date}",
     "alreadyRegistered": "تم تسجيل هذه الدفعة مسبقًا",
-    "authRequired": "يجب تسجيل الدخول أولاً"
+    "authRequired": "يجب تسجيل الدخول أولاً",
+    "enableNotifications": "تفعيل الإشعارات",
+    "enableNotificationsHint": "فعّل الإشعارات عشان توصلك تنبيه لما العملية المتكررة تستحق."
   },
   "alertItems": {
     "planOverBudgetTitle": "تجاوزت خطة المصروفات",

@@ -1,4 +1,4 @@
-const CACHE_NAME = "masrofy-shell-v2";
+const CACHE_NAME = "masrofy-shell-v3";
 const SHELL_URLS = [
   "/",
   "/dashboard",
@@ -10,7 +10,7 @@ const SHELL_URLS = [
 
 const BYPASS_PREFIXES = ["/auth/", "/api/", "/login", "/register", "/forgot-password", "/reset-password"];
 
-function shouldBypassServiceWorker(url: URL) {
+function shouldBypassServiceWorker(url) {
   return BYPASS_PREFIXES.some((prefix) => url.pathname.startsWith(prefix));
 }
 
@@ -66,5 +66,53 @@ self.addEventListener("fetch", (event) => {
 
         throw new Error("Offline and no cached response available.");
       }),
+  );
+});
+
+self.addEventListener("push", (event) => {
+  const fallback = {
+    title: "Masrofy",
+    body: "عملية متكررة مستحقة",
+    url: "/expenses",
+    tag: "masrofy-due",
+  };
+
+  let payload = fallback;
+
+  try {
+    payload = { ...fallback, ...(event.data ? event.data.json() : {}) };
+  } catch {
+    payload = fallback;
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      tag: payload.tag,
+      data: { url: payload.url || "/expenses" },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || "/expenses";
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ("focus" in client) {
+          if ("navigate" in client) {
+            return client.navigate(targetUrl).then((opened) => opened.focus());
+          }
+
+          return client.focus();
+        }
+      }
+
+      return self.clients.openWindow(targetUrl);
+    }),
   );
 });

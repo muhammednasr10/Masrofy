@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "@/components/i18n/LocaleProvider";
+import IconActionButton from "@/components/ui/IconActionButton";
 import { useFormat } from "@/hooks/useFormat";
 import {
   getDueStatusLabel,
@@ -78,23 +79,21 @@ export default function DueRecurringAlertsList({
                 {t("alerts.dueOn", { date: formatDate(recurring.next_due_date) })}
               </p>
 
-              <div className="mt-3 flex gap-2">
-                <button
-                  type="button"
+              <div className="mt-3 flex items-center gap-1">
+                <IconActionButton
+                  icon="✓"
+                  label={t("alerts.registerDue")}
+                  tone="emerald"
                   disabled={actingId === recurring.id}
                   onClick={() => onRegister(recurring)}
-                  className="flex-1 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60"
-                >
-                  {actingId === recurring.id ? "..." : t("alerts.registerDue")}
-                </button>
-                <button
-                  type="button"
+                />
+                <IconActionButton
+                  icon="⏭"
+                  label={t("alerts.postponeDue")}
+                  tone="slate"
                   disabled={actingId === recurring.id}
                   onClick={() => onSkip(recurring)}
-                  className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
-                >
-                  {t("alerts.postponeDue")}
-                </button>
+                />
               </div>
             </li>
           );

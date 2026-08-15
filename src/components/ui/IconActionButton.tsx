@@ -14,17 +14,20 @@ export default function IconActionButton({
   label,
   onClick,
   tone = "slate",
+  disabled = false,
 }: {
   icon: string;
   label: string;
   onClick: () => void;
   tone?: IconActionTone;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`flex h-9 w-9 items-center justify-center rounded-lg text-base transition ${toneClasses[tone]}`}
+      disabled={disabled}
+      className={`flex h-9 w-9 items-center justify-center rounded-lg text-base transition disabled:pointer-events-none disabled:opacity-40 ${toneClasses[tone]}`}
       aria-label={label}
       title={label}
     >

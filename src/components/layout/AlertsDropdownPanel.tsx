@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import DueNotificationPrompt from "@/components/layout/DueNotificationPrompt";
 import DueRecurringAlertsList from "@/components/layout/DueRecurringAlertsList";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import type { DashboardAlert } from "@/lib/alerts/dashboard";
@@ -45,6 +46,8 @@ export default function AlertsDropdownPanel({
         </p>
         <p className="mt-0.5 text-xs text-slate-500">{t("alerts.subtitle")}</p>
       </div>
+
+      <DueNotificationPrompt dueCount={dueRecurrings.length} />
 
       <DueRecurringAlertsList
         dueRecurrings={dueRecurrings}

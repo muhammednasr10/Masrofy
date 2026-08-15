@@ -175,6 +175,9 @@ function ExpensesPageContent() {
       <RecurringTransactionsSection
         recurrings={recurring.recurrings}
         currency={currency}
+        actingId={recurring.actingId}
+        onRegisterDue={recurring.registerDue}
+        onEdit={recurring.openEditModal}
         onToggleActive={recurring.toggleActive}
         onDelete={recurring.deleteRecurring}
       />
@@ -211,12 +214,13 @@ function ExpensesPageContent() {
 
       {recurring.showFormModal ? (
         <RecurringTransactionFormModal
+          mode={recurring.editingId ? "edit" : "add"}
           form={recurring.form}
           wallets={wallets}
           categories={categories}
           submitting={recurring.submitting}
           onChange={recurring.setForm}
-          onSubmit={recurring.handleCreate}
+          onSubmit={recurring.handleSave}
           onClose={recurring.closeFormModal}
         />
       ) : null}

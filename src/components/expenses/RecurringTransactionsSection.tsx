@@ -1,12 +1,17 @@
 "use client";
 
+import { useTranslations } from "@/components/i18n/LocaleProvider";
+import IconActionButton from "@/components/ui/IconActionButton";
+import { getFrequencyLabel } from "@/lib/recurring";
 import type { RecurringTransaction } from "@/lib/types/database";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
-import { getFrequencyLabel } from "@/lib/recurring";
 
 type RecurringTransactionsSectionProps = {
   recurrings: RecurringTransaction[];
   currency: string;
+  actingId?: string | null;
+  onRegisterDue: (recurring: RecurringTransaction) => void;
+  onEdit: (recurring: RecurringTransaction) => void;
   onToggleActive: (recurring: RecurringTransaction) => void;
   onDelete: (id: string) => void;
   onOpenAdd?: () => void;
@@ -16,11 +21,17 @@ type RecurringTransactionsSectionProps = {
 export default function RecurringTransactionsSection({
   recurrings,
   currency,
+  actingId = null,
+  onRegisterDue,
+  onEdit,
   onToggleActive,
   onDelete,
   onOpenAdd,
   showAddButton = false,
 }: RecurringTransactionsSectionProps) {
+  const t = useTranslations();
+  const isActing = (id: string) => actingId === id;
+
   return (
     <section className="rounded-3xl border border-white bg-white p-4 shadow-sm sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -58,8 +69,8 @@ export default function RecurringTransactionsSection({
                 <div className="min-w-0">
                   <p className="font-medium text-slate-900">{recurring.title}</p>
                   <p className="mt-1 text-sm text-slate-600">
-                    {recurring.type === "expense" ? "مصروف" : "دخل"} •{" "}
-                    {getFrequencyLabel(recurring.frequency)} •{" "}
+                    {recurring.type === "expense" ? t("expenses.typeExpense") : t("expenses.typeIncome")}{" "}
+                    • {getFrequencyLabel(recurring.frequency)} •{" "}
                     {formatCurrency(Number(recurring.amount), currency)}
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
@@ -74,21 +85,40 @@ export default function RecurringTransactionsSection({
                   </p>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
+                <div className="flex shrink-0 items-center gap-1 self-end sm:self-start">
+                  {recurring.is_active ? (
+                    <IconActionButton
+                      icon="✓"
+                      label={t("expenses.recurringMarkDone")}
+                      tone="emerald"
+                      disabled={isActing(recurring.id)}
+                      onClick={() => onRegisterDue(recurring)}
+                    />
+                  ) : null}
+                  <IconActionButton
+                    icon="✏️"
+                    label={t("expenses.recurringEdit")}
+                    disabled={isActing(recurring.id)}
+                    onClick={() => onEdit(recurring)}
+                  />
+                  <IconActionButton
+                    icon={recurring.is_active ? "⏸" : "▶"}
+                    label={
+                      recurring.is_active
+                        ? t("expenses.recurringPause")
+                        : t("expenses.recurringResume")
+                    }
+                    tone="amber"
+                    disabled={isActing(recurring.id)}
                     onClick={() => onToggleActive(recurring)}
-                    className="rounded-2xl border border-slate-200 px-3 py-2 text-sm text-slate-600 transition hover:bg-white"
-                  >
-                    {recurring.is_active ? "إيقاف" : "تفعيل"}
-                  </button>
-                  <button
-                    type="button"
+                  />
+                  <IconActionButton
+                    icon="🗑"
+                    label={t("expenses.recurringDelete")}
+                    tone="red"
+                    disabled={isActing(recurring.id)}
                     onClick={() => onDelete(recurring.id)}
-                    className="rounded-2xl border border-red-100 px-3 py-2 text-sm text-red-600 transition hover:bg-red-50"
-                  >
-                    حذف
-                  </button>
+                  />
                 </div>
               </div>
             </article>

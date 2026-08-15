@@ -170,7 +170,14 @@
     "pwaInstallShort": "Install",
     "pwaInstallShortIos": "Add",
     "pwaHowToInstall": "How to install?",
-    "pwaUnavailable": "Install is available from Chrome/Edge on Android or Safari on iPhone."
+    "pwaUnavailable": "Install is available from Chrome/Edge on Android or Safari on iPhone.",
+    "notificationsTitle": "Due notifications",
+    "notificationsSubtitle": "Get notified when rent, subscriptions, or other recurring transactions are due — even if the app is closed.",
+    "notificationsEnable": "Enable notifications",
+    "notificationsDisable": "Turn off notifications",
+    "notificationsEnabled": "Notifications are enabled on this device.",
+    "notificationsBlocked": "Notifications are blocked in the browser. Allow them in site settings, then try again.",
+    "notificationsUnsupported": "This browser does not support notifications."
   },
   "expenses": {
     "loading": "Loading expenses...",
@@ -252,7 +259,18 @@
     "addCategory": "+ New category",
     "categoryLoginRequired": "You must sign in first.",
     "categorySaveFailed": "Could not save the category.",
-    "manageWallets": "Manage wallets"
+    "manageWallets": "Manage wallets",
+    "recurringMarkDone": "Done — record as expense or income",
+    "recurringPause": "Pause",
+    "recurringResume": "Resume",
+    "recurringDelete": "Delete",
+    "recurringEdit": "Edit",
+    "recurringAddTitle": "New recurring transaction",
+    "recurringAddDesc": "Rent, subscriptions, salary — save once and get reminded each period.",
+    "recurringEditTitle": "Edit recurring transaction",
+    "recurringEditDesc": "Update the amount, wallet, or next due date without deleting it.",
+    "recurringNextDue": "Next due date",
+    "recurringStartDate": "Start date"
   },
   "wallets": {
     "loading": "Loading wallets...",
@@ -321,7 +339,9 @@
     "postponeDue": "Postpone",
     "dueOn": "Due: {date}",
     "alreadyRegistered": "This payment was already recorded",
-    "authRequired": "Please sign in first"
+    "authRequired": "Please sign in first",
+    "enableNotifications": "Enable notifications",
+    "enableNotificationsHint": "Enable notifications to get an alert when a recurring transaction is due."
   },
   "alertItems": {
     "planOverBudgetTitle": "Over monthly spending plan",

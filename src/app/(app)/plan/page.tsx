@@ -33,6 +33,7 @@ export default function PlanPage() {
     annualApplying,
     annualError,
     hasAnnualTemplate,
+    monthStartDay,
     setPlanMonthKey,
     setPlannedIncome,
     handleCategoryPlanChange,
@@ -58,6 +59,7 @@ export default function PlanPage() {
       <PlanMonthPicker
         planMonthKey={planMonthKey}
         monthLabel={comparison.monthLabel}
+        monthStartDay={monthStartDay}
         onChange={setPlanMonthKey}
         onOpenAnnualPlan={openAnnualModal}
         planYear={planYear}

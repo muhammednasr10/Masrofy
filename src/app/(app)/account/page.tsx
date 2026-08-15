@@ -37,6 +37,7 @@ export default function AccountPage() {
         email={account.email}
         defaultWalletId={account.defaultWalletId}
         currency={account.currency}
+        monthStartDay={account.monthStartDay}
         wallets={account.wallets}
         createdAt={account.createdAt}
         saving={account.saving}
@@ -45,6 +46,7 @@ export default function AccountPage() {
         onFullNameChange={account.setFullName}
         onDefaultWalletChange={account.setDefaultWalletId}
         onCurrencyChange={account.setCurrency}
+        onMonthStartDayChange={account.setMonthStartDay}
         onSubmit={account.handleSubmit}
         onSignOut={account.handleSignOut}
       />

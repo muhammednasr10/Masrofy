@@ -22,6 +22,7 @@ export function useAccountPage() {
   const [fullName, setFullName] = useState("");
   const [currency, setCurrency] = useState("EGP");
   const [defaultWalletId, setDefaultWalletId] = useState("");
+  const [monthStartDay, setMonthStartDay] = useState(1);
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [createdAt, setCreatedAt] = useState<string | null>(null);
   const [stats, setStats] = useState<AccountStats>({
@@ -44,6 +45,7 @@ export function useAccountPage() {
     setFullName(data.fullName);
     setCurrency(data.currency);
     setDefaultWalletId(data.defaultWalletId);
+    setMonthStartDay(data.monthStartDay);
     setWallets(data.wallets);
     setCreatedAt(data.createdAt);
     setStats(data.stats);
@@ -69,6 +71,7 @@ export function useAccountPage() {
       fullName,
       currency,
       defaultWalletId,
+      monthStartDay,
     });
 
     if (result.error) {
@@ -106,6 +109,7 @@ export function useAccountPage() {
     fullName,
     currency,
     defaultWalletId,
+    monthStartDay,
     wallets,
     createdAt,
     stats,
@@ -113,6 +117,7 @@ export function useAccountPage() {
     setFullName,
     setCurrency,
     setDefaultWalletId,
+    setMonthStartDay,
     handleSubmit,
     handleSignOut,
     handleSectionFeedback,

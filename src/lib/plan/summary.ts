@@ -1,22 +1,6 @@
+import type { Locale } from "@/i18n/config";
 import type { Category, MonthlyPlan, PlanComparison, PlanItem, Transaction } from "@/lib/types/database";
-import { getMonthRange } from "@/lib/utils/format";
-
-export function getPlanMonthKey(referenceDate = new Date()) {
-  const year = referenceDate.getFullYear();
-  const month = String(referenceDate.getMonth() + 1).padStart(2, "0");
-  return `${year}-${month}`;
-}
-
-export function parsePlanMonthKey(planMonthKey: string) {
-  const [year, month] = planMonthKey.split("-").map(Number);
-  return new Date(year, month - 1, 1);
-}
-
-export function shiftPlanMonthKey(planMonthKey: string, offset: number) {
-  const date = parsePlanMonthKey(planMonthKey);
-  date.setMonth(date.getMonth() + offset);
-  return getPlanMonthKey(date);
-}
+import { getMonthRange, isDateInMonthRange } from "@/lib/calendar";
 
 export function buildCategoryPlanMap(planItems: PlanItem[]) {
   const map = new Map<string, number>();
@@ -34,18 +18,20 @@ export function buildPlanComparison({
   planItems,
   transactions,
   referenceDate = new Date(),
+  monthStartDay = 1,
+  locale = "ar",
 }: {
   categories: Category[];
   plan: MonthlyPlan | null;
   planItems: PlanItem[];
   transactions: Transaction[];
   referenceDate?: Date;
+  monthStartDay?: number;
+  locale?: Locale;
 }): PlanComparison {
-  const month = getMonthRange(referenceDate);
-  const monthTransactions = transactions.filter(
-    (transaction) =>
-      transaction.transaction_date >= month.start &&
-      transaction.transaction_date <= month.end,
+  const month = getMonthRange(referenceDate, locale, monthStartDay);
+  const monthTransactions = transactions.filter((transaction) =>
+    isDateInMonthRange(transaction.transaction_date, month),
   );
 
   const plannedByCategory = buildCategoryPlanMap(planItems);

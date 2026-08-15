@@ -1,4 +1,4 @@
-import { buildPlanComparison } from "@/lib/plan";
+import { buildPlanComparison } from "@/lib/plan/summary";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Category, MonthlyPlan, PlanComparison, PlanItem, Transaction } from "@/lib/types/database";
 
@@ -7,6 +7,7 @@ export async function loadMonthPlanComparison(
   planMonth: string,
   categories: Category[],
   monthTransactions: Transaction[],
+  monthStartDay = 1,
 ): Promise<PlanComparison> {
   const { data: planRow } = await supabase
     .from("monthly_plans")
@@ -31,5 +32,6 @@ export async function loadMonthPlanComparison(
     plan,
     planItems,
     transactions: monthTransactions,
+    monthStartDay,
   });
 }

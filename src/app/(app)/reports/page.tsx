@@ -26,6 +26,7 @@ export default function ReportsPage() {
     currency,
     planMonthKey,
     setPlanMonthKey,
+    monthStartDay,
     monthLabel,
     planYear,
     monthSummary,
@@ -67,6 +68,7 @@ export default function ReportsPage() {
       <PlanMonthPicker
         planMonthKey={planMonthKey}
         monthLabel={monthLabel}
+        monthStartDay={monthStartDay}
         onChange={setPlanMonthKey}
       />
 

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Profile, Wallet } from "@/lib/types/database";
+import { normalizeMonthStartDay } from "@/lib/calendar";
 
 export type AccountStats = {
   categoriesCount: number;
@@ -14,6 +15,7 @@ export type AccountPageData = {
   currency: string;
   defaultWalletId: string;
   locale: string;
+  monthStartDay: number;
   wallets: Wallet[];
   createdAt: string | null;
   stats: AccountStats;
@@ -58,6 +60,7 @@ export async function loadAccountPageData(
       typedWallets[0]?.id ??
       "",
     locale: typedProfile?.locale ?? "ar",
+    monthStartDay: normalizeMonthStartDay(typedProfile?.month_start_day),
     wallets: typedWallets,
     createdAt: user.created_at ?? null,
     stats: {
@@ -74,6 +77,7 @@ export async function saveAccountProfile(
     fullName: string;
     currency: string;
     defaultWalletId: string;
+    monthStartDay: number;
   },
 ) {
   const {
@@ -90,6 +94,7 @@ export async function saveAccountProfile(
       full_name: params.fullName.trim() || null,
       currency: params.currency,
       default_wallet_id: params.defaultWalletId || null,
+      month_start_day: normalizeMonthStartDay(params.monthStartDay),
     })
     .eq("id", user.id);
 

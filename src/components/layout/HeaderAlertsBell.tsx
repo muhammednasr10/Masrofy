@@ -22,6 +22,7 @@ export default function HeaderAlertsBell() {
   useDueRecurringNotifications(dueRecurrings, locale);
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) {
@@ -29,9 +30,13 @@ export default function HeaderAlertsBell() {
     }
 
     function handleClickOutside(event: MouseEvent) {
-      if (!containerRef.current?.contains(event.target as Node)) {
-        setOpen(false);
+      const target = event.target as Node;
+
+      if (containerRef.current?.contains(target) || panelRef.current?.contains(target)) {
+        return;
       }
+
+      setOpen(false);
     }
 
     function handleEscape(event: KeyboardEvent) {
@@ -74,6 +79,8 @@ export default function HeaderAlertsBell() {
           currency={currency}
           actingId={actingId}
           actionError={actionError}
+          anchorRef={containerRef}
+          panelRef={panelRef}
           onRegisterDue={registerDue}
           onSkipDue={skipDue}
           onClose={() => setOpen(false)}

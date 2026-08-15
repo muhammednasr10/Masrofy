@@ -2,7 +2,6 @@ import DashboardView from "@/components/dashboard/DashboardView";
 import { loadDashboardData } from "@/lib/dashboard";
 import { getServerLocale } from "@/i18n/server";
 import { createClient } from "@/lib/supabase/server";
-import { getMonthRange } from "@/lib/utils/format";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -12,7 +11,6 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
 
   const data = await loadDashboardData(supabase, user?.id, locale);
-  const monthLabel = getMonthRange(new Date(), locale).label;
 
-  return <DashboardView monthLabel={monthLabel} data={data} />;
+  return <DashboardView monthLabel={data.monthLabel} data={data} />;
 }

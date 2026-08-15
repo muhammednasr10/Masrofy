@@ -5,7 +5,7 @@ import {
   ONBOARDING_WALLET_TYPES,
 } from "@/lib/onboarding/presets";
 import type { OnboardingSetupInput } from "@/lib/onboarding/types";
-import { getMonthRange } from "@/lib/utils/format";
+import { getMonthRange } from "@/lib/calendar";
 
 export async function completeOnboardingSetup(
   supabase: SupabaseClient,

@@ -34,7 +34,7 @@ export default function RecurringTransactionFormModal({
   const isEdit = mode === "edit";
 
   return (
-    <ModalShell onClose={onClose} maxWidthClassName="sm:max-w-lg">
+    <ModalShell onClose={onClose} maxWidthClassName="sm:max-w-lg" zIndexClassName="z-[60]">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold text-slate-900">

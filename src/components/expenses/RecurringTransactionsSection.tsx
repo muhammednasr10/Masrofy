@@ -2,11 +2,13 @@
 
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import IconActionButton from "@/components/ui/IconActionButton";
+import ModalShell from "@/components/ui/ModalShell";
 import { getFrequencyLabel } from "@/lib/recurring";
 import type { RecurringTransaction } from "@/lib/types/database";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
 
 type RecurringTransactionsSectionProps = {
+  open: boolean;
   recurrings: RecurringTransaction[];
   currency: string;
   actingId?: string | null;
@@ -14,11 +16,12 @@ type RecurringTransactionsSectionProps = {
   onEdit: (recurring: RecurringTransaction) => void;
   onToggleActive: (recurring: RecurringTransaction) => void;
   onDelete: (id: string) => void;
-  onOpenAdd?: () => void;
-  showAddButton?: boolean;
+  onOpenAdd: () => void;
+  onClose: () => void;
 };
 
 export default function RecurringTransactionsSection({
+  open,
   recurrings,
   currency,
   actingId = null,
@@ -27,29 +30,38 @@ export default function RecurringTransactionsSection({
   onToggleActive,
   onDelete,
   onOpenAdd,
-  showAddButton = false,
+  onClose,
 }: RecurringTransactionsSectionProps) {
   const t = useTranslations();
   const isActing = (id: string) => actingId === id;
 
+  if (!open) {
+    return null;
+  }
+
   return (
-    <section className="rounded-3xl border border-white bg-white p-4 shadow-sm sm:p-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <ModalShell onClose={onClose} maxWidthClassName="sm:max-w-2xl">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-slate-900">العمليات المتكررة</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            إيجار، اشتراكات، راتب — تُذكّرك تلقائيًا عند موعدها.
-          </p>
+          <h2 className="text-xl font-semibold text-slate-900">{t("expenses.recurringPanelTitle")}</h2>
+          <p className="mt-1 text-sm text-slate-500">{t("expenses.recurringPanelDesc")}</p>
         </div>
-        {showAddButton && onOpenAdd ? (
+        <div className="flex shrink-0 items-center gap-2">
           <button
             type="button"
             onClick={onOpenAdd}
-            className="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700"
+            className="rounded-2xl bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700"
           >
-            + إضافة متكررة
+            + {t("expenses.recurringAddInside")}
           </button>
-        ) : null}
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full px-3 py-1 text-sm text-slate-500 transition hover:bg-slate-100"
+          >
+            {t("common.close")}
+          </button>
+        </div>
       </div>
 
       {recurrings.length === 0 ? (
@@ -125,6 +137,6 @@ export default function RecurringTransactionsSection({
           ))}
         </div>
       )}
-    </section>
+    </ModalShell>
   );
 }

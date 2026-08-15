@@ -1,10 +1,11 @@
 "use client";
 
-import { getPlanMonthKey, parsePlanMonthKey, shiftPlanMonthKey } from "@/lib/plan";
+import { getPlanMonthKey, shiftPlanMonthKey } from "@/lib/calendar";
 
 type PlanMonthPickerProps = {
   planMonthKey: string;
   monthLabel: string;
+  monthStartDay?: number;
   onChange: (planMonthKey: string) => void;
   onOpenAnnualPlan?: () => void;
   planYear?: number;
@@ -14,6 +15,7 @@ type PlanMonthPickerProps = {
 export default function PlanMonthPicker({
   planMonthKey,
   monthLabel,
+  monthStartDay = 1,
   onChange,
   onOpenAnnualPlan,
   planYear,
@@ -30,14 +32,14 @@ export default function PlanMonthPicker({
         <div className="grid grid-cols-2 gap-2 sm:contents">
           <button
             type="button"
-            onClick={() => onChange(shiftPlanMonthKey(planMonthKey, -1))}
+            onClick={() => onChange(shiftPlanMonthKey(planMonthKey, -1, monthStartDay))}
             className="rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-600 transition hover:bg-slate-50"
           >
             الشهر السابق
           </button>
           <button
             type="button"
-            onClick={() => onChange(shiftPlanMonthKey(planMonthKey, 1))}
+            onClick={() => onChange(shiftPlanMonthKey(planMonthKey, 1, monthStartDay))}
             className="rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-600 transition hover:bg-slate-50"
           >
             الشهر التالي
@@ -53,7 +55,7 @@ export default function PlanMonthPicker({
 
         <button
           type="button"
-          onClick={() => onChange(getPlanMonthKey())}
+          onClick={() => onChange(getPlanMonthKey(new Date(), monthStartDay))}
           className="w-full rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 transition hover:bg-emerald-100 sm:w-auto"
         >
           الشهر الحالي
@@ -73,8 +75,4 @@ export default function PlanMonthPicker({
       </div>
     </div>
   );
-}
-
-export function planMonthKeyToDate(planMonthKey: string) {
-  return parsePlanMonthKey(planMonthKey);
 }

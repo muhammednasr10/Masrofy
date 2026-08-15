@@ -45,7 +45,7 @@ export default function ExpensesToolbar({
           onClick={onAddRecurring}
           className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-medium text-emerald-800 transition hover:bg-emerald-100"
         >
-          + {t("expenses.addRecurring")}
+          {t("expenses.addRecurring")}
         </button>
         <button
           type="button"

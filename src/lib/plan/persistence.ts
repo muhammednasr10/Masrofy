@@ -1,9 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getMonthStartFromPlanMonthKey, getYearMonthKeys } from "@/lib/calendar";
 import {
   buildAnnualTemplatePayloadItems,
   buildMonthlyPlanPayloadItems,
-  getMonthStartFromPlanMonthKey,
-  getYearMonthKeys,
 } from "@/lib/plan/annual";
 import { requireAuthenticatedUser } from "@/lib/supabase/auth";
 import type {
@@ -152,6 +151,7 @@ export async function applyAnnualTemplateToYear(
   annualPlannedIncome: string,
   annualNotes: string,
   annualCategoryPlans: Record<string, string>,
+  monthStartDay: unknown = 1,
 ) {
   await persistAnnualTemplate(
     supabase,
@@ -166,7 +166,7 @@ export async function applyAnnualTemplateToYear(
     await persistMonthlyPlan(
       supabase,
       categories,
-      getMonthStartFromPlanMonthKey(monthKey),
+      getMonthStartFromPlanMonthKey(monthKey, monthStartDay),
       annualPlannedIncome,
       annualNotes,
       annualCategoryPlans,

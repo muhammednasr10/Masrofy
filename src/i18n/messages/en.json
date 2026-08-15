@@ -147,6 +147,8 @@
     "profileTitle": "Account details",
     "defaultWallet": "Default wallet",
     "defaultCurrency": "Default currency",
+    "monthStartDay": "Month start day",
+    "monthStartDayHint": "Monthly summaries, plans, and reports will run from this day until the day before it next month. Day 1 is a normal calendar month.",
     "createdAt": "Account created: {date}",
     "saveChanges": "Save changes",
     "saving": "Saving...",
@@ -194,7 +196,7 @@
     "addTransaction": "Add transaction",
     "exportCsv": "Export CSV",
     "exportCurrency": "Currency",
-    "addRecurring": "Recurring",
+    "addRecurring": "Recurring transactions",
     "addModalTitle": "Add expense or income",
     "addModalSubtitle": "Choose wallet and category. Credit limits change with expenses and income.",
     "editModalTitle": "Edit transaction",
@@ -270,7 +272,10 @@
     "recurringEditTitle": "Edit recurring transaction",
     "recurringEditDesc": "Update the amount, wallet, or next due date without deleting it.",
     "recurringNextDue": "Next due date",
-    "recurringStartDate": "Start date"
+    "recurringStartDate": "Start date",
+    "recurringPanelTitle": "Recurring transactions",
+    "recurringPanelDesc": "Rent, subscriptions, salary — get reminded when they are due.",
+    "recurringAddInside": "Add recurring"
   },
   "wallets": {
     "loading": "Loading wallets...",

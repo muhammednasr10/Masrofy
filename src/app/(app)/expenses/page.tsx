@@ -22,6 +22,7 @@ function ExpensesPageContent() {
   const searchParams = useSearchParams();
   const { formatCurrency } = useFormat();
   const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [showRecurringPanel, setShowRecurringPanel] = useState(false);
   const wasSubmittingRef = useRef(false);
   const openedFromQueryRef = useRef(false);
 
@@ -145,7 +146,7 @@ function ExpensesPageContent() {
               closeTransactionModal();
               setShowTransactionModal(true);
             }}
-            onAddRecurring={recurring.openFormModal}
+            onAddRecurring={() => setShowRecurringPanel(true)}
             onImport={handleImportTransactions}
           />
         </div>
@@ -173,6 +174,7 @@ function ExpensesPageContent() {
       </section>
 
       <RecurringTransactionsSection
+        open={showRecurringPanel}
         recurrings={recurring.recurrings}
         currency={currency}
         actingId={recurring.actingId}
@@ -180,6 +182,8 @@ function ExpensesPageContent() {
         onEdit={recurring.openEditModal}
         onToggleActive={recurring.toggleActive}
         onDelete={recurring.deleteRecurring}
+        onOpenAdd={recurring.openFormModal}
+        onClose={() => setShowRecurringPanel(false)}
       />
 
       <TransactionFormModal

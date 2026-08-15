@@ -2,7 +2,6 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useLocale } from "@/components/i18n/LocaleProvider";
 import { createClient } from "@/lib/supabase/client";
 import {
   deleteTransactionAttachments,
@@ -21,6 +20,8 @@ import type { ParsedImportRow } from "@/lib/expenses/import-csv";
 import { usePageFeedback } from "@/hooks/usePageFeedback";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useSyncCompleteListener } from "@/hooks/useSyncCompleteListener";
+import { useCurrentMonthRange } from "@/hooks/useMonthPeriod";
+import { normalizeMonthStartDay } from "@/lib/calendar";
 import type { Category, Transaction, TransactionType, Wallet } from "@/lib/types/database";
 import { requireAuthenticatedUser } from "@/lib/supabase/auth";
 import {
@@ -30,15 +31,14 @@ import {
   saveExpensesCache,
   type OfflineTransaction,
 } from "@/lib/offline";
-import { getMonthRange } from "@/lib/utils/format";
 import { summarizeTransactions } from "@/lib/utils/summary";
 
 export function useExpensesPage() {
   const router = useRouter();
-  const { locale } = useLocale();
   const online = useNetworkStatus();
-  const month = useMemo(() => getMonthRange(new Date(), locale), [locale]);
   const { error, message, setError, setMessage, clearFeedback } = usePageFeedback();
+  const [monthStartDay, setMonthStartDay] = useState(1);
+  const month = useCurrentMonthRange(monthStartDay);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [wallets, setWallets] = useState<Wallet[]>([]);
@@ -78,6 +78,7 @@ export function useExpensesPage() {
           Transaction,
           "id" | "wallet_id" | "amount" | "type" | "transfer_role"
         >[];
+        monthStartDay?: number;
       },
       options?: { fromCache?: boolean },
     ) => {
@@ -88,6 +89,8 @@ export function useExpensesPage() {
       setMonthTransactions(snapshot.monthTransactions);
       setBalanceTransactions(snapshot.balanceTransactions);
       setUsingOfflineCache(Boolean(options?.fromCache));
+
+      setMonthStartDay(normalizeMonthStartDay(snapshot.monthStartDay));
 
       if (snapshot.categories[0]) {
         setCategoryId(snapshot.categories[0].id);
@@ -153,6 +156,10 @@ export function useExpensesPage() {
   useEffect(() => {
     void loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    setFilters(emptyTransactionFilters(month.start, month.end));
+  }, [month.end, month.start]);
 
   useSyncCompleteListener(loadData);
 

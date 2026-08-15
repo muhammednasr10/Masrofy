@@ -9,7 +9,7 @@ import type {
   Wallet,
   WalletReconciliation,
 } from "@/lib/types/database";
-import { getMonthRange } from "@/lib/utils/format";
+import { getMonthRange, normalizeMonthStartDay } from "@/lib/calendar";
 
 export type AlertInputs = {
   profile: { currency?: string | null; locale?: string | null } | null;
@@ -29,11 +29,14 @@ function filterMonthTransactions(transactions: Transaction[] | null | undefined)
 export async function fetchAlertInputs(
   supabase: SupabaseClient,
 ): Promise<AlertInputs> {
-  const month = getMonthRange();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("currency, locale, month_start_day")
+    .maybeSingle();
+  const month = getMonthRange(new Date(), "ar", profile?.month_start_day);
   const today = new Date().toISOString().slice(0, 10);
 
   const [
-    { data: profile },
     { data: transactions },
     { data: wallets },
     { data: investments },
@@ -41,7 +44,6 @@ export async function fetchAlertInputs(
     { data: dueRecurringRows },
     { data: reconciliationRows },
   ] = await Promise.all([
-    supabase.from("profiles").select("currency, locale").maybeSingle(),
     supabase
       .from("transactions")
       .select("*, categories(name, icon, color), wallets(name, icon, color)")
@@ -70,6 +72,7 @@ export async function fetchAlertInputs(
     month.start,
     categories,
     monthTransactions,
+    normalizeMonthStartDay(profile?.month_start_day),
   );
 
   return {

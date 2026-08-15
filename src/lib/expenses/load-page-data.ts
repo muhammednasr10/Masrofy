@@ -2,7 +2,7 @@ import { loadSignedAttachmentUrls } from "@/lib/attachments";
 import { loadExpensesCache, saveExpensesCache } from "@/lib/offline";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Category, Transaction, Wallet } from "@/lib/types/database";
-import { normalizeWallets } from "@/lib/wallets";
+import { getMonthRange, isDateInMonthRange, normalizeMonthStartDay } from "@/lib/calendar";
 import type { ExpensesPageSnapshot } from "@/lib/expenses/append-transaction";
 
 export type LoadExpensesPageResult =
@@ -39,25 +39,20 @@ export async function loadExpensesPageData(
       { data: categoryRows },
       { data: walletRows },
       { data: transactionRows },
-      { data: monthRows },
       { data: balanceRows },
     ] = await Promise.all([
-      supabase.from("profiles").select("currency, default_wallet_id").maybeSingle(),
+      supabase.from("profiles").select("currency, default_wallet_id, month_start_day").maybeSingle(),
       supabase.from("categories").select("*").order("sort_order", { ascending: true }),
       supabase.from("wallets").select("*").order("sort_order", { ascending: true }),
       supabase
         .from("transactions")
         .select("*, categories(name, icon, color), wallets(name, icon, color)")
         .order("transaction_date", { ascending: false }),
-      supabase
-        .from("transactions")
-        .select("*, categories(name, icon, color)")
-        .gte("transaction_date", monthStart)
-        .lte("transaction_date", monthEnd)
-        .order("transaction_date", { ascending: false }),
       supabase.from("transactions").select("id, wallet_id, amount, type, transfer_role"),
     ]);
 
+    const monthStartDay = normalizeMonthStartDay(profile?.month_start_day);
+    const month = getMonthRange(new Date(), "ar", monthStartDay);
     const expenseTransactions = ((transactionRows ?? []) as Transaction[]).filter(
       (transaction) => transaction.type !== "transfer",
     );
@@ -66,8 +61,8 @@ export async function loadExpensesPageData(
       expenseTransactions.map((transaction) => transaction.id),
     );
     const typedWallets = normalizeWallets((walletRows ?? []) as Wallet[]);
-    const monthTransactions = ((monthRows ?? []) as Transaction[]).filter(
-      (transaction) => transaction.type !== "transfer",
+    const monthTransactions = expenseTransactions.filter((transaction) =>
+      isDateInMonthRange(transaction.transaction_date, month),
     );
     const balanceTransactions = (balanceRows ?? []) as Pick<
       Transaction,
@@ -76,6 +71,7 @@ export async function loadExpensesPageData(
 
     const snapshot: ExpensesPageSnapshot = {
       currency: profile?.currency ?? "EGP",
+      monthStartDay,
       categories: (categoryRows ?? []) as Category[],
       wallets: typedWallets,
       transactions: expenseTransactions,
@@ -92,8 +88,8 @@ export async function loadExpensesPageData(
       transactions: snapshot.transactions,
       monthTransactions: snapshot.monthTransactions,
       balanceTransactions: snapshot.balanceTransactions,
-      monthStart,
-      monthEnd,
+      monthStart: month.start,
+      monthEnd: month.end,
     });
 
     return { kind: "success", snapshot, attachmentUrls };

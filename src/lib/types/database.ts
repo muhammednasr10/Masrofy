@@ -10,6 +10,7 @@ export type Profile = {
   default_wallet_id: string | null;
   onboarding_completed: boolean;
   locale: "ar" | "en";
+  month_start_day: number;
   created_at: string;
 };
 

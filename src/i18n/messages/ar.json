@@ -147,6 +147,8 @@
     "profileTitle": "معلومات الحساب",
     "defaultWallet": "المحفظة الافتراضية",
     "defaultCurrency": "العملة الافتراضية",
+    "monthStartDay": "أول يوم في الشهر",
+    "monthStartDayHint": "ملخص الشهر والخطة والتقارير هيتحسبوا من اليوم ده لليوم اللي قبله في الشهر التالي. يوم 1 يعني الشهر الميلادي العادي.",
     "createdAt": "تاريخ إنشاء الحساب: {date}",
     "saveChanges": "حفظ التعديلات",
     "saving": "جاري الحفظ...",
@@ -194,7 +196,7 @@
     "addTransaction": "إضافة معاملة",
     "exportCsv": "تصدير CSV",
     "exportCurrency": "العملة",
-    "addRecurring": "عملية متكررة",
+    "addRecurring": "العمليات المتكررة",
     "addModalTitle": "إضافة مصروف أو دخل",
     "addModalSubtitle": "اختَر المحفظة والفئة. الكريديت يزيد المستحق بالمصروف ويقلّه بالدخل.",
     "editModalTitle": "تعديل المعاملة",
@@ -270,7 +272,10 @@
     "recurringEditTitle": "تعديل العملية المتكررة",
     "recurringEditDesc": "عدّل المبلغ أو المحفظة أو الموعد القادم بدون ما تمسح العملية.",
     "recurringNextDue": "الموعد القادم",
-    "recurringStartDate": "تاريخ البداية"
+    "recurringStartDate": "تاريخ البداية",
+    "recurringPanelTitle": "العمليات المتكررة",
+    "recurringPanelDesc": "إيجار، اشتراكات، راتب — تُذكّرك تلقائيًا عند موعدها.",
+    "recurringAddInside": "إضافة متكررة"
   },
   "wallets": {
     "loading": "جاري تحميل المحافظ...",

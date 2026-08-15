@@ -2,19 +2,6 @@ import type {
   AnnualPlanTemplateItem,
   Category,
 } from "@/lib/types/database";
-import { getMonthRange } from "@/lib/utils/format";
-import { parsePlanMonthKey } from "@/lib/plan/summary";
-
-export function getPlanYear(planMonthKey: string) {
-  return parsePlanMonthKey(planMonthKey).getFullYear();
-}
-
-export function getYearMonthKeys(year: number) {
-  return Array.from({ length: 12 }, (_, index) => {
-    const month = String(index + 1).padStart(2, "0");
-    return `${year}-${month}`;
-  });
-}
 
 export function categoryPlansFromTemplateItems(
   categories: Category[],
@@ -32,10 +19,6 @@ export function categoryPlansFromTemplateItems(
       plannedByCategory.has(category.id) ? String(plannedByCategory.get(category.id)) : "",
     ]),
   ) as Record<string, string>;
-}
-
-export function getMonthStartFromPlanMonthKey(planMonthKey: string) {
-  return getMonthRange(parsePlanMonthKey(planMonthKey)).start;
 }
 
 export function buildAnnualTemplateFormState(

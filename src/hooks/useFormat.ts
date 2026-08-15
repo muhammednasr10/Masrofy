@@ -2,10 +2,10 @@
 
 import { useMemo } from "react";
 import { useLocale } from "@/components/i18n/LocaleProvider";
+import { getMonthRange as getMonthRangeBase } from "@/lib/calendar";
 import {
   formatCurrency as formatCurrencyBase,
   formatDate as formatDateBase,
-  getMonthRange as getMonthRangeBase,
 } from "@/lib/utils/format";
 
 export function useFormat() {
@@ -17,7 +17,8 @@ export function useFormat() {
       formatCurrency: (amount: number, currency = "EGP") =>
         formatCurrencyBase(amount, currency, locale),
       formatDate: (date: string) => formatDateBase(date, locale),
-      getMonthRange: (referenceDate = new Date()) => getMonthRangeBase(referenceDate, locale),
+      getMonthRange: (referenceDate = new Date(), monthStartDay: unknown = 1) =>
+        getMonthRangeBase(referenceDate, locale, monthStartDay),
     }),
     [locale],
   );

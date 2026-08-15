@@ -1,6 +1,12 @@
+import type { Locale } from "@/i18n/config";
 import type { Transaction, Wallet } from "@/lib/types/database";
-import { parsePlanMonthKey } from "@/lib/plan/summary";
-import { getMonthRange } from "@/lib/utils/format";
+import {
+  getMonthRange,
+  getYearMonthKeys,
+  isDateInMonthRange,
+  parsePlanMonthKey,
+  shiftPlanMonthKey,
+} from "@/lib/calendar";
 import { summarizeTransactions } from "@/lib/utils/summary";
 
 export type WalletActivityRow = {
@@ -22,12 +28,20 @@ export type MonthlyTrendRow = {
   balance: number;
 };
 
-export function filterTransactionsForMonth(transactions: Transaction[], planMonthKey: string) {
-  const month = getMonthRange(parsePlanMonthKey(planMonthKey));
+export function filterTransactionsForMonth(
+  transactions: Transaction[],
+  planMonthKey: string,
+  monthStartDay: unknown = 1,
+  locale: Locale = "ar",
+) {
+  const month = getMonthRange(
+    parsePlanMonthKey(planMonthKey, monthStartDay),
+    locale,
+    monthStartDay,
+  );
 
-  return transactions.filter(
-    (transaction) =>
-      transaction.transaction_date >= month.start && transaction.transaction_date <= month.end,
+  return transactions.filter((transaction) =>
+    isDateInMonthRange(transaction.transaction_date, month),
   );
 }
 
@@ -81,11 +95,22 @@ export function summarizeTransactionsByWallet(
 export function buildMonthlyTrend(
   transactions: Transaction[],
   planMonthKeys: string[],
+  monthStartDay: unknown = 1,
+  locale: Locale = "ar",
 ): MonthlyTrendRow[] {
   return planMonthKeys.map((planMonthKey) => {
-    const monthTransactions = filterTransactionsForMonth(transactions, planMonthKey);
+    const monthTransactions = filterTransactionsForMonth(
+      transactions,
+      planMonthKey,
+      monthStartDay,
+      locale,
+    );
     const summary = summarizeTransactions(monthTransactions);
-    const month = getMonthRange(parsePlanMonthKey(planMonthKey));
+    const month = getMonthRange(
+      parsePlanMonthKey(planMonthKey, monthStartDay),
+      locale,
+      monthStartDay,
+    );
 
     return {
       planMonthKey,
@@ -97,13 +122,13 @@ export function buildMonthlyTrend(
   });
 }
 
-export function buildYearlyOverview(transactions: Transaction[], year: number) {
-  const monthKeys = Array.from({ length: 12 }, (_, index) => {
-    const month = String(index + 1).padStart(2, "0");
-    return `${year}-${month}`;
-  });
-
-  const rows = buildMonthlyTrend(transactions, monthKeys);
+export function buildYearlyOverview(
+  transactions: Transaction[],
+  year: number,
+  monthStartDay: unknown = 1,
+  locale: Locale = "ar",
+) {
+  const rows = buildMonthlyTrend(transactions, getYearMonthKeys(year), monthStartDay, locale);
   const totals = rows.reduce(
     (acc, row) => ({
       expenses: acc.expenses + row.expenses,
@@ -116,16 +141,12 @@ export function buildYearlyOverview(transactions: Transaction[], year: number) {
   return { rows, totals, year };
 }
 
-export function getRecentMonthKeys(planMonthKey: string, count = 6) {
-  const keys: string[] = [];
-
-  for (let offset = count - 1; offset >= 0; offset -= 1) {
-    const date = parsePlanMonthKey(planMonthKey);
-    date.setMonth(date.getMonth() - offset);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    keys.push(`${year}-${month}`);
-  }
-
-  return keys;
+export function getRecentMonthKeys(
+  planMonthKey: string,
+  count = 6,
+  monthStartDay: unknown = 1,
+) {
+  return Array.from({ length: count }, (_, index) =>
+    shiftPlanMonthKey(planMonthKey, index - (count - 1), monthStartDay),
+  );
 }

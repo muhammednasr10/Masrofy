@@ -9,14 +9,10 @@ import {
   getRecentMonthKeys,
   summarizeTransactionsByWallet,
 } from "@/lib/reports";
-import {
-  buildPlanComparison,
-  getMonthStartFromPlanMonthKey,
-  getPlanMonthKey,
-  getPlanYear,
-  parsePlanMonthKey,
-} from "@/lib/plan";
+import { buildPlanComparison } from "@/lib/plan";
+import { getMonthStartFromPlanMonthKey, normalizeMonthStartDay } from "@/lib/calendar";
 import { summarizeInvestments } from "@/lib/investments/utils";
+import { useMonthPeriod } from "@/hooks/useMonthPeriod";
 import type {
   Category,
   Investment,
@@ -27,7 +23,6 @@ import type {
   Wallet,
   WalletReconciliation,
 } from "@/lib/types/database";
-import { getMonthRange } from "@/lib/utils/format";
 import { summarizeTransactions } from "@/lib/utils/summary";
 import {
   summarizePortfolioWealth,
@@ -35,7 +30,9 @@ import {
 } from "@/lib/wallets";
 
 export function useReportsPage() {
-  const [planMonthKey, setPlanMonthKey] = useState(() => getPlanMonthKey());
+  const [monthStartDay, setMonthStartDay] = useState(1);
+  const { locale, planMonthKey, setPlanMonthKey, referenceDate, month, planYear } =
+    useMonthPeriod(monthStartDay);
   const [currency, setCurrency] = useState("EGP");
   const [categories, setCategories] = useState<Category[]>([]);
   const [wallets, setWallets] = useState<Wallet[]>([]);
@@ -48,10 +45,6 @@ export function useReportsPage() {
   const [reconciliations, setReconciliations] = useState<WalletReconciliation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const referenceDate = useMemo(() => parsePlanMonthKey(planMonthKey), [planMonthKey]);
-  const month = useMemo(() => getMonthRange(referenceDate), [referenceDate]);
-  const planYear = useMemo(() => getPlanYear(planMonthKey), [planMonthKey]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -72,7 +65,7 @@ export function useReportsPage() {
       { data: reconciliationRows },
       { data: planRow, error: planError },
     ] = await Promise.all([
-      supabase.from("profiles").select("currency").maybeSingle(),
+      supabase.from("profiles").select("currency, month_start_day").maybeSingle(),
       supabase.from("categories").select("*").order("sort_order", { ascending: true }),
       supabase.from("wallets").select("*").order("sort_order", { ascending: true }),
       supabase.from("investments").select("*").order("sort_order", { ascending: true }),
@@ -92,7 +85,7 @@ export function useReportsPage() {
       supabase
         .from("monthly_plans")
         .select("*")
-        .eq("plan_month", getMonthStartFromPlanMonthKey(planMonthKey))
+        .eq("plan_month", getMonthStartFromPlanMonthKey(planMonthKey, monthStartDay))
         .maybeSingle(),
     ]);
 
@@ -101,6 +94,7 @@ export function useReportsPage() {
     }
 
     setCurrency(profile?.currency ?? "EGP");
+    setMonthStartDay(normalizeMonthStartDay(profile?.month_start_day));
     setCategories((categoryRows ?? []) as Category[]);
     setWallets((walletRows ?? []) as Wallet[]);
     setInvestments((investmentRows ?? []) as Investment[]);
@@ -130,15 +124,15 @@ export function useReportsPage() {
     }
 
     setLoading(false);
-  }, [planMonthKey, planYear]);
+  }, [planMonthKey, planYear, monthStartDay]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
   const monthTransactions = useMemo(
-    () => filterTransactionsForMonth(yearTransactions, planMonthKey),
-    [yearTransactions, planMonthKey],
+    () => filterTransactionsForMonth(yearTransactions, planMonthKey, monthStartDay, locale),
+    [yearTransactions, planMonthKey, monthStartDay, locale],
   );
 
   const monthSummary = useMemo(
@@ -159,18 +153,26 @@ export function useReportsPage() {
         planItems,
         transactions: monthTransactions,
         referenceDate,
+        monthStartDay,
+        locale,
       }),
-    [categories, plan, planItems, monthTransactions, referenceDate],
+    [categories, locale, plan, planItems, monthTransactions, referenceDate, monthStartDay],
   );
 
   const recentTrend = useMemo(
-    () => buildMonthlyTrend(yearTransactions, getRecentMonthKeys(planMonthKey, 6)),
-    [yearTransactions, planMonthKey],
+    () =>
+      buildMonthlyTrend(
+        yearTransactions,
+        getRecentMonthKeys(planMonthKey, 6, monthStartDay),
+        monthStartDay,
+        locale,
+      ),
+    [yearTransactions, planMonthKey, monthStartDay, locale],
   );
 
   const yearlyOverview = useMemo(
-    () => buildYearlyOverview(yearTransactions, planYear),
-    [yearTransactions, planYear],
+    () => buildYearlyOverview(yearTransactions, planYear, monthStartDay, locale),
+    [yearTransactions, planYear, monthStartDay, locale],
   );
 
   const portfolioSummary = useMemo(
@@ -197,6 +199,7 @@ export function useReportsPage() {
     currency,
     planMonthKey,
     setPlanMonthKey,
+    monthStartDay,
     monthLabel: month.label,
     planYear,
     monthSummary,

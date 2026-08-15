@@ -6,6 +6,7 @@ import WalletSelect from "@/components/wallets/WalletSelect";
 import { FeedbackBanner } from "@/components/ui/FeedbackBanner";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import { useFormat } from "@/hooks/useFormat";
+import MonthStartDayField from "@/components/account/MonthStartDayField";
 
 type AccountProfileFormProps = {
   fullName: string;
@@ -17,9 +18,11 @@ type AccountProfileFormProps = {
   saving: boolean;
   error: string | null;
   message: string | null;
+  monthStartDay: number;
   onFullNameChange: (value: string) => void;
   onDefaultWalletChange: (value: string) => void;
   onCurrencyChange: (value: string) => void;
+  onMonthStartDayChange: (value: number) => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   onSignOut: () => void;
 };
@@ -34,9 +37,11 @@ export default function AccountProfileForm({
   saving,
   error,
   message,
+  monthStartDay,
   onFullNameChange,
   onDefaultWalletChange,
   onCurrencyChange,
+  onMonthStartDayChange,
   onSubmit,
   onSignOut,
 }: AccountProfileFormProps) {
@@ -92,6 +97,8 @@ export default function AccountProfileForm({
             ))}
           </select>
         </label>
+
+        <MonthStartDayField value={monthStartDay} onChange={onMonthStartDayChange} />
 
         {createdAt ? (
           <p className="text-sm text-slate-500">

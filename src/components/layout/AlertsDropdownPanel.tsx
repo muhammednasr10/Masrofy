@@ -1,5 +1,7 @@
 "use client";
 
+import { useLayoutEffect, useState, type RefObject } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import DueNotificationPrompt from "@/components/layout/DueNotificationPrompt";
 import DueRecurringAlertsList from "@/components/layout/DueRecurringAlertsList";
@@ -19,10 +21,28 @@ type AlertsDropdownPanelProps = {
   currency: string;
   actingId: string | null;
   actionError: string | null;
+  anchorRef: RefObject<HTMLElement | null>;
+  panelRef: RefObject<HTMLDivElement | null>;
   onRegisterDue: (recurring: RecurringTransaction) => void;
   onSkipDue: (recurring: RecurringTransaction) => void;
   onClose: () => void;
 };
+
+function getPanelStyle(anchor: HTMLElement) {
+  const rect = anchor.getBoundingClientRect();
+  const gutter = 8;
+  const width = Math.min(384, window.innerWidth - gutter * 2);
+  const left = Math.min(
+    Math.max(gutter, rect.right - width),
+    window.innerWidth - width - gutter,
+  );
+
+  return {
+    top: rect.bottom + gutter,
+    left,
+    width,
+  };
+}
 
 export default function AlertsDropdownPanel({
   alerts,
@@ -30,15 +50,42 @@ export default function AlertsDropdownPanel({
   currency,
   actingId,
   actionError,
+  anchorRef,
+  panelRef,
   onRegisterDue,
   onSkipDue,
   onClose,
 }: AlertsDropdownPanelProps) {
   const t = useTranslations();
   const totalCount = alerts.length + dueRecurrings.length;
+  const [style, setStyle] = useState(() =>
+    anchorRef.current ? getPanelStyle(anchorRef.current) : { top: 0, left: 0, width: 320 },
+  );
 
-  return (
-    <div className="absolute end-0 top-full z-50 mt-2 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
+  useLayoutEffect(() => {
+    function updatePosition() {
+      if (anchorRef.current) {
+        setStyle(getPanelStyle(anchorRef.current));
+      }
+    }
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [anchorRef]);
+
+  return createPortal(
+    <div
+      ref={panelRef}
+      style={style}
+      className="fixed z-[80] max-h-[min(28rem,calc(100dvh-5rem))] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-lg"
+      role="menu"
+    >
       <div className="border-b border-slate-100 px-4 py-3">
         <p className="text-sm font-semibold text-slate-900">
           {t("alerts.title")}
@@ -70,7 +117,7 @@ export default function AlertsDropdownPanel({
       {alerts.length === 0 && dueRecurrings.length === 0 ? (
         <p className="px-4 py-6 text-center text-sm text-slate-500">{t("alerts.empty")}</p>
       ) : alerts.length > 0 ? (
-        <ul className="max-h-72 space-y-2 overflow-y-auto p-3">
+        <ul className="space-y-2 p-3">
           {alerts.map((alert) => (
             <li key={alert.id}>
               <Link
@@ -91,6 +138,7 @@ export default function AlertsDropdownPanel({
           ))}
         </ul>
       ) : null}
-    </div>
+    </div>,
+    document.body,
   );
 }

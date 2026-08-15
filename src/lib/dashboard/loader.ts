@@ -12,7 +12,7 @@ import type {
   Transaction,
   Wallet,
 } from "@/lib/types/database";
-import { getMonthRange } from "@/lib/utils/format";
+import { getMonthRange, normalizeMonthStartDay } from "@/lib/calendar";
 import { summarizeTransactions } from "@/lib/utils/summary";
 import { summarizePortfolioWealth } from "@/lib/wallets";
 
@@ -43,13 +43,16 @@ function filterMonthTransactions(transactions: Transaction[] | null | undefined)
 export async function loadDashboardData(
   supabase: SupabaseClient,
   userId: string | undefined,
-  _locale: Locale = "ar",
+  locale: Locale = "ar",
 ): Promise<DashboardData> {
-  const month = getMonthRange();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("currency, full_name, month_start_day")
+    .maybeSingle();
+  const month = getMonthRange(new Date(), locale, profile?.month_start_day);
   const today = new Date().toISOString().slice(0, 10);
 
   const [
-    { data: profile },
     { data: transactions },
     { data: wallets },
     { data: allTransactions },
@@ -59,7 +62,6 @@ export async function loadDashboardData(
     { data: dueRecurringRows },
     { data: savingsGoalRows },
   ] = await Promise.all([
-    supabase.from("profiles").select("currency, full_name").maybeSingle(),
     supabase
       .from("transactions")
       .select("*, categories(name, icon, color), wallets(name, icon, color)")
@@ -104,6 +106,7 @@ export async function loadDashboardData(
     month.start,
     categories,
     monthTransactions,
+    normalizeMonthStartDay(profile?.month_start_day),
   );
 
   return {

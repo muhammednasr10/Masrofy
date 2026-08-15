@@ -1,8 +1,10 @@
 import type { Category, Transaction, Wallet } from "@/lib/types/database";
 import type { OfflineTransaction } from "@/lib/offline/types";
+import { isDateInMonthRange } from "@/lib/calendar";
 
 export type ExpensesPageSnapshot = {
   currency: string;
+  monthStartDay?: number;
   categories: Category[];
   wallets: Wallet[];
   transactions: OfflineTransaction[];
@@ -30,11 +32,12 @@ export function appendTransactionToSnapshot(
     },
     ...snapshot.balanceTransactions,
   ];
-  const nextMonth =
-    savedTransaction.transaction_date >= monthStart &&
-    savedTransaction.transaction_date <= monthEnd
-      ? [savedTransaction, ...snapshot.monthTransactions]
-      : snapshot.monthTransactions;
+  const nextMonth = isDateInMonthRange(savedTransaction.transaction_date, {
+    start: monthStart,
+    end: monthEnd,
+  })
+    ? [savedTransaction, ...snapshot.monthTransactions]
+    : snapshot.monthTransactions;
 
   return {
     ...snapshot,
@@ -78,8 +81,8 @@ export function updateTransactionInSnapshot(
         }
       : item,
   );
-  const nextMonthTransactions = nextTransactions.filter(
-    (item) => item.transaction_date >= monthStart && item.transaction_date <= monthEnd,
+  const nextMonthTransactions = nextTransactions.filter((item) =>
+    isDateInMonthRange(item.transaction_date, { start: monthStart, end: monthEnd }),
   );
 
   return {

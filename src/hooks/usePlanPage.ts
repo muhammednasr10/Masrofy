@@ -10,13 +10,12 @@ import {
   categoryPlansFromItems,
   categoryPlansFromTemplateItems,
   emptyCategoryPlans,
-  getPlanMonthKey,
-  getPlanYear,
-  parsePlanMonthKey,
   persistAnnualTemplate,
   persistMonthlyPlan,
 } from "@/lib/plan";
 import { useCategoryForm } from "@/hooks/useCategoryForm";
+import { useMonthPeriod } from "@/hooks/useMonthPeriod";
+import { getPlanMonthKey, normalizeMonthStartDay } from "@/lib/calendar";
 import type {
   AnnualPlanTemplate,
   AnnualPlanTemplateItem,
@@ -25,12 +24,13 @@ import type {
   PlanItem,
   Transaction,
 } from "@/lib/types/database";
-import { getMonthRange } from "@/lib/utils/format";
 
 export function usePlanPage() {
   const pathname = usePathname();
   const { error, message, setError, setMessage, clearFeedback } = usePageFeedback();
-  const [planMonthKey, setPlanMonthKey] = useState(() => getPlanMonthKey());
+  const [monthStartDay, setMonthStartDay] = useState(1);
+  const { locale, planMonthKey, setPlanMonthKey, referenceDate, month, planYear } =
+    useMonthPeriod(monthStartDay);
   const [categories, setCategories] = useState<Category[]>([]);
   const [plan, setPlan] = useState<MonthlyPlan | null>(null);
   const [planItems, setPlanItems] = useState<PlanItem[]>([]);
@@ -51,10 +51,6 @@ export function usePlanPage() {
   const [annualApplying, setAnnualApplying] = useState(false);
   const [annualError, setAnnualError] = useState<string | null>(null);
 
-  const referenceDate = useMemo(() => parsePlanMonthKey(planMonthKey), [planMonthKey]);
-  const month = useMemo(() => getMonthRange(referenceDate), [referenceDate]);
-  const planYear = useMemo(() => getPlanYear(planMonthKey), [planMonthKey]);
-
   const loadData = useCallback(async () => {
     setLoading(true);
     clearFeedback();
@@ -62,7 +58,7 @@ export function usePlanPage() {
     const supabase = createClient();
     const [{ data: profile }, { data: categoryRows }, { data: transactionRows }, { data: annualRow }] =
       await Promise.all([
-        supabase.from("profiles").select("currency").maybeSingle(),
+        supabase.from("profiles").select("currency, month_start_day").maybeSingle(),
         supabase.from("categories").select("*").order("sort_order", { ascending: true }),
         supabase
           .from("transactions")
@@ -98,6 +94,7 @@ export function usePlanPage() {
     }
 
     setCurrency(profile?.currency ?? "EGP");
+    setMonthStartDay(normalizeMonthStartDay(profile?.month_start_day));
     setCategories(typedCategories);
     setTransactions((transactionRows ?? []) as Transaction[]);
     setAnnualTemplate(typedAnnualTemplate);
@@ -163,9 +160,9 @@ export function usePlanPage() {
 
   useEffect(() => {
     if (pathname === "/plan") {
-      setPlanMonthKey(getPlanMonthKey());
+      setPlanMonthKey(getPlanMonthKey(new Date(), monthStartDay));
     }
-  }, [pathname]);
+  }, [pathname, monthStartDay]);
 
   useEffect(() => {
     loadData();
@@ -179,8 +176,10 @@ export function usePlanPage() {
         planItems,
         transactions,
         referenceDate,
+        monthStartDay,
+        locale,
       }),
-    [categories, plan, planItems, referenceDate, transactions],
+    [categories, locale, plan, planItems, referenceDate, transactions, monthStartDay],
   );
 
   function handleCategoryCreated(category: Category) {
@@ -299,6 +298,7 @@ export function usePlanPage() {
         annualPlannedIncome,
         annualNotes,
         annualCategoryPlans,
+        monthStartDay,
       );
       await loadData();
       setMessage(`تم تطبيق الخطة الافتراضية على كل شهور ${planYear}.`);
@@ -368,6 +368,7 @@ export function usePlanPage() {
     annualApplying,
     annualError,
     hasAnnualTemplate: Boolean(annualTemplate),
+    monthStartDay,
     setPlanMonthKey,
     setPlannedIncome,
     handleCategoryPlanChange,

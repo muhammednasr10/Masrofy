@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sendWebPushNotification, getVapidConfig } from "@/lib/notifications/web-push";
 import { buildDueNotificationCopy } from "@/lib/notifications/due";
 import { getDueRecurringTransactions } from "@/lib/recurring/schedule";
+import { isLocale, type Locale } from "@/i18n/config";
 import type { RecurringTransaction } from "@/lib/types/database";
 import { NextResponse } from "next/server";
 
@@ -63,7 +64,12 @@ export async function GET(request: Request) {
       ),
   ]);
 
-  const localeByUser = new Map((profiles ?? []).map((row) => [row.id as string, row.locale === "en" ? "en" : "ar"]));
+  const localeByUser = new Map<string, Locale>(
+    (profiles ?? []).map((row) => [
+      String(row.id),
+      isLocale(row.locale) ? row.locale : "ar",
+    ]),
+  );
   const sentKeys = new Set(
     (alreadySent ?? []).map((row) => `${row.user_id}:${row.recurring_id}:${row.due_date}`),
   );
@@ -90,7 +96,7 @@ export async function GET(request: Request) {
       continue;
     }
 
-    const locale = localeByUser.get(recurring.user_id) ?? "ar";
+    const locale: Locale = localeByUser.get(recurring.user_id) ?? "ar";
     const copy = buildDueNotificationCopy(recurring, locale);
     let delivered = false;
 

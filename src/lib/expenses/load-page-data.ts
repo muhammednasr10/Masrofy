@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Category, Transaction, Wallet } from "@/lib/types/database";
 import { getMonthRange, isDateInMonthRange, normalizeMonthStartDay } from "@/lib/calendar";
 import type { ExpensesPageSnapshot } from "@/lib/expenses/append-transaction";
+import { normalizeWallets } from "@/lib/wallets/normalize";
 
 export type LoadExpensesPageResult =
   | { kind: "success"; snapshot: ExpensesPageSnapshot; attachmentUrls: Record<string, string> }

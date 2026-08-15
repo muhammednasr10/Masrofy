@@ -240,7 +240,7 @@ export default function TransactionForm({
         <button
           type="submit"
           disabled={submitting}
-          className="hidden w-full rounded-2xl bg-emerald-600 px-4 py-3 font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60 sm:block"
+          className="w-full rounded-2xl bg-emerald-600 px-4 py-3 font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60"
         >
           {submitting
             ? t("expenses.formSaving")

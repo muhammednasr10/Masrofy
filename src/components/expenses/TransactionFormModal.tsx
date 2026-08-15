@@ -44,7 +44,6 @@ export default function TransactionFormModal({
   ...formProps
 }: TransactionFormModalProps) {
   const t = useTranslations();
-  const formId = "transaction-form-modal";
 
   if (!open) {
     return null;
@@ -65,49 +64,14 @@ export default function TransactionFormModal({
           type="button"
           onClick={onClose}
           className="shrink-0 rounded-full px-3 py-1 text-sm text-slate-500 transition hover:bg-slate-100"
-          aria-label={t("common.close")}
         >
-          ✕
+          {t("common.close")}
         </button>
       </div>
 
-      <div className="mt-6 pb-24 sm:pb-0">
-        <TransactionForm
-          {...formProps}
-          formId={formId}
-          mode={mode}
-          submitting={submitting}
-          showSubmit={false}
-        />
+      <div className="mt-6">
+        <TransactionForm {...formProps} mode={mode} submitting={submitting} />
       </div>
-
-      <div className="sticky bottom-0 -mx-4 border-t border-slate-100 bg-white px-4 py-4 safe-bottom sm:mx-0 sm:hidden">
-        <button
-          type="submit"
-          form={formId}
-          disabled={submitting}
-          className="w-full rounded-2xl bg-emerald-600 px-4 py-3.5 text-base font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60"
-        >
-          {submitting
-            ? t("expenses.formSaving")
-            : mode === "edit"
-              ? t("expenses.formSaveChanges")
-              : t("expenses.formSave")}
-        </button>
-      </div>
-
-      <button
-        type="submit"
-        form={formId}
-        disabled={submitting}
-        className="mt-6 hidden w-full rounded-2xl bg-emerald-600 px-4 py-3 font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60 sm:block"
-      >
-        {submitting
-          ? t("expenses.formSaving")
-          : mode === "edit"
-            ? t("expenses.formSaveChanges")
-            : t("expenses.formSave")}
-      </button>
     </ModalShell>
   );
 }

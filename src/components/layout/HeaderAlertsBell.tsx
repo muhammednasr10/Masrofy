@@ -47,10 +47,13 @@ export default function HeaderAlertsBell() {
 
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleEscape);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = previousOverflow;
     };
   }, [open]);
 

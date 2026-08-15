@@ -6,8 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 import type { Transaction, Wallet } from "@/lib/types/database";
 import { formatCurrency } from "@/lib/utils/format";
 import {
+  buildReconcilableDisplayRows,
   buildReconciliationPreview,
-  buildWalletDisplayRows,
   calculateWalletBalance,
   getActualBalanceLabel,
   getRecordedBalanceLabel,
@@ -40,8 +40,8 @@ export default function WalletInventoryModal({
   );
 
   const walletRows = useMemo(
-    () => buildWalletDisplayRows(reconcilableWallets),
-    [reconcilableWallets],
+    () => buildReconcilableDisplayRows(wallets, reconcilableWallets),
+    [reconcilableWallets, wallets],
   );
 
   const [actualBalanceEdits, setActualBalanceEdits] = useState<Record<string, string>>({});

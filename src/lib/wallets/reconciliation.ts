@@ -52,6 +52,12 @@ export function getReconcilableWalletsForFocus(wallets: Wallet[], focusWalletId:
   return reconcilableWallets.filter((wallet) => wallet.id === focusWalletId);
 }
 
+export function buildReconcilableDisplayRows(allWallets: Wallet[], reconcilableWallets: Wallet[]) {
+  const reconcilableIds = new Set(reconcilableWallets.map((wallet) => wallet.id));
+
+  return buildWalletDisplayRows(allWallets).filter((row) => reconcilableIds.has(row.wallet.id));
+}
+
 export function buildReconciliationPreview(
   wallet: Wallet,
   transactions: Transaction[],

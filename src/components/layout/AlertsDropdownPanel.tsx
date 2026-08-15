@@ -38,9 +38,10 @@ function getPanelStyle(anchor: HTMLElement) {
   );
 
   return {
-    top: rect.bottom + gutter,
+    top: "max(0.5rem, env(safe-area-inset-top, 0px))",
     left,
     width,
+    maxHeight: "calc(100dvh - 1rem - env(safe-area-inset-top, 0px))",
   };
 }
 
@@ -59,7 +60,9 @@ export default function AlertsDropdownPanel({
   const t = useTranslations();
   const totalCount = alerts.length + dueRecurrings.length;
   const [style, setStyle] = useState(() =>
-    anchorRef.current ? getPanelStyle(anchorRef.current) : { top: 0, left: 0, width: 320 },
+    anchorRef.current
+      ? getPanelStyle(anchorRef.current)
+      : { top: 8, left: 8, width: 320, maxHeight: "90dvh" },
   );
 
   useLayoutEffect(() => {
@@ -71,74 +74,80 @@ export default function AlertsDropdownPanel({
 
     updatePosition();
     window.addEventListener("resize", updatePosition);
-    window.addEventListener("scroll", updatePosition, true);
 
     return () => {
       window.removeEventListener("resize", updatePosition);
-      window.removeEventListener("scroll", updatePosition, true);
     };
   }, [anchorRef]);
 
   return createPortal(
-    <div
-      ref={panelRef}
-      style={style}
-      className="fixed z-[80] max-h-[min(28rem,calc(100dvh-5rem))] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-lg"
-      role="menu"
-    >
-      <div className="border-b border-slate-100 px-4 py-3">
-        <p className="text-sm font-semibold text-slate-900">
-          {t("alerts.title")}
-          {totalCount > 0 ? ` (${totalCount})` : ""}
-        </p>
-        <p className="mt-0.5 text-xs text-slate-500">{t("alerts.subtitle")}</p>
-      </div>
-
-      <DueNotificationPrompt dueCount={dueRecurrings.length} />
-
-      <DueRecurringAlertsList
-        dueRecurrings={dueRecurrings}
-        currency={currency}
-        actingId={actingId}
-        onRegister={onRegisterDue}
-        onSkip={onSkipDue}
+    <>
+      <button
+        type="button"
+        className="fixed inset-0 z-[90] bg-slate-900/25"
+        onClick={onClose}
+        aria-label={t("common.close")}
       />
+      <div
+        ref={panelRef}
+        style={style}
+        className="fixed z-[100] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl"
+        role="menu"
+      >
+        <div className="border-b border-slate-100 px-4 py-3">
+          <p className="text-sm font-semibold text-slate-900">
+            {t("alerts.title")}
+            {totalCount > 0 ? ` (${totalCount})` : ""}
+          </p>
+          <p className="mt-0.5 text-xs text-slate-500">{t("alerts.subtitle")}</p>
+        </div>
 
-      {actionError ? (
-        <p className="border-b border-red-100 bg-red-50 px-4 py-2 text-xs text-red-700">
-          {actionError === "already_registered"
-            ? t("alerts.alreadyRegistered")
-            : actionError === "auth_required"
-              ? t("alerts.authRequired")
-              : actionError}
-        </p>
-      ) : null}
+        <DueNotificationPrompt dueCount={dueRecurrings.length} />
 
-      {alerts.length === 0 && dueRecurrings.length === 0 ? (
-        <p className="px-4 py-6 text-center text-sm text-slate-500">{t("alerts.empty")}</p>
-      ) : alerts.length > 0 ? (
-        <ul className="space-y-2 p-3">
-          {alerts.map((alert) => (
-            <li key={alert.id}>
-              <Link
-                href={alert.href}
-                onClick={onClose}
-                className={`flex items-start gap-3 rounded-xl border px-3 py-3 transition ${toneClasses[alert.tone]}`}
-              >
-                <span className="text-lg">{alert.icon}</span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold">{alert.title}</span>
-                  <span className="mt-0.5 block text-xs opacity-80">{alert.description}</span>
-                  <span className="mt-1 block text-xs font-medium underline underline-offset-2">
-                    {alert.actionLabel}
+        <DueRecurringAlertsList
+          dueRecurrings={dueRecurrings}
+          currency={currency}
+          actingId={actingId}
+          onRegister={onRegisterDue}
+          onSkip={onSkipDue}
+        />
+
+        {actionError ? (
+          <p className="border-b border-red-100 bg-red-50 px-4 py-2 text-xs text-red-700">
+            {actionError === "already_registered"
+              ? t("alerts.alreadyRegistered")
+              : actionError === "auth_required"
+                ? t("alerts.authRequired")
+                : actionError}
+          </p>
+        ) : null}
+
+        {alerts.length === 0 && dueRecurrings.length === 0 ? (
+          <p className="px-4 py-6 text-center text-sm text-slate-500">{t("alerts.empty")}</p>
+        ) : alerts.length > 0 ? (
+          <ul className="space-y-2 p-3">
+            {alerts.map((alert) => (
+              <li key={alert.id}>
+                <Link
+                  href={alert.href}
+                  onClick={onClose}
+                  className={`flex items-start gap-3 rounded-xl border px-3 py-3 transition ${toneClasses[alert.tone]}`}
+                >
+                  <span className="text-lg">{alert.icon}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold">{alert.title}</span>
+                    <span className="mt-0.5 block text-xs opacity-80">{alert.description}</span>
+                    <span className="mt-1 block text-xs font-medium underline underline-offset-2">
+                      {alert.actionLabel}
+                    </span>
                   </span>
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-    </div>,
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+    </>,
     document.body,
   );
 }

@@ -52,10 +52,22 @@ export function getReconcilableWalletsForFocus(wallets: Wallet[], focusWalletId:
   return reconcilableWallets.filter((wallet) => wallet.id === focusWalletId);
 }
 
-export function buildReconcilableDisplayRows(allWallets: Wallet[], reconcilableWallets: Wallet[]) {
-  const reconcilableIds = new Set(reconcilableWallets.map((wallet) => wallet.id));
+export function buildInventoryDisplayRows(wallets: Wallet[], focusWalletId: string | null = null) {
+  const reconcilableIds = new Set(
+    getReconcilableWalletsForFocus(wallets, focusWalletId).map((wallet) => wallet.id),
+  );
+  const allowedIds = focusWalletId
+    ? new Set([focusWalletId, ...getWalletDescendantIds(focusWalletId, wallets)])
+    : null;
 
-  return buildWalletDisplayRows(allWallets).filter((row) => reconcilableIds.has(row.wallet.id));
+  return buildWalletDisplayRows(wallets)
+    .filter((row) => (allowedIds ? allowedIds.has(row.wallet.id) : true))
+    .map((row) => ({
+      ...row,
+      editable: reconcilableIds.has(row.wallet.id),
+      parentName:
+        wallets.find((wallet) => wallet.id === getWalletParentId(row.wallet))?.name ?? null,
+    }));
 }
 
 export function buildReconciliationPreview(

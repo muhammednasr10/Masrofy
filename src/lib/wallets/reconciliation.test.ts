@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { makeWallet } from "@/test/factories";
 import {
-  buildReconcilableDisplayRows,
+  buildInventoryDisplayRows,
   getInventoryNetAdjustment,
   getReconcilableWallets,
-  getReconcilableWalletsForFocus,
 } from "@/lib/wallets/reconciliation";
 
 describe("reconcilable wallet display", () => {
@@ -48,11 +47,21 @@ describe("reconcilable wallet display", () => {
   });
   const wallets = [bank, debit, credit, cash, investment];
 
-  it("keeps sub-wallets visible even when the parent bank is not reconcilable", () => {
-    const reconcilable = getReconcilableWallets(wallets);
-    const rows = buildReconcilableDisplayRows(wallets, reconcilable);
+  it("shows the parent bank and its sub-wallets in inventory", () => {
+    const rows = buildInventoryDisplayRows(wallets);
 
-    expect(rows.map((row) => row.wallet.id)).toEqual(["debit", "credit", "cash"]);
+    expect(rows.map((row) => [row.wallet.id, row.editable])).toEqual([
+      ["bank", false],
+      ["debit", true],
+      ["credit", true],
+      ["cash", true],
+      ["invest", false],
+    ]);
+    expect(getReconcilableWallets(wallets).map((wallet) => wallet.id)).toEqual([
+      "debit",
+      "credit",
+      "cash",
+    ]);
   });
 
   it("nets cash gains against credit-owed increases", () => {

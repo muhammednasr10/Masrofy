@@ -6,14 +6,14 @@ import { createClient } from "@/lib/supabase/client";
 import type { Transaction, Wallet } from "@/lib/types/database";
 import { formatCurrency } from "@/lib/utils/format";
 import {
-  buildReconcilableDisplayRows,
+  buildInventoryDisplayRows,
   buildReconciliationPreview,
   calculateWalletBalance,
   getActualBalanceLabel,
   getInventoryNetAdjustment,
   getRecordedBalanceLabel,
-  getReconcilableWalletsForFocus,
   isCreditWallet,
+  isInvestmentWallet,
 } from "@/lib/wallets";
 import { FormEvent, useMemo, useState } from "react";
 
@@ -34,14 +34,14 @@ export default function WalletInventoryModal({
   onClose,
   onComplete,
 }: WalletInventoryModalProps) {
-  const reconcilableWallets = useMemo(
-    () => getReconcilableWalletsForFocus(wallets, focusWalletId),
-    [wallets, focusWalletId],
+  const walletRows = useMemo(
+    () => buildInventoryDisplayRows(wallets, focusWalletId),
+    [focusWalletId, wallets],
   );
 
-  const walletRows = useMemo(
-    () => buildReconcilableDisplayRows(wallets, reconcilableWallets),
-    [reconcilableWallets, wallets],
+  const editableWallets = useMemo(
+    () => walletRows.filter((row) => row.editable).map((row) => row.wallet),
+    [walletRows],
   );
 
   const [actualBalanceEdits, setActualBalanceEdits] = useState<Record<string, string>>({});
@@ -60,7 +60,7 @@ export default function WalletInventoryModal({
   }
 
   const previews = useMemo(() => {
-    return walletRows.map(({ wallet }) => {
+    return editableWallets.map((wallet) => {
       const actualBalance = Number(getActualBalanceInput(wallet)) || 0;
 
       return {
@@ -68,7 +68,7 @@ export default function WalletInventoryModal({
         ...buildReconciliationPreview(wallet, transactions, actualBalance),
       };
     });
-  }, [walletRows, actualBalanceEdits, transactions]);
+  }, [editableWallets, actualBalanceEdits, transactions]);
 
   const summary = useMemo(() => {
     const mismatched = previews.filter((preview) => !preview.isMatched);
@@ -153,9 +153,35 @@ export default function WalletInventoryModal({
           </div>
         ) : (
           <div className="space-y-3">
-            <p className="text-sm font-medium text-slate-700">أدخل الرصيد الفعلي</p>
+            <p className="text-sm font-medium text-slate-700">
+              أدخل الرصيد الفعلي ({editableWallets.length} محفظة قابلة للتحديث)
+            </p>
 
-            {walletRows.map(({ wallet, depth }) => {
+            {walletRows.map(({ wallet, depth, editable, parentName }) => {
+              if (!editable) {
+                return (
+                  <article
+                    key={wallet.id}
+                    className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                    style={{ marginRight: `${depth * 0.75}rem` }}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-xl shadow-sm">
+                        {wallet.icon}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-slate-900">{wallet.name}</p>
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          {isInvestmentWallet(wallet)
+                            ? "يُحدَّث من صفحة الاستثمارات"
+                            : "محفظة رئيسية — حدّث المحافظ الفرعية تحتها"}
+                        </p>
+                      </div>
+                    </div>
+                  </article>
+                );
+              }
+
               const preview = previews.find((item) => item.wallet.id === wallet.id);
 
               if (!preview) {
@@ -177,6 +203,9 @@ export default function WalletInventoryModal({
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-slate-900">{wallet.name}</p>
+                      {parentName ? (
+                        <p className="mt-0.5 text-xs text-emerald-700">تحت {parentName}</p>
+                      ) : null}
                       <p className="mt-0.5 text-xs text-slate-500">{getRecordedBalanceLabel(wallet)}</p>
                     </div>
                   </div>

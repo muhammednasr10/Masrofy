@@ -102,6 +102,10 @@ export default function WalletInventoryModal({
     const trimmedNote = note.trim() || null;
 
     for (const preview of previews) {
+      if (preview.isMatched) {
+        continue;
+      }
+
       const { error: reconcileError } = await supabase.rpc("reconcile_wallet", {
         p_wallet_id: preview.wallet.id,
         p_actual_balance: preview.actualBalance,

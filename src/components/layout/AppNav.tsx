@@ -40,12 +40,13 @@ export function AppNav() {
   }, []);
 
   const navLinks = useMemo(() => {
-    const links = navLinkKeys.map((link) => ({ ...link, label: t(link.key) }));
+    const links: Array<{ href: string; icon: string; label: string }> = navLinkKeys.map(
+      (link) => ({ href: link.href, icon: link.icon, label: t(link.key) }),
+    );
 
     if (isAdmin) {
       links.splice(links.length - 1, 0, {
         href: "/admin/categories",
-        key: "nav.admin",
         icon: "🛡️",
         label: t("nav.admin"),
       });

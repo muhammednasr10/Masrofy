@@ -18,7 +18,12 @@ type WalletBalanceCellProps = {
   investments?: Investment[];
   currency: string;
   aggregatedSummary?: ParentWalletBalanceSummary | null;
+  /** List/table view: same font size as surrounding text */
+  compact?: boolean;
 };
+
+const listAmountClass = "amount-inline text-slate-900";
+const detailAmountClass = "amount-text text-slate-900";
 
 function WalletBalanceCellComponent({
   wallet,
@@ -26,24 +31,31 @@ function WalletBalanceCellComponent({
   investments = [],
   currency,
   aggregatedSummary = null,
+  compact = false,
 }: WalletBalanceCellProps) {
+  const amountClass = compact ? listAmountClass : detailAmountClass;
+
   if (aggregatedSummary) {
     return (
-      <div className="space-y-1">
-        <p className="amount-text text-slate-900">
+      <div className={compact ? "text-end" : "space-y-1"}>
+        <p className={amountClass}>
           {formatCurrency(aggregatedSummary.assetTotal, currency)}
         </p>
-        <p className="wrap-text text-sm leading-6 text-slate-500">
-          مجموع المحافظ الفرعية (بدون كريديت)
-        </p>
-        {aggregatedSummary.creditNotes.map((note) => (
-          <p key={note.walletName} className="wrap-text text-sm leading-6 text-amber-700">
-            ملاحظة: {note.walletName} — مستحق {formatCurrency(note.owed, currency)}
-            {note.limit != null
-              ? ` • متاح ${formatCurrency(note.available ?? 0, currency)}`
-              : ""}
-          </p>
-        ))}
+        {!compact ? (
+          <>
+            <p className="wrap-text text-sm leading-6 text-slate-500">
+              مجموع المحافظ الفرعية (بدون كريديت)
+            </p>
+            {aggregatedSummary.creditNotes.map((note) => (
+              <p key={note.walletName} className="wrap-text text-sm leading-6 text-amber-700">
+                ملاحظة: {note.walletName} — مستحق {formatCurrency(note.owed, currency)}
+                {note.limit != null
+                  ? ` • متاح ${formatCurrency(note.available ?? 0, currency)}`
+                  : ""}
+              </p>
+            ))}
+          </>
+        ) : null}
       </div>
     );
   }
@@ -53,11 +65,11 @@ function WalletBalanceCellComponent({
     const available = getCreditAvailable(wallet, transactions);
 
     return (
-      <div className="space-y-1">
-        <p className="wrap-text font-semibold text-red-600">
+      <div className={compact ? "text-end" : "space-y-1"}>
+        <p className={`wrap-text ${compact ? "amount-inline text-red-600" : "font-semibold text-red-600"}`}>
           مستحق: {formatCurrency(owed, currency)}
         </p>
-        {wallet.credit_limit != null ? (
+        {!compact && wallet.credit_limit != null ? (
           <>
             <p className="wrap-text text-sm text-slate-500">
               الحد: {formatCurrency(Number(wallet.credit_limit), currency)}
@@ -75,17 +87,17 @@ function WalletBalanceCellComponent({
 
   if (isInvestmentWallet(wallet)) {
     return (
-      <div className="space-y-1">
-        <p className="amount-text text-slate-900">
+      <div className={compact ? "text-end" : "space-y-1"}>
+        <p className={amountClass}>
           {formatCurrency(calculateWalletBalance(wallet, transactions, investments), currency)}
         </p>
-        <p className="text-sm text-slate-500">يُحدَّث من صفحة الاستثمار</p>
+        {!compact ? <p className="text-sm text-slate-500">يُحدَّث من صفحة الاستثمار</p> : null}
       </div>
     );
   }
 
   return (
-    <p className="amount-text text-slate-900">
+    <p className={`${amountClass}${compact ? " text-end" : ""}`}>
       {formatCurrency(calculateWalletBalance(wallet, transactions, investments), currency)}
     </p>
   );

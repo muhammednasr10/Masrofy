@@ -52,8 +52,8 @@ export function buildTransactionsCsv(
 ) {
   const header = [
     labels.date,
-    labels.type,
     labels.category,
+    labels.type,
     labels.wallet,
     labels.note,
     labels.amount,
@@ -69,8 +69,8 @@ export function buildTransactionsCsv(
 
     return [
       transaction.transaction_date,
-      typeLabel,
       categoryLabel,
+      typeLabel,
       getWalletCsvLabel(wallets, transaction, labels),
       transaction.note ?? "",
       String(Number(transaction.amount)),

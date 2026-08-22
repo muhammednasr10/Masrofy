@@ -16,7 +16,7 @@ export default function AppLayout({
           <AppShell>
             <div className="min-h-full w-full overflow-x-hidden bg-gradient-to-b from-emerald-50 to-slate-50">
               <AppNav />
-              <main className="mx-auto w-full min-w-0 max-w-5xl overflow-x-hidden px-3 py-4 pb-24 sm:px-4 sm:py-8 sm:pb-28">
+              <main className="mx-auto w-full min-w-0 max-w-5xl overflow-x-hidden px-3 py-4 pb-36 sm:px-4 sm:py-8 md:pb-28">
                 {children}
               </main>
             </div>

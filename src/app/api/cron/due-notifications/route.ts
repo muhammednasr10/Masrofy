@@ -1,21 +1,11 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isAuthorizedCron } from "@/lib/cron/auth";
 import { sendWebPushNotification, getVapidConfig } from "@/lib/notifications/web-push";
 import { buildDueNotificationCopy } from "@/lib/notifications/due";
 import { getDueRecurringTransactions } from "@/lib/recurring/schedule";
 import { isLocale, type Locale } from "@/i18n/config";
 import type { RecurringTransaction } from "@/lib/types/database";
 import { NextResponse } from "next/server";
-
-function isAuthorizedCron(request: Request) {
-  const cronSecret = process.env.CRON_SECRET;
-  const authorization = request.headers.get("authorization");
-
-  if (cronSecret) {
-    return authorization === `Bearer ${cronSecret}`;
-  }
-
-  return request.headers.get("x-vercel-cron") === "1" || process.env.NODE_ENV !== "production";
-}
 
 export async function GET(request: Request) {
   if (!isAuthorizedCron(request)) {

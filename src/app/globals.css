@@ -59,12 +59,26 @@ html {
     font-size: 1.25rem;
     line-height: 1.75rem;
     font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .amount-inline {
+    font-variant-numeric: tabular-nums;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
   }
 
   @media (min-width: 640px) {
     .amount-text {
       font-size: 1.5rem;
       line-height: 2rem;
+    }
+
+    .amount-inline {
+      font-size: 0.9375rem;
+      line-height: 1.375rem;
     }
   }
 }

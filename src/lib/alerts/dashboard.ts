@@ -146,7 +146,7 @@ export function buildDashboardAlerts({
         count: String(pendingCategorySuggestions),
       }),
       actionLabel: t("alertItems.categorySuggestionAction"),
-      href: "/admin/categories",
+      href: "/admin/settings",
     });
   }
 

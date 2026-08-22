@@ -1,7 +1,5 @@
 "use client";
 
-import { useLayoutEffect, useState, type RefObject } from "react";
-import { createPortal } from "react-dom";
 import Link from "next/link";
 import DueNotificationPrompt from "@/components/layout/DueNotificationPrompt";
 import DueRecurringAlertsList from "@/components/layout/DueRecurringAlertsList";
@@ -21,29 +19,10 @@ type AlertsDropdownPanelProps = {
   currency: string;
   actingId: string | null;
   actionError: string | null;
-  anchorRef: RefObject<HTMLElement | null>;
-  panelRef: RefObject<HTMLDivElement | null>;
   onRegisterDue: (recurring: RecurringTransaction) => void;
   onSkipDue: (recurring: RecurringTransaction) => void;
   onClose: () => void;
 };
-
-function getPanelStyle(anchor: HTMLElement) {
-  const rect = anchor.getBoundingClientRect();
-  const gutter = 8;
-  const width = Math.min(384, window.innerWidth - gutter * 2);
-  const left = Math.min(
-    Math.max(gutter, rect.right - width),
-    window.innerWidth - width - gutter,
-  );
-
-  return {
-    top: "max(0.5rem, env(safe-area-inset-top, 0px))",
-    left,
-    width,
-    maxHeight: "calc(100dvh - 1rem - env(safe-area-inset-top, 0px))",
-  };
-}
 
 export default function AlertsDropdownPanel({
   alerts,
@@ -51,37 +30,14 @@ export default function AlertsDropdownPanel({
   currency,
   actingId,
   actionError,
-  anchorRef,
-  panelRef,
   onRegisterDue,
   onSkipDue,
   onClose,
 }: AlertsDropdownPanelProps) {
   const t = useTranslations();
   const totalCount = alerts.length + dueRecurrings.length;
-  const [style, setStyle] = useState({
-    top: 8 as number | string,
-    left: 8 as number,
-    width: 320 as number,
-    maxHeight: "90dvh" as string,
-  });
 
-  useLayoutEffect(() => {
-    function updatePosition() {
-      if (anchorRef.current) {
-        setStyle(getPanelStyle(anchorRef.current));
-      }
-    }
-
-    updatePosition();
-    window.addEventListener("resize", updatePosition);
-
-    return () => {
-      window.removeEventListener("resize", updatePosition);
-    };
-  }, [anchorRef]);
-
-  return createPortal(
+  return (
     <>
       <button
         type="button"
@@ -90,9 +46,7 @@ export default function AlertsDropdownPanel({
         aria-label={t("common.close")}
       />
       <div
-        ref={panelRef}
-        style={style}
-        className="fixed z-[100] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl"
+        className="absolute end-0 top-[calc(100%+0.5rem)] z-[100] w-[min(24rem,calc(100vw-2rem))] max-h-[min(28rem,calc(100dvh-6rem))] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl"
         role="menu"
       >
         <div className="border-b border-slate-100 px-4 py-3">
@@ -148,7 +102,6 @@ export default function AlertsDropdownPanel({
           </ul>
         ) : null}
       </div>
-    </>,
-    document.body,
+    </>
   );
 }

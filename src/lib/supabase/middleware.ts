@@ -34,6 +34,7 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/forgot-password") ||
     pathname.startsWith("/reset-password") ||
     pathname.startsWith("/auth/");
+  const isAdminRoute = pathname.startsWith("/admin");
   const isProtectedRoute =
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/expenses") ||
@@ -45,7 +46,7 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/reports") ||
     pathname.startsWith("/savings") ||
     pathname.startsWith("/account") ||
-    pathname.startsWith("/admin");
+    isAdminRoute;
 
   if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone();
@@ -57,6 +58,16 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
+  }
+
+  if (user && isAdminRoute) {
+    const { data: isAdmin } = await supabase.rpc("is_admin");
+
+    if (!isAdmin) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/dashboard";
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;

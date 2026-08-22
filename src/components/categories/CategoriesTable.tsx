@@ -1,40 +1,43 @@
 "use client";
 
-import { buildCategoryDisplayRows, getCategoryFullPathLabel } from "@/lib/categories";
-import type { Category } from "@/lib/types/database";
+import { useMemo, useState } from "react";
+import CategoryDetailModal from "@/components/categories/CategoryDetailModal";
+import IconActionButton from "@/components/ui/IconActionButton";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
+import {
+  getCategoryDescendantIds,
+  getDirectChildCategories,
+  getParentCategories,
+} from "@/lib/categories/hierarchy";
+import type { Category } from "@/lib/types/database";
 
 type CategoriesTableProps = {
   categories: Category[];
+  quickAddSubmitting: boolean;
   onAddSubCategory: (parentCategoryId: string) => void;
+  onQuickAddSubCategory: (parent: Category, name: string) => Promise<void>;
   onEdit: (category: Category) => void;
   onDelete: (category: Category) => void;
 };
 
-function getParentPath(category: Category, categories: Category[]) {
-  if (!category.parent_category_id) {
-    return "—";
-  }
-
-  const parent = categories.find((item) => item.id === category.parent_category_id);
-
-  if (!parent) {
-    return "—";
-  }
-
-  return getCategoryFullPathLabel(parent, categories);
-}
-
 export default function CategoriesTable({
   categories,
+  quickAddSubmitting,
   onAddSubCategory,
+  onQuickAddSubCategory,
   onEdit,
   onDelete,
 }: CategoriesTableProps) {
   const t = useTranslations();
-  const rows = buildCategoryDisplayRows(categories);
+  const roots = useMemo(() => getParentCategories(categories), [categories]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
-  if (rows.length === 0) {
+  const selectedCategory = useMemo(
+    () => (selectedCategoryId ? categories.find((item) => item.id === selectedCategoryId) : undefined),
+    [categories, selectedCategoryId],
+  );
+
+  if (roots.length === 0) {
     return (
       <p className="mt-6 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
         {t("categories.empty")}
@@ -44,149 +47,139 @@ export default function CategoriesTable({
 
   return (
     <>
-      <div className="mt-6 space-y-3 md:hidden">
-        {rows.map(({ category, depth }) => (
-          <article
-            key={category.id}
-            className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm"
-            style={{ marginInlineStart: `${depth * 0.75}rem` }}
-          >
-            <div className="flex items-start gap-3">
-              <span
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg"
-                style={{ backgroundColor: `${category.color}22` }}
+      <ul className="mt-6 overflow-hidden rounded-2xl border border-slate-100 bg-white">
+        {roots.map((category, index) => {
+          const directCount = getDirectChildCategories(category.id, categories).length;
+          const totalCount = getCategoryDescendantIds(category.id, categories).size;
+
+          return (
+            <li
+              key={category.id}
+              className={`flex flex-col gap-2 px-3 py-3 sm:flex-row sm:items-center sm:justify-between ${
+                index > 0 ? "border-t border-slate-100/80" : ""
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => setSelectedCategoryId(category.id)}
+                className="flex min-w-0 flex-1 items-center gap-3 rounded-lg py-0.5 text-start transition hover:bg-slate-50/80"
               >
-                {category.icon}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="wrap-text font-medium text-slate-900">
-                  {depth > 0 ? `↳ ${category.name}` : category.name}
-                </p>
-                <p className="mt-1 text-sm text-slate-500">
-                  {depth === 0 ? t("categories.typeRoot") : t("categories.typeSub")}
-                </p>
-                <p className="mt-1 wrap-text text-sm leading-6 text-slate-600">
-                  {t("categories.under")}: {getParentPath(category, categories)}
-                </p>
-              </div>
-            </div>
+                <span
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl"
+                  style={{ backgroundColor: `${category.color}18` }}
+                >
+                  {category.icon}
+                </span>
 
-            <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
-              <CategoryIconButton
-                icon="✏️"
-                label={t("common.edit")}
-                onClick={() => onEdit(category)}
-                tone="slate"
-              />
-              <CategoryIconButton
-                icon="➕"
-                label={t("categories.addSub")}
-                onClick={() => onAddSubCategory(category.id)}
-                tone="emerald"
-              />
-              <CategoryIconButton
-                icon="🗑️"
-                label={t("common.delete")}
-                onClick={() => onDelete(category)}
-                tone="red"
-              />
-            </div>
-          </article>
-        ))}
-      </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="wrap-text text-base font-semibold tracking-tight text-slate-900 sm:text-lg">
+                      {category.name}
+                    </span>
+                    <TypeBadge label={t("categories.typeRootShort")} />
+                    <SubCountBadges directCount={directCount} totalCount={totalCount} />
+                  </div>
+                  <p className="mt-0.5 text-xs font-normal text-slate-400">
+                    {t("categories.openDetails")}
+                  </p>
+                </div>
+              </button>
 
-      <div className="mt-6 hidden x-scroll rounded-2xl border border-slate-100 md:block">
-        <table className="min-w-full text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 bg-slate-50 text-slate-500">
-              <th className="px-4 py-3 text-start font-medium">{t("categories.columnName")}</th>
-              <th className="px-4 py-3 text-start font-medium">{t("categories.columnType")}</th>
-              <th className="px-4 py-3 text-start font-medium">{t("categories.columnParent")}</th>
-              <th className="px-4 py-3 text-start font-medium">{t("categories.columnActions")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(({ category, depth }) => (
-              <tr key={category.id} className="border-b border-slate-100 last:border-0">
-                <td className="px-4 py-4">
-                  <div
-                    className="flex items-center gap-3"
-                    style={{ paddingInlineStart: `${depth}rem` }}
-                  >
-                    <span
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-base"
-                      style={{ backgroundColor: `${category.color}22` }}
-                    >
-                      {category.icon}
-                    </span>
-                    <span className="font-medium text-slate-900">
-                      {depth > 0 ? `↳ ${category.name}` : category.name}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-4 py-4 text-slate-600">
-                  {depth === 0 ? t("categories.typeRootShort") : t("categories.typeSubShort")}
-                </td>
-                <td className="px-4 py-4 text-slate-600">
-                  {getParentPath(category, categories)}
-                </td>
-                <td className="px-4 py-4">
-                  <div className="flex items-center gap-1">
-                    <CategoryIconButton
-                      icon="✏️"
-                      label={t("common.edit")}
-                      onClick={() => onEdit(category)}
-                      tone="slate"
-                    />
-                    <CategoryIconButton
-                      icon="➕"
-                      label={t("categories.addSub")}
-                      onClick={() => onAddSubCategory(category.id)}
-                      tone="emerald"
-                    />
-                    <CategoryIconButton
-                      icon="🗑️"
-                      label={t("common.delete")}
-                      onClick={() => onDelete(category)}
-                      tone="red"
-                    />
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+              <CategoryRowActions
+                onAddSub={() => onAddSubCategory(category.id)}
+                onEdit={() => onEdit(category)}
+                onDelete={() => onDelete(category)}
+              />
+            </li>
+          );
+        })}
+      </ul>
+
+      {selectedCategory ? (
+        <CategoryDetailModal
+          category={selectedCategory}
+          categories={categories}
+          quickAddSubmitting={quickAddSubmitting}
+          onClose={() => setSelectedCategoryId(null)}
+          onOpenCategory={setSelectedCategoryId}
+          onAddSubCategory={onAddSubCategory}
+          onQuickAddSubCategory={onQuickAddSubCategory}
+          onEdit={onEdit}
+          onDelete={(category) => {
+            setSelectedCategoryId(null);
+            onDelete(category);
+          }}
+        />
+      ) : null}
     </>
   );
 }
 
-const iconToneClasses = {
-  emerald: "bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
-  slate: "bg-slate-100 text-slate-600 hover:bg-slate-200",
-  red: "bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-600",
-};
-
-function CategoryIconButton({
-  icon,
-  label,
-  onClick,
-  tone,
-}: {
-  icon: string;
-  label: string;
-  onClick: () => void;
-  tone: keyof typeof iconToneClasses;
-}) {
+function TypeBadge({ label }: { label: string }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={label}
-      aria-label={label}
-      className={`flex h-8 w-8 items-center justify-center rounded-full text-sm transition ${iconToneClasses[tone]}`}
-    >
-      {icon}
-    </button>
+    <span className="rounded-md bg-slate-100/80 px-2 py-0.5 text-xs font-medium text-slate-500">
+      {label}
+    </span>
+  );
+}
+
+function SubCountBadges({
+  directCount,
+  totalCount,
+}: {
+  directCount: number;
+  totalCount: number;
+}) {
+  const t = useTranslations();
+  const hasDirect = directCount > 0;
+  const hasTotal = totalCount > 0;
+  const showTotal = totalCount !== directCount;
+
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span
+        className={`min-w-[1.5rem] rounded-lg px-2.5 py-1 text-center text-sm font-semibold tabular-nums ${
+          hasDirect ? "bg-emerald-50 text-emerald-700" : "bg-slate-50 text-slate-400"
+        }`}
+        title={t("categories.directChildCount", { count: String(directCount) })}
+      >
+        {directCount}
+      </span>
+      {showTotal ? (
+        <span
+          className={`min-w-[1.15rem] rounded-md px-1.5 py-0.5 text-center text-[10px] font-medium tabular-nums ${
+            hasTotal ? "bg-slate-100 text-slate-600" : "bg-slate-50 text-slate-400"
+          }`}
+          title={t("categories.totalChildCount", { count: String(totalCount) })}
+        >
+          {totalCount}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+function CategoryRowActions({
+  onAddSub,
+  onEdit,
+  onDelete,
+}: {
+  onAddSub: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const t = useTranslations();
+
+  return (
+    <div className="flex items-center gap-1 sm:shrink-0">
+      <IconActionButton
+        icon="➕"
+        label={t("categories.addSub")}
+        onClick={onAddSub}
+        tone="emerald"
+      />
+      <IconActionButton icon="✏️" label={t("common.edit")} onClick={onEdit} tone="slate" />
+      <IconActionButton icon="🗑️" label={t("common.delete")} onClick={onDelete} tone="red" />
+    </div>
   );
 }

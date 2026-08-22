@@ -16,7 +16,12 @@ export async function inviteFriendByEmail(
   });
 
   if (lookupError) {
-    return { error: lookupError.message as string };
+    const message = lookupError.message ?? "";
+    if (message.includes("rate_limited")) {
+      return { error: "تم تجاوز حد محاولات البحث. حاول مرة أخرى بعد ساعة." };
+    }
+
+    return { error: "تعذّر البحث عن المستخدم الآن." };
   }
 
   const foundUser = (foundUsers as Pick<Profile, "id" | "full_name" | "email">[] | null)?.[0];

@@ -164,6 +164,17 @@ export default function TransactionForm({
         />
       </div>
 
+      <label className="block space-y-2">
+        <span className="text-sm font-medium text-slate-700">{t("expenses.formDate")}</span>
+        <input
+          type="date"
+          required
+          value={transactionDate}
+          onChange={(event) => onTransactionDateChange(event.target.value)}
+          className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
+        />
+      </label>
+
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-3">
           <span className="text-sm font-medium text-slate-700">
@@ -197,17 +208,6 @@ export default function TransactionForm({
           value={amount}
           onChange={(event) => onAmountChange(event.target.value)}
           className="amount-text w-full rounded-2xl border border-slate-200 px-4 py-3 text-base outline-none focus:border-emerald-500"
-        />
-      </label>
-
-      <label className="block space-y-2">
-        <span className="text-sm font-medium text-slate-700">{t("expenses.formDate")}</span>
-        <input
-          type="date"
-          required
-          value={transactionDate}
-          onChange={(event) => onTransactionDateChange(event.target.value)}
-          className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
         />
       </label>
 

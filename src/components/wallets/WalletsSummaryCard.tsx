@@ -20,23 +20,6 @@ export default function WalletsSummaryCard({
       <p className="mt-2 text-3xl font-semibold text-slate-900">
         {formatCurrency(summary.assetTotal, currency)}
       </p>
-      {summary.creditNotes.length > 0 ? (
-        <div className="mt-3 space-y-1">
-          {summary.creditNotes.map((note) => (
-            <p key={note.walletName} className="text-sm text-amber-700">
-              {t("wallets.creditNote", {
-                wallet: note.walletName,
-                owed: formatCurrency(note.owed, currency),
-              })}
-              {note.limit != null
-                ? t("wallets.creditAvailable", {
-                    available: formatCurrency(note.available ?? 0, currency),
-                  })
-                : ""}
-            </p>
-          ))}
-        </div>
-      ) : null}
     </section>
   );
 }

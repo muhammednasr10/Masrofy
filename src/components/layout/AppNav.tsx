@@ -2,61 +2,44 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
 import HeaderAlertsBell from "@/components/layout/HeaderAlertsBell";
 import HeaderPwaInstallButton from "@/components/layout/HeaderPwaInstallButton";
 import SidebarPwaInstallButton from "@/components/layout/SidebarPwaInstallButton";
 import { MasrofyLogo } from "@/components/layout/MasrofyLogo";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { createClient } from "@/lib/supabase/client";
-
-const navLinkKeys = [
-  { href: "/expenses", key: "nav.expenses", icon: "💸" },
-  { href: "/plan", key: "nav.plan", icon: "📋" },
-  { href: "/wallets", key: "nav.wallets", icon: "👛" },
-  { href: "/investments", key: "nav.investments", icon: "📈" },
-  { href: "/reports", key: "nav.reports", icon: "📊" },
-  { href: "/savings", key: "nav.savings", icon: "🎯" },
-  { href: "/friends", key: "nav.friends", icon: "👥" },
-  { href: "/categories", key: "nav.categories", icon: "🏷️" },
-  { href: "/account", key: "nav.account", icon: "⚙️" },
-] as const;
+import {
+  ADMIN_NAV_LINK,
+  isMoreNavActive,
+  isNavLinkActive,
+  MORE_NAV_LINKS,
+  PRIMARY_NAV_LINKS,
+  type AppNavLink,
+} from "@/lib/navigation/links";
 
 export function AppNav() {
   const pathname = usePathname();
   const router = useRouter();
   const t = useTranslations();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const { isAdmin } = useIsAdmin();
+  const moreRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const supabase = createClient();
-    void supabase
-      .from("profiles")
-      .select("is_admin")
-      .maybeSingle()
-      .then(({ data }) => setIsAdmin(Boolean(data?.is_admin)));
-  }, []);
-
-  const navLinks = useMemo(() => {
-    const links: Array<{ href: string; icon: string; label: string }> = navLinkKeys.map(
-      (link) => ({ href: link.href, icon: link.icon, label: t(link.key) }),
-    );
-
+  const moreLinks = useMemo(() => {
+    const links: AppNavLink[] = [...MORE_NAV_LINKS];
     if (isAdmin) {
-      links.splice(links.length - 1, 0, {
-        href: "/admin/categories",
-        icon: "🛡️",
-        label: t("nav.admin"),
-      });
+      links.splice(links.length - 1, 0, ADMIN_NAV_LINK);
     }
-
     return links;
-  }, [isAdmin, t]);
+  }, [isAdmin]);
 
   useEffect(() => {
     setSidebarOpen(false);
+    setMoreOpen(false);
   }, [pathname]);
 
   useEffect(() => {
@@ -81,6 +64,32 @@ export function AppNav() {
     };
   }, [sidebarOpen]);
 
+  useEffect(() => {
+    if (!moreOpen) {
+      return;
+    }
+
+    function handleClickOutside(event: MouseEvent) {
+      if (!moreRef.current?.contains(event.target as Node)) {
+        setMoreOpen(false);
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setMoreOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [moreOpen]);
+
   async function handleSignOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -88,9 +97,11 @@ export function AppNav() {
     router.refresh();
   }
 
+  const moreActive = isMoreNavActive(pathname, isAdmin);
+
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b border-emerald-100 bg-white/95 backdrop-blur safe-top">
+      <header className="sticky top-0 z-40 w-full overflow-visible border-b border-emerald-100 bg-white/95 backdrop-blur safe-top">
         <div className="mx-auto flex w-full min-w-0 max-w-7xl items-center gap-2 px-3 py-3 sm:gap-3 sm:px-4">
           <button
             type="button"
@@ -112,24 +123,62 @@ export function AppNav() {
             </div>
           </div>
 
-          <nav className="hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto md:flex md:flex-nowrap md:[scrollbar-width:none] md:[&::-webkit-scrollbar]:hidden">
-            {navLinks.map((link) => {
-              const active = pathname.startsWith(link.href);
+          <nav className="hidden min-w-0 flex-1 items-center gap-1 md:flex">
+            {PRIMARY_NAV_LINKS.map((link) => {
+              const active = isNavLinkActive(pathname, link.href);
 
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs transition lg:px-4 lg:py-2 lg:text-sm ${
+                  className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-sm transition lg:px-4 lg:py-2 ${
                     active
                       ? "bg-emerald-600 text-white"
                       : "text-slate-600 hover:bg-emerald-50 hover:text-emerald-700"
                   }`}
                 >
-                  {link.label}
+                  {t(link.key)}
                 </Link>
               );
             })}
+
+            <div ref={moreRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setMoreOpen((current) => !current)}
+                aria-expanded={moreOpen}
+                className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-sm transition lg:px-4 lg:py-2 ${
+                  moreActive || moreOpen
+                    ? "bg-emerald-600 text-white"
+                    : "text-slate-600 hover:bg-emerald-50 hover:text-emerald-700"
+                }`}
+              >
+                {t("nav.more")}
+              </button>
+
+              {moreOpen ? (
+                <div className="absolute start-0 top-[calc(100%+0.5rem)] z-50 min-w-56 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
+                  {moreLinks.map((link) => {
+                    const active = isNavLinkActive(pathname, link.href);
+
+                    return (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${
+                          active
+                            ? "bg-emerald-50 font-medium text-emerald-700"
+                            : "text-slate-700 hover:bg-slate-50"
+                        }`}
+                      >
+                        <span aria-hidden>{link.icon}</span>
+                        <span>{t(link.key)}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
           </nav>
 
           <div className="ms-auto flex shrink-0 items-center gap-2 md:ms-0">
@@ -175,36 +224,26 @@ export function AppNav() {
             </div>
 
             <nav className="flex-1 overflow-y-auto px-3 py-4">
+              <p className="px-4 pb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                {t("nav.primarySection")}
+              </p>
               <ul className="space-y-1">
-                {navLinks.map((link) => {
-                  const active = pathname.startsWith(link.href);
+                {PRIMARY_NAV_LINKS.map((link) => (
+                  <SidebarLink key={link.href} link={link} pathname={pathname} label={t(link.key)} />
+                ))}
+              </ul>
 
-                  return (
-                    <li key={link.href}>
-                      <Link
-                        href={link.href}
-                        className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm transition ${
-                          active
-                            ? "bg-emerald-50 font-medium text-emerald-700"
-                            : "text-slate-700 hover:bg-slate-50"
-                        }`}
-                      >
-                        <span
-                          className={`flex h-9 w-9 items-center justify-center rounded-xl text-base ${
-                            active ? "bg-emerald-100" : "bg-slate-50"
-                          }`}
-                        >
-                          {link.icon}
-                        </span>
-                        <span>{link.label}</span>
-                      </Link>
-                    </li>
-                  );
-                })}
+              <p className="mt-6 px-4 pb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                {t("nav.more")}
+              </p>
+              <ul className="space-y-1">
+                {moreLinks.map((link) => (
+                  <SidebarLink key={link.href} link={link} pathname={pathname} label={t(link.key)} />
+                ))}
               </ul>
             </nav>
 
-            <div className="border-t border-emerald-50 p-4 space-y-2">
+            <div className="space-y-2 border-t border-emerald-50 p-4">
               <div className="rounded-2xl border border-slate-100 px-4 py-3">
                 <LanguageSwitcher persistProfile />
               </div>
@@ -221,5 +260,39 @@ export function AppNav() {
         </div>
       ) : null}
     </>
+  );
+}
+
+function SidebarLink({
+  link,
+  pathname,
+  label,
+}: {
+  link: AppNavLink;
+  pathname: string;
+  label: string;
+}) {
+  const active = isNavLinkActive(pathname, link.href);
+
+  return (
+    <li>
+      <Link
+        href={link.href}
+        className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm transition ${
+          active
+            ? "bg-emerald-50 font-medium text-emerald-700"
+            : "text-slate-700 hover:bg-slate-50"
+        }`}
+      >
+        <span
+          className={`flex h-9 w-9 items-center justify-center rounded-xl text-base ${
+            active ? "bg-emerald-100" : "bg-slate-50"
+          }`}
+        >
+          {link.icon}
+        </span>
+        <span>{label}</span>
+      </Link>
+    </li>
   );
 }

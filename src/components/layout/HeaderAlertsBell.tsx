@@ -22,7 +22,6 @@ export default function HeaderAlertsBell() {
   useDueRecurringNotifications(dueRecurrings, locale);
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) {
@@ -30,9 +29,7 @@ export default function HeaderAlertsBell() {
     }
 
     function handleClickOutside(event: MouseEvent) {
-      const target = event.target as Node;
-
-      if (containerRef.current?.contains(target) || panelRef.current?.contains(target)) {
+      if (containerRef.current?.contains(event.target as Node)) {
         return;
       }
 
@@ -47,18 +44,15 @@ export default function HeaderAlertsBell() {
 
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleEscape);
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleEscape);
-      document.body.style.overflow = previousOverflow;
     };
   }, [open]);
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative z-[100]">
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
@@ -82,8 +76,6 @@ export default function HeaderAlertsBell() {
           currency={currency}
           actingId={actingId}
           actionError={actionError}
-          anchorRef={containerRef}
-          panelRef={panelRef}
           onRegisterDue={registerDue}
           onSkipDue={skipDue}
           onClose={() => setOpen(false)}

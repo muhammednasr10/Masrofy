@@ -6,7 +6,7 @@ import PlanEditor from "@/components/plan/PlanEditor";
 import PlanMonthPicker from "@/components/plan/PlanMonthPicker";
 import PlanOverviewCards from "@/components/plan/PlanOverviewCards";
 import CategoryFormModal from "@/components/categories/CategoryFormModal";
-import { FeedbackBanner } from "@/components/wallets/FeedbackBanner";
+import { FeedbackBanner } from "@/components/ui/FeedbackBanner";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import { usePlanPage } from "@/hooks/usePlanPage";
 

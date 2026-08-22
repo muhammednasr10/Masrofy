@@ -1,12 +1,9 @@
 "use client";
 
 import InternalTransfersList from "@/components/wallets/InternalTransfersList";
-import WalletInventoryModal from "@/components/wallets/WalletInventoryModal";
-import WalletTransferModal from "@/components/wallets/WalletTransferModal";
-import { FeedbackBanner } from "@/components/wallets/FeedbackBanner";
-import WalletFormFields from "@/components/wallets/WalletFormFields";
-import WalletFormModal from "@/components/wallets/WalletFormModal";
+import { FeedbackBanner } from "@/components/ui/FeedbackBanner";
 import WalletReconciliationHistory from "@/components/wallets/WalletReconciliationHistory";
+import WalletsPageModals from "@/components/wallets/WalletsPageModals";
 import WalletsSummaryCard from "@/components/wallets/WalletsSummaryCard";
 import WalletsTable from "@/components/wallets/WalletsTable";
 import WalletsToolbar from "@/components/wallets/WalletsToolbar";
@@ -15,217 +12,97 @@ import { useWalletsPage } from "@/hooks/useWalletsPage";
 
 export default function WalletsPage() {
   const t = useTranslations();
-  const {
-    loading,
-    currency,
-    wallets,
-    investments,
-    transactions,
-    reconciliations,
-    internalTransfers,
-    transferableWallets,
-    tableRows,
-    parentWallets,
-    takenInvestmentIds,
-    reconcilableWalletIds,
-    latestReconciliations,
-    portfolioSummary,
-    defaultWalletId,
-    addForm,
-    editForm,
-    editingWalletId,
-    showAddModal,
-    showInventoryModal,
-    showTransferModal,
-    transferForm,
-    inventoryFocusWalletId,
-    adding,
-    savingEdit,
-    transferring,
-    reorderingId,
-    error,
-    message,
-    setAddForm,
-    setEditForm,
-    setTransferForm,
-    loadData,
-    openInventoryModal,
-    closeInventoryModal,
-    openTransferModal,
-    closeTransferModal,
-    openEditModal,
-    closeEditModal,
-    openAddModal,
-    closeAddModal,
-    handleAddSubmit,
-    handleEditSubmit,
-    handleMoveWallet,
-    handleSetDefault,
-    handleTransferSubmit,
-    handleDelete,
-  } = useWalletsPage();
+  const page = useWalletsPage();
 
-  if (loading) {
+  if (page.loading) {
     return <p className="text-sm text-slate-500">{t("wallets.loading")}</p>;
   }
 
   return (
     <div className="space-y-6">
-      <WalletsSummaryCard summary={portfolioSummary} currency={currency} />
-      <FeedbackBanner error={error} message={message} />
+      <WalletsSummaryCard summary={page.portfolioSummary} currency={page.currency} />
+      <FeedbackBanner error={page.error} message={page.message} />
 
       <WalletsToolbar
-        wallets={wallets}
-        defaultWalletId={defaultWalletId}
-        hasReconcilableWallets={reconcilableWalletIds.size > 0}
-        canTransfer={transferableWallets.length >= 2}
-        onSetDefault={handleSetDefault}
-        onOpenInventory={() => openInventoryModal()}
-        onOpenTransfer={openTransferModal}
-        onOpenAdd={() => openAddModal()}
+        wallets={page.wallets}
+        defaultWalletId={page.defaultWalletId}
+        hasReconcilableWallets={page.reconcilableWalletIds.size > 0}
+        canTransfer={page.transferableWallets.length >= 2}
+        onSetDefault={page.handleSetDefault}
+        onOpenInventory={() => page.openInventoryModal()}
+        onOpenTransfer={page.openTransferModal}
+        onOpenAdd={() => page.openAddModal()}
       />
 
       <section className="rounded-3xl border border-white bg-white p-4 shadow-sm sm:p-6">
-        <h2 className="text-xl font-semibold text-slate-900">محافظك</h2>
-        <p className="mt-1 text-sm text-slate-500">
-          أضف محافظ فرعية تحت البنك (Debit / Credit). المصروف على الكريديت يزيد المستحق، والدفع
-          (دخل) يقلله.
-        </p>
+        <h2 className="text-xl font-semibold text-slate-900">{t("wallets.sectionTitle")}</h2>
+        <p className="mt-1 text-sm text-slate-500">{t("wallets.sectionDesc")}</p>
         <WalletsTable
-          rows={tableRows}
-          wallets={wallets}
-          transactions={transactions}
-          investments={investments}
-          currency={currency}
-          reconcilableWalletIds={reconcilableWalletIds}
-          latestReconciliations={latestReconciliations}
-          reorderingId={reorderingId}
-          onMoveWallet={handleMoveWallet}
-          onAddSubWallet={openAddModal}
-          onInventoryWallet={openInventoryModal}
-          onEditWallet={openEditModal}
-          onDeleteWallet={handleDelete}
+          rows={page.tableRows}
+          wallets={page.wallets}
+          transactions={page.transactions}
+          monthTransactions={page.monthTransactions}
+          monthStartDay={page.monthStartDay}
+          investments={page.investments}
+          currency={page.currency}
+          reconcilableWalletIds={page.reconcilableWalletIds}
+          latestReconciliations={page.latestReconciliations}
+          reorderingId={page.reorderingId}
+          onMoveWallet={page.handleMoveWallet}
+          onAddSubWallet={page.openAddModal}
+          onInventoryWallet={page.openInventoryModal}
+          onEditWallet={page.openEditModal}
+          onDeleteWallet={page.handleDelete}
         />
       </section>
 
       <InternalTransfersList
-        transfers={internalTransfers}
-        wallets={wallets}
-        currency={currency}
+        transfers={page.internalTransfers}
+        wallets={page.wallets}
+        currency={page.currency}
       />
 
       <section className="rounded-3xl border border-white bg-white p-4 shadow-sm sm:p-6">
-        <h2 className="text-xl font-semibold text-slate-900">سجل تحديث الأرصدة</h2>
-        <p className="mt-1 text-sm text-slate-500">
-          تاريخ تحديث الأرصدة ومقارنتها بالواقع، مع معاملات الإيراد/المصروف غير المعروف.
-        </p>
-        <WalletReconciliationHistory reconciliations={reconciliations} currency={currency} />
+        <h2 className="text-xl font-semibold text-slate-900">{t("wallets.reconciliationTitle")}</h2>
+        <p className="mt-1 text-sm text-slate-500">{t("wallets.reconciliationDesc")}</p>
+        <WalletReconciliationHistory
+          reconciliations={page.reconciliations}
+          currency={page.currency}
+        />
       </section>
 
-      {showTransferModal ? (
-        <WalletTransferModal
-          wallets={transferableWallets}
-          form={transferForm}
-          submitting={transferring}
-          onChange={setTransferForm}
-          onSubmit={handleTransferSubmit}
-          onClose={closeTransferModal}
-        />
-      ) : null}
-
-      {showInventoryModal ? (
-        <WalletInventoryModal
-          key={inventoryFocusWalletId ?? "all"}
-          wallets={wallets}
-          transactions={transactions}
-          currency={currency}
-          focusWalletId={inventoryFocusWalletId}
-          onClose={closeInventoryModal}
-          onComplete={loadData}
-        />
-      ) : null}
-
-      {showAddModal ? (
-        <WalletFormModal
-          title={addForm.parentWalletId ? "إضافة محفظة فرعية" : "إضافة محفظة"}
-          description={
-            addForm.parentWalletId
-              ? "أضف بطاقة Debit أو Credit تحت المحفظة الرئيسية."
-              : "أضف محفظة جديدة برصيدها الحالي."
-          }
-          onClose={closeAddModal}
-        >
-          <form onSubmit={handleAddSubmit} className="mt-6 space-y-4">
-            <WalletFormFields
-              form={addForm}
-              onChange={setAddForm}
-              idPrefix="add"
-              parentWallets={parentWallets}
-              investments={investments.filter(
-                (investment) => !takenInvestmentIds.has(investment.id),
-              )}
-              currency={currency}
-              allowParentSelection
-            />
-            <div className="flex flex-wrap gap-3 pt-2">
-              <button
-                type="submit"
-                disabled={adding}
-                className="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60"
-              >
-                {adding ? "جاري الحفظ..." : "إضافة المحفظة"}
-              </button>
-              <button
-                type="button"
-                onClick={closeAddModal}
-                className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
-              >
-                إلغاء
-              </button>
-            </div>
-          </form>
-        </WalletFormModal>
-      ) : null}
-
-      {editingWalletId && editForm ? (
-        <WalletFormModal
-          title="تعديل المحفظة"
-          description="كارت تعديل منفصل عن الإضافة."
-          onClose={closeEditModal}
-        >
-          <form onSubmit={handleEditSubmit} className="mt-6 space-y-4">
-            <WalletFormFields
-              form={editForm}
-              onChange={setEditForm}
-              idPrefix="edit"
-              parentWallets={parentWallets}
-              investments={investments.filter(
-                (investment) =>
-                  investment.id === editForm.investmentId ||
-                  !takenInvestmentIds.has(investment.id),
-              )}
-              currency={currency}
-              editingWalletId={editingWalletId}
-            />
-            <div className="flex flex-wrap gap-3 pt-2">
-              <button
-                type="submit"
-                disabled={savingEdit}
-                className="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60"
-              >
-                {savingEdit ? "جاري الحفظ..." : "حفظ التعديلات"}
-              </button>
-              <button
-                type="button"
-                onClick={closeEditModal}
-                className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
-              >
-                إلغاء
-              </button>
-            </div>
-          </form>
-        </WalletFormModal>
-      ) : null}
+      <WalletsPageModals
+        currency={page.currency}
+        wallets={page.wallets}
+        transactions={page.transactions}
+        investments={page.investments}
+        parentWallets={page.parentWallets}
+        takenInvestmentIds={page.takenInvestmentIds}
+        transferableWallets={page.transferableWallets}
+        addForm={page.addForm}
+        editForm={page.editForm}
+        editingWalletId={page.editingWalletId}
+        transferForm={page.transferForm}
+        showAddModal={page.showAddModal}
+        showEditModal={Boolean(page.editingWalletId && page.editForm)}
+        showInventoryModal={page.showInventoryModal}
+        showTransferModal={page.showTransferModal}
+        inventoryFocusWalletId={page.inventoryFocusWalletId}
+        adding={page.adding}
+        savingEdit={page.savingEdit}
+        transferring={page.transferring}
+        setAddForm={page.setAddForm}
+        setEditForm={page.setEditForm}
+        setTransferForm={page.setTransferForm}
+        onCloseAdd={page.closeAddModal}
+        onCloseEdit={page.closeEditModal}
+        onCloseInventory={page.closeInventoryModal}
+        onCloseTransfer={page.closeTransferModal}
+        onAddSubmit={page.handleAddSubmit}
+        onEditSubmit={page.handleEditSubmit}
+        onTransferSubmit={page.handleTransferSubmit}
+        onInventoryComplete={page.loadData}
+      />
     </div>
   );
 }

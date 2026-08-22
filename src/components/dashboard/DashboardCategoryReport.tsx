@@ -1,11 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import CategoryBreakdownReport from "@/components/reports/CategoryBreakdownReport";
+import CategoryExpensesModal from "@/components/dashboard/CategoryExpensesModal";
 import { useDashboardBalanceVisibility } from "@/components/dashboard/DashboardBalanceVisibility";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import { useFormat } from "@/hooks/useFormat";
 import type { DashboardData } from "@/lib/dashboard";
+import type { MonthlySummary } from "@/lib/types/database";
 
 type DashboardCategoryReportProps = {
   data: DashboardData;
@@ -15,6 +18,9 @@ export default function DashboardCategoryReport({ data }: DashboardCategoryRepor
   const t = useTranslations();
   const { formatCurrency } = useFormat();
   const { maskBalance } = useDashboardBalanceVisibility();
+  const [selectedCategory, setSelectedCategory] = useState<
+    MonthlySummary["byCategory"][number] | null
+  >(null);
   const formatAmount = (value: number) =>
     maskBalance(formatCurrency(value, data.currency));
 
@@ -37,7 +43,20 @@ export default function DashboardCategoryReport({ data }: DashboardCategoryRepor
         summary={data.summary}
         currency={data.currency}
         formatAmount={formatAmount}
+        onCategorySelect={setSelectedCategory}
+        openDetailsLabel={t("dashboard.categoryOpenExpenses")}
       />
+
+      {selectedCategory ? (
+        <CategoryExpensesModal
+          category={selectedCategory}
+          transactions={data.monthTransactions}
+          currency={data.currency}
+          monthLabel={data.monthLabel}
+          formatAmount={formatAmount}
+          onClose={() => setSelectedCategory(null)}
+        />
+      ) : null}
     </section>
   );
 }

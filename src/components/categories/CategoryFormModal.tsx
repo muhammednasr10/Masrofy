@@ -62,6 +62,7 @@ export default function CategoryFormModal({
             form={form}
             categories={categories}
             onChange={onChange}
+            lockParent={Boolean(form.parentCategoryId && !isEditing)}
           />
 
           {error ? (

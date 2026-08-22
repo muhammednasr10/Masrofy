@@ -32,6 +32,7 @@ export type DashboardData = {
   investmentCount: number;
   transactionCount: number;
   topCategory: ReturnType<typeof summarizeTransactions>["byCategory"][number] | undefined;
+  monthTransactions: Transaction[];
 };
 
 function filterMonthTransactions(transactions: Transaction[] | null | undefined) {
@@ -125,5 +126,6 @@ export async function loadDashboardData(
     investmentCount: investments?.length ?? 0,
     transactionCount: monthTransactions.length,
     topCategory: summary.byCategory[0],
+    monthTransactions,
   };
 }

@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "setup:supabase": "powershell -ExecutionPolicy Bypass -File ./scripts/setup-supabase.ps1"

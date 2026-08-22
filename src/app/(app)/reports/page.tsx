@@ -14,7 +14,7 @@ import PlanOverviewCards from "@/components/plan/PlanOverviewCards";
 import InvestmentsSummaryCard from "@/components/investments/InvestmentsSummaryCard";
 import WalletReconciliationHistory from "@/components/wallets/WalletReconciliationHistory";
 import WalletsSummaryCard from "@/components/wallets/WalletsSummaryCard";
-import { FeedbackBanner } from "@/components/wallets/FeedbackBanner";
+import { FeedbackBanner } from "@/components/ui/FeedbackBanner";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import { useReportsPage } from "@/hooks/useReportsPage";
 

@@ -225,8 +225,8 @@ export default function TransactionsTable({
           <thead className="bg-slate-50 text-slate-600">
             <tr>
               <th className="px-4 py-3 text-start font-medium">{t("expenses.tableDate")}</th>
-              <th className="px-4 py-3 text-start font-medium">{t("expenses.tableType")}</th>
               <th className="px-4 py-3 text-start font-medium">{t("expenses.tableCategory")}</th>
+              <th className="px-4 py-3 text-start font-medium">{t("expenses.tableType")}</th>
               <th className="px-4 py-3 text-start font-medium">{t("expenses.tableWallet")}</th>
               <th className="px-4 py-3 text-start font-medium">{t("expenses.tableNote")}</th>
               <th className="px-4 py-3 text-start font-medium">{t("expenses.tableAmount")}</th>
@@ -243,6 +243,13 @@ export default function TransactionsTable({
                 <tr key={transaction.id} className="hover:bg-slate-50/80">
                   <td className="whitespace-nowrap px-4 py-3 text-slate-700">
                     {formatDate(transaction.transaction_date)}
+                  </td>
+                  <td className="px-4 py-3 text-slate-900">
+                    {transaction.categories?.icon}{" "}
+                    {transaction.categories?.name ??
+                      (transaction.type === "income"
+                        ? t("expenses.typeIncome")
+                        : t("expenses.noCategory"))}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3">
                     <span
@@ -261,13 +268,6 @@ export default function TransactionsTable({
                         {t("expenses.offlinePending")}
                       </span>
                     ) : null}
-                  </td>
-                  <td className="px-4 py-3 text-slate-900">
-                    {transaction.categories?.icon}{" "}
-                    {transaction.categories?.name ??
-                      (transaction.type === "income"
-                        ? t("expenses.typeIncome")
-                        : t("expenses.noCategory"))}
                   </td>
                   <td className="min-w-[180px] px-4 py-3 text-slate-600">{walletLabel}</td>
                   <td className="max-w-[200px] px-4 py-3 text-slate-600">

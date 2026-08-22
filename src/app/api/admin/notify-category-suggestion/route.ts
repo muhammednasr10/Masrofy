@@ -38,7 +38,7 @@ export async function POST(request: Request) {
   const html = `
     <p>مستخدم أضاف فئة جديدة في مصروفي.</p>
     <p><strong>${suggestion.icon} ${suggestion.name}</strong> — ${parentLine}</p>
-    <p>راجعها من صفحة الإدارة: <a href="${process.env.NEXT_PUBLIC_SITE_URL ?? "https://masrofy-sigma.vercel.app"}/admin/categories">مراجعة الفئات</a></p>
+    <p>راجعها من صفحة الإدارة: <a href="${process.env.NEXT_PUBLIC_SITE_URL ?? "https://masrofy-sigma.vercel.app"}/admin/settings">إعدادات البرنامج</a></p>
   `;
 
   const email = await sendAdminEmail(subject, html);
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
         await sendWebPushNotification(subscription, {
           title: "اقتراح فئة جديدة",
           body: `${suggestion.icon} ${suggestion.name} — ${parentLine}`,
-          url: "/admin/categories",
+          url: "/admin/settings",
           tag: `category-suggestion:${suggestion.id}`,
         });
       }

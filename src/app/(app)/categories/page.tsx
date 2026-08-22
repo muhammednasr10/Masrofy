@@ -20,6 +20,7 @@ export default function CategoriesPage() {
   const [form, setForm] = useState<CategoryFormState | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [quickAddSubmitting, setQuickAddSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -34,7 +35,7 @@ export default function CategoriesPage() {
       setLoading(false);
     }
 
-    loadCategories();
+    void loadCategories();
   }, []);
 
   function openForm(parentCategoryId: string | null = null) {
@@ -52,6 +53,43 @@ export default function CategoriesPage() {
     setError(null);
   }
 
+  async function saveCategory(formState: CategoryFormState) {
+    const supabase = createClient();
+
+    if (formState.editingCategoryId) {
+      const result = await updateCategory(supabase, formState);
+
+      if (result.error || !result.category) {
+        setError(result.error ?? "تعذّر حفظ التعديلات.");
+        return false;
+      }
+
+      setCategories((current) =>
+        current.map((item) => (item.id === result.category!.id ? result.category! : item)),
+      );
+      return true;
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setError("يجب تسجيل الدخول أولاً.");
+      return false;
+    }
+
+    const result = await insertCategory(supabase, user.id, formState, categories);
+
+    if (result.error || !result.category) {
+      setError(result.error ?? "تعذّر حفظ الفئة.");
+      return false;
+    }
+
+    setCategories((current) => [...current, result.category!]);
+    return true;
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -62,46 +100,32 @@ export default function CategoriesPage() {
     setSubmitting(true);
     setError(null);
 
-    const supabase = createClient();
+    const saved = await saveCategory(form);
 
-    if (form.editingCategoryId) {
-      const result = await updateCategory(supabase, form);
-
-      if (result.error || !result.category) {
-        setError(result.error ?? "تعذّر حفظ التعديلات.");
-        setSubmitting(false);
-        return;
-      }
-
-      setCategories((current) =>
-        current.map((item) => (item.id === result.category!.id ? result.category! : item)),
-      );
+    if (saved) {
       closeForm();
-      setSubmitting(false);
-      return;
     }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      setError("يجب تسجيل الدخول أولاً.");
-      setSubmitting(false);
-      return;
-    }
-
-    const result = await insertCategory(supabase, user.id, form, categories);
-
-    if (result.error || !result.category) {
-      setError(result.error ?? "تعذّر حفظ الفئة.");
-      setSubmitting(false);
-      return;
-    }
-
-    setCategories((current) => [...current, result.category!]);
-    closeForm();
     setSubmitting(false);
+  }
+
+  async function handleQuickAddSubCategory(parent: Category, name: string) {
+    setQuickAddSubmitting(true);
+    setError(null);
+
+    const formState = emptyCategoryForm(parent.id);
+    formState.name = name;
+    formState.icon = parent.icon;
+    formState.color = parent.color;
+
+    const saved = await saveCategory(formState);
+
+    if (!saved) {
+      setQuickAddSubmitting(false);
+      return;
+    }
+
+    setQuickAddSubmitting(false);
   }
 
   async function handleDelete(category: Category) {
@@ -143,7 +167,7 @@ export default function CategoriesPage() {
           <div>
             <h2 className="text-xl font-semibold text-slate-900">فئاتك</h2>
             <p className="mt-1 text-sm text-slate-500">
-              {categories.length} فئة • رئيسية وفرعية. الفئة الجديدة تظهر عندك فوراً، والجديدة على البرنامج بتترراجع للإضافة الافتراضية.
+              {categories.length} فئة • اضغط على الفئة لعرض التفاصيل والفرعية.
             </p>
           </div>
 
@@ -152,7 +176,7 @@ export default function CategoriesPage() {
             onClick={() => openForm()}
             className="inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700"
           >
-            + إضافة فئة
+            + فئة رئيسية
           </button>
         </div>
 
@@ -162,7 +186,9 @@ export default function CategoriesPage() {
 
         <CategoriesTable
           categories={categories}
+          quickAddSubmitting={quickAddSubmitting}
           onAddSubCategory={(parentCategoryId) => openForm(parentCategoryId)}
+          onQuickAddSubCategory={handleQuickAddSubCategory}
           onEdit={openEditForm}
           onDelete={handleDelete}
         />

@@ -10,7 +10,7 @@ import TransactionFiltersPanel from "@/components/expenses/TransactionFiltersPan
 import TransactionFormModal from "@/components/expenses/TransactionFormModal";
 import TransactionsTable from "@/components/expenses/TransactionsTable";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
-import { FeedbackBanner } from "@/components/wallets/FeedbackBanner";
+import { FeedbackBanner } from "@/components/ui/FeedbackBanner";
 import { useExpensesPage } from "@/hooks/useExpensesPage";
 import { useFormat } from "@/hooks/useFormat";
 import { useRecurringTransactions } from "@/hooks/useRecurringTransactions";

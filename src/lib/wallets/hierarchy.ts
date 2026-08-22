@@ -5,13 +5,67 @@ import {
   getCreditOwed,
   isCreditWallet,
 } from "@/lib/wallets/balance";
+import { isInvestmentWallet } from "@/lib/wallets/investment-link";
 import { getWalletParentId, normalizeWallets } from "@/lib/wallets/normalize";
+
+export type WalletBalanceSortContext = {
+  transactions: Transaction[];
+  investments: Investment[];
+};
+
+function getWalletDisplayBalance(
+  wallet: Wallet,
+  wallets: Wallet[],
+  sortContext: WalletBalanceSortContext,
+): number {
+  if (walletHasChildren(wallet.id, wallets)) {
+    return getAggregatedSubWalletSummary(
+      wallet.id,
+      wallets,
+      sortContext.transactions,
+      sortContext.investments,
+    ).assetTotal;
+  }
+
+  return calculateWalletBalance(
+    wallet,
+    sortContext.transactions,
+    sortContext.investments,
+  );
+}
+
+function compareWalletsForDisplay(
+  a: Wallet,
+  b: Wallet,
+  wallets: Wallet[],
+  sortContext: WalletBalanceSortContext,
+): number {
+  const aInvestment = isInvestmentWallet(a);
+  const bInvestment = isInvestmentWallet(b);
+
+  if (aInvestment !== bInvestment) {
+    return aInvestment ? 1 : -1;
+  }
+
+  const balanceDiff =
+    getWalletDisplayBalance(b, wallets, sortContext) -
+    getWalletDisplayBalance(a, wallets, sortContext);
+
+  if (balanceDiff !== 0) {
+    return balanceDiff;
+  }
+
+  return a.sort_order - b.sort_order || a.name.localeCompare(b.name, "ar");
+}
 
 export function isSubWallet(wallet: Pick<Wallet, "parent_wallet_id">): boolean {
   return getWalletParentId(wallet) !== null;
 }
 
-export function buildWalletDisplayRows(wallets: Wallet[]) {
+export function buildWalletDisplayRows(
+  wallets: Wallet[],
+  sortContext?: WalletBalanceSortContext,
+) {
   const byParent = new Map<string | null, Wallet[]>();
 
   for (const wallet of normalizeWallets(wallets)) {
@@ -26,7 +80,11 @@ export function buildWalletDisplayRows(wallets: Wallet[]) {
   }
 
   for (const siblings of byParent.values()) {
-    siblings.sort((a, b) => a.sort_order - b.sort_order);
+    if (sortContext) {
+      siblings.sort((a, b) => compareWalletsForDisplay(a, b, wallets, sortContext));
+    } else {
+      siblings.sort((a, b) => a.sort_order - b.sort_order);
+    }
   }
 
   const rows: Array<{ wallet: Wallet; depth: number }> = [];
@@ -125,8 +183,11 @@ export type WalletDisplayRow = {
   hasChildren: boolean;
 };
 
-export function buildWalletTableRows(wallets: Wallet[]): WalletDisplayRow[] {
-  const displayRows = buildWalletDisplayRows(wallets);
+export function buildWalletTableRows(
+  wallets: Wallet[],
+  sortContext?: WalletBalanceSortContext,
+): WalletDisplayRow[] {
+  const displayRows = buildWalletDisplayRows(wallets, sortContext);
   const siblingsByParent = new Map<string | null, typeof displayRows>();
 
   for (const row of displayRows) {

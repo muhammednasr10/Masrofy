@@ -3,7 +3,7 @@
 import SavingsContributionModal from "@/components/savings/SavingsContributionModal";
 import SavingsGoalFormModal from "@/components/savings/SavingsGoalFormModal";
 import SavingsGoalsList from "@/components/savings/SavingsGoalsList";
-import { FeedbackBanner } from "@/components/wallets/FeedbackBanner";
+import { FeedbackBanner } from "@/components/ui/FeedbackBanner";
 import { useSavingsGoalsPage } from "@/hooks/useSavingsGoalsPage";
 import { formatCurrency } from "@/lib/utils/format";
 

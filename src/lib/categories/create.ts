@@ -5,6 +5,10 @@ import {
   type CategoryFormState,
 } from "@/lib/categories/form";
 import { getNextCategorySortOrder } from "@/lib/categories/hierarchy";
+import {
+  findMatchingDefaultCategory,
+  loadActiveDefaultCategories,
+} from "@/lib/categories/import-defaults";
 import type { Category } from "@/lib/types/database";
 
 export async function insertCategory(
@@ -13,10 +17,52 @@ export async function insertCategory(
   form: CategoryFormState,
   categories: Category[],
 ): Promise<{ category: Category | null; error: string | null }> {
-  const sortOrder = getNextCategorySortOrder(categories, form.parentCategoryId);
+  let resolvedForm = form;
+  const { catalog } = await loadActiveDefaultCategories(supabase);
+  const defaultMatch = findMatchingDefaultCategory(
+    catalog,
+    form.name,
+    form.parentCategoryId,
+    categories,
+  );
+
+  if (defaultMatch) {
+    resolvedForm = {
+      ...form,
+      name: defaultMatch.name,
+      icon: defaultMatch.icon,
+      color: defaultMatch.color,
+    };
+
+    const existing = categories.find(
+      (category) =>
+        category.name === defaultMatch.name &&
+        (category.parent_category_id ?? null) === (resolvedForm.parentCategoryId ?? null),
+    );
+
+    if (existing) {
+      const { data, error } = await supabase
+        .from("categories")
+        .update({
+          icon: defaultMatch.icon,
+          color: defaultMatch.color,
+        })
+        .eq("id", existing.id)
+        .select("*")
+        .single();
+
+      if (error) {
+        return { category: null, error: error.message };
+      }
+
+      return { category: data as Category, error: null };
+    }
+  }
+
+  const sortOrder = getNextCategorySortOrder(categories, resolvedForm.parentCategoryId);
   const { data, error } = await supabase
     .from("categories")
-    .insert(buildCategoryPayload(form, userId, sortOrder))
+    .insert(buildCategoryPayload(resolvedForm, userId, sortOrder))
     .select("*")
     .single();
 
@@ -24,7 +70,10 @@ export async function insertCategory(
     return { category: null, error: error.message };
   }
 
-  notifyAdminOfCategory(data.id);
+  if (!defaultMatch) {
+    notifyAdminOfCategory(data.id);
+  }
+
   return { category: data as Category, error: null };
 }
 

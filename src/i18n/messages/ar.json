@@ -78,7 +78,12 @@
     "openDetails": "عرض التفاصيل",
     "subCountLabel": "عدد الفرعية",
     "subListTitle": "الفئات الفرعية",
-    "addSubFull": "إضافة فرعية (نموذج كامل)"
+    "addSubFull": "إضافة فرعية (نموذج كامل)",
+    "importDefaults": "استيراد الفئات الافتراضية",
+    "importDefaultsLoading": "جاري الاستيراد...",
+    "importDefaultsSuccess": "تم استيراد {inserted} فئة وتحديث {synced} فئة مطابقة.",
+    "importDefaultsNothing": "كل الفئات الافتراضية موجودة عندك بالفعل.",
+    "importDefaultsError": "تعذّر استيراد الفئات الافتراضية."
   },
   "admin": {
     "settingsTitle": "إعدادات البرنامج",

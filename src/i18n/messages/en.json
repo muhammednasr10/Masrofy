@@ -78,7 +78,12 @@
     "openDetails": "View details",
     "subCountLabel": "Subcategories",
     "subListTitle": "Subcategories",
-    "addSubFull": "Add subcategory (full form)"
+    "addSubFull": "Add subcategory (full form)",
+    "importDefaults": "Import default categories",
+    "importDefaultsLoading": "Importing...",
+    "importDefaultsSuccess": "Imported {inserted} categories and updated {synced} matching ones.",
+    "importDefaultsNothing": "All default categories are already in your list.",
+    "importDefaultsError": "Could not import default categories."
   },
   "admin": {
     "settingsTitle": "Program settings",

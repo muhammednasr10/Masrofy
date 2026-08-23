@@ -3,10 +3,12 @@
 import { FormEvent, useEffect, useState } from "react";
 import CategoriesTable from "@/components/categories/CategoriesTable";
 import CategoryFormModal from "@/components/categories/CategoryFormModal";
+import { useTranslations } from "@/components/i18n/LocaleProvider";
 import { createClient } from "@/lib/supabase/client";
 import {
   categoryToFormState,
   emptyCategoryForm,
+  importDefaultCategories,
   insertCategory,
   categoryHasChildren,
   getCategoryDescendantIds,
@@ -16,36 +18,41 @@ import type { CategoryFormState } from "@/lib/categories/form";
 import type { Category } from "@/lib/types/database";
 
 export default function CategoriesPage() {
+  const t = useTranslations();
   const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState<CategoryFormState | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [importingDefaults, setImportingDefaults] = useState(false);
   const [quickAddSubmitting, setQuickAddSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+
+  async function loadCategories() {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("categories")
+      .select("*")
+      .order("sort_order", { ascending: true });
+
+    setCategories((data ?? []) as Category[]);
+    setLoading(false);
+  }
 
   useEffect(() => {
-    async function loadCategories() {
-      const supabase = createClient();
-      const { data } = await supabase
-        .from("categories")
-        .select("*")
-        .order("sort_order", { ascending: true });
-
-      setCategories((data ?? []) as Category[]);
-      setLoading(false);
-    }
-
     void loadCategories();
   }, []);
 
   function openForm(parentCategoryId: string | null = null) {
     setForm(emptyCategoryForm(parentCategoryId));
     setError(null);
+    setMessage(null);
   }
 
   function openEditForm(category: Category) {
     setForm(categoryToFormState(category));
     setError(null);
+    setMessage(null);
   }
 
   function closeForm() {
@@ -86,7 +93,14 @@ export default function CategoriesPage() {
       return false;
     }
 
-    setCategories((current) => [...current, result.category!]);
+    setCategories((current) => {
+      const existingIndex = current.findIndex((item) => item.id === result.category!.id);
+      if (existingIndex >= 0) {
+        return current.map((item) => (item.id === result.category!.id ? result.category! : item));
+      }
+
+      return [...current, result.category!];
+    });
     return true;
   }
 
@@ -112,6 +126,7 @@ export default function CategoriesPage() {
   async function handleQuickAddSubCategory(parent: Category, name: string) {
     setQuickAddSubmitting(true);
     setError(null);
+    setMessage(null);
 
     const formState = emptyCategoryForm(parent.id);
     formState.name = name;
@@ -128,13 +143,43 @@ export default function CategoriesPage() {
     setQuickAddSubmitting(false);
   }
 
+  async function handleImportDefaults() {
+    setImportingDefaults(true);
+    setError(null);
+    setMessage(null);
+
+    const supabase = createClient();
+    const { result, error: importError } = await importDefaultCategories(supabase);
+
+    if (importError || !result) {
+      setError(importError ?? t("categories.importDefaultsError"));
+      setImportingDefaults(false);
+      return;
+    }
+
+    await loadCategories();
+
+    if (result.inserted === 0 && result.synced === 0) {
+      setMessage(t("categories.importDefaultsNothing"));
+    } else {
+      setMessage(
+        t("categories.importDefaultsSuccess", {
+          inserted: String(result.inserted),
+          synced: String(result.synced),
+        }),
+      );
+    }
+
+    setImportingDefaults(false);
+  }
+
   async function handleDelete(category: Category) {
     const hasChildren = categoryHasChildren(category.id, categories);
-    const message = hasChildren
+    const messageText = hasChildren
       ? `حذف "${category.name}" هيحذف الفئات الفرعية التابعة ليها كمان. متأكد؟`
       : `حذف "${category.name}"؟`;
 
-    if (!window.confirm(message)) {
+    if (!window.confirm(messageText)) {
       return;
     }
 
@@ -157,7 +202,7 @@ export default function CategoriesPage() {
   }
 
   if (loading) {
-    return <p className="text-sm text-slate-500">جاري تحميل الفئات...</p>;
+    return <p className="text-sm text-slate-500">{t("common.loading")}</p>;
   }
 
   return (
@@ -165,20 +210,34 @@ export default function CategoriesPage() {
       <section className="rounded-3xl border border-white bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-slate-900">فئاتك</h2>
+            <h2 className="text-xl font-semibold text-slate-900">{t("nav.categories")}</h2>
             <p className="mt-1 text-sm text-slate-500">
               {categories.length} فئة • اضغط على الفئة لعرض التفاصيل والفرعية.
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => openForm()}
-            className="inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700"
-          >
-            + فئة رئيسية
-          </button>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              disabled={importingDefaults}
+              onClick={() => void handleImportDefaults()}
+              className="inline-flex items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-medium text-emerald-800 transition hover:bg-emerald-100 disabled:opacity-60"
+            >
+              {importingDefaults ? t("categories.importDefaultsLoading") : t("categories.importDefaults")}
+            </button>
+            <button
+              type="button"
+              onClick={() => openForm()}
+              className="inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700"
+            >
+              + {t("categories.typeRoot")}
+            </button>
+          </div>
         </div>
+
+        {message ? (
+          <p className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{message}</p>
+        ) : null}
 
         {error && !form ? (
           <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>

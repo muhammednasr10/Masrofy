@@ -4,14 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   emptyTransactionFilters,
   filterTransactions,
-  getSelectedWalletSnapshot,
   loadExpensesPageData,
 } from "@/lib/expenses";
 import { usePageFeedback } from "@/hooks/usePageFeedback";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useSyncCompleteListener } from "@/hooks/useSyncCompleteListener";
-import { useCurrentMonthRange } from "@/hooks/useMonthPeriod";
-import { normalizeMonthStartDay } from "@/lib/calendar";
+import { useSelectedMonth } from "@/components/month/SelectedMonthProvider";
 import { createClient } from "@/lib/supabase/client";
 import type { Category, Transaction, Wallet } from "@/lib/types/database";
 import { isBrowserOnline, saveExpensesCache, type OfflineTransaction } from "@/lib/offline";
@@ -21,8 +19,7 @@ export function useExpensesData() {
   const online = useNetworkStatus();
   const { error, message, setError, setMessage, clearFeedback } = usePageFeedback();
 
-  const [monthStartDay, setMonthStartDay] = useState(1);
-  const month = useCurrentMonthRange(monthStartDay);
+  const { month, setMonthStartDay } = useSelectedMonth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [transactions, setTransactions] = useState<OfflineTransaction[]>([]);
@@ -61,12 +58,13 @@ export function useExpensesData() {
       setMonthTransactions(snapshot.monthTransactions);
       setBalanceTransactions(snapshot.balanceTransactions);
       setUsingOfflineCache(Boolean(options?.fromCache));
-      setMonthStartDay(normalizeMonthStartDay(snapshot.monthStartDay));
+      setMonthStartDay(snapshot.monthStartDay);
     },
     [],
   );
 
   const loadData = useCallback(async () => {
+    setLoading(true);
     const supabase = createClient();
     const {
       data: { user },

@@ -1,3 +1,4 @@
+import { readPublicEnv } from "@/lib/public-env";
 import { getSupabaseUrlValidationError } from "@/lib/supabase/env";
 
 const authErrorMessages: Record<string, string> = {
@@ -26,5 +27,5 @@ export function translateAuthError(message: string) {
 }
 
 export function getSupabaseConfigHint() {
-  return getSupabaseUrlValidationError(process.env.NEXT_PUBLIC_SUPABASE_URL);
+  return getSupabaseUrlValidationError(readPublicEnv("NEXT_PUBLIC_SUPABASE_URL"));
 }

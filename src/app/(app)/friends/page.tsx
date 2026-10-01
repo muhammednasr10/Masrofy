@@ -23,10 +23,12 @@ export default function FriendsPage() {
         inviteEmail={friends.inviteEmail}
         relationshipType={friends.relationshipType}
         shareMyActivity={friends.shareMyActivity}
+        makeDependent={friends.makeDependent}
         submitting={friends.submitting}
         onInviteEmailChange={friends.setInviteEmail}
         onRelationshipTypeChange={friends.setRelationshipType}
         onShareMyActivityChange={friends.setShareMyActivity}
+        onMakeDependentChange={friends.setMakeDependent}
         onSubmit={friends.handleInvite}
       />
 
@@ -37,8 +39,12 @@ export default function FriendsPage() {
           friendships={friends.acceptedFriends}
           currentUserId={friends.currentUserId}
           selectedFriendId={friends.selectedFriendId}
+          currency={friends.currency}
+          dependentWallets={friends.dependentWallets}
           onSelectFriend={friends.handleSelectFriend}
           onViewActivity={friends.handleViewActivity}
+          onRelationshipChange={friends.handleRelationshipChange}
+          onDependentChange={friends.handleDependentChange}
         />
 
         <div className="space-y-6">

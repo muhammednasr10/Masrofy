@@ -1,10 +1,12 @@
+import { readPublicEnv } from "@/lib/public-env";
+
 type WhatsAppSupportMessageOptions = {
   email?: string;
   fullName?: string;
 };
 
 export function getSupportWhatsAppNumber() {
-  const raw = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP ?? "";
+  const raw = readPublicEnv("NEXT_PUBLIC_SUPPORT_WHATSAPP") ?? "";
   return raw.replace(/\D/g, "");
 }
 

@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter } from "@/lib/router/navigation";
 import { useLocale } from "@/components/i18n/LocaleProvider";
+import { useSelectedMonth } from "@/components/month/SelectedMonthProvider";
 import type { DashboardAlert } from "@/lib/alerts/dashboard";
-import type { AlertsPanelData } from "@/lib/alerts/load-alerts";
+import { useSyncCompleteListener } from "@/hooks/useSyncCompleteListener";
+import { loadHeaderAlerts } from "@/lib/alerts/load-alerts";
 import { createClient } from "@/lib/supabase/client";
 import {
   registerRecurringDueTransaction,
@@ -14,6 +16,7 @@ import type { RecurringTransaction } from "@/lib/types/database";
 
 export function useHeaderAlerts() {
   const { locale } = useLocale();
+  const { referenceDate } = useSelectedMonth();
   const pathname = usePathname();
   const router = useRouter();
   const [alerts, setAlerts] = useState<DashboardAlert[]>([]);
@@ -24,23 +27,24 @@ export function useHeaderAlerts() {
 
   const loadAlerts = useCallback(async () => {
     try {
-      const response = await fetch(`/api/alerts?locale=${locale}`, { cache: "no-store" });
-      if (!response.ok) {
-        return;
-      }
-
-      const payload = (await response.json()) as AlertsPanelData;
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      const payload = await loadHeaderAlerts(supabase, user?.id, locale, referenceDate);
       setAlerts(payload.alerts ?? []);
       setDueRecurrings(payload.dueRecurrings ?? []);
       setCurrency(payload.currency ?? "EGP");
     } catch {
       // Ignore alert fetch failures in the header.
     }
-  }, [locale]);
+  }, [locale, referenceDate]);
 
   useEffect(() => {
     void loadAlerts();
   }, [pathname, loadAlerts]);
+
+  useSyncCompleteListener(loadAlerts);
 
   const registerDue = useCallback(
     async (recurring: RecurringTransaction) => {

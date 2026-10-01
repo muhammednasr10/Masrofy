@@ -2,17 +2,21 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useLocale } from "@/components/i18n/LocaleProvider";
+import { useSelectedMonth } from "@/components/month/SelectedMonthProvider";
 import { usePageFeedback } from "@/hooks/usePageFeedback";
 import { useWalletModals } from "@/hooks/useWalletModals";
 import { useWalletMutations } from "@/hooks/useWalletMutations";
+import { useSyncCompleteListener } from "@/hooks/useSyncCompleteListener";
 import { useWalletTransfers } from "@/hooks/useWalletTransfers";
 import { useWalletsDerivedData } from "@/hooks/useWalletsDerivedData";
 import { createClient } from "@/lib/supabase/client";
 import type { Investment, Transaction, Wallet, WalletReconciliation } from "@/lib/types/database";
+import { loadDependentWallets, type DependentWallet } from "@/lib/friends/dependent";
 import { loadWalletsPageData } from "@/lib/wallets/load-page-data";
 
 export function useWalletsPage() {
   const { locale } = useLocale();
+  const { referenceDate, setMonthStartDay: setSharedMonthStartDay } = useSelectedMonth();
   const { error, message, setError, setMessage, clearFeedback } = usePageFeedback();
 
   const [wallets, setWallets] = useState<Wallet[]>([]);
@@ -22,6 +26,7 @@ export function useWalletsPage() {
   const [monthStartDay, setMonthStartDay] = useState(1);
   const [currency, setCurrency] = useState("EGP");
   const [reconciliations, setReconciliations] = useState<WalletReconciliation[]>([]);
+  const [dependentWallets, setDependentWallets] = useState<DependentWallet[]>([]);
   const [loading, setLoading] = useState(true);
 
   const modals = useWalletModals(transactions, investments, clearFeedback);
@@ -43,8 +48,9 @@ export function useWalletsPage() {
   });
 
   const loadData = useCallback(async () => {
+    setLoading(true);
     const supabase = createClient();
-    const data = await loadWalletsPageData(supabase, locale);
+    const data = await loadWalletsPageData(supabase, locale, referenceDate);
 
     if (data.walletLoadError) {
       setError(data.walletLoadError);
@@ -52,18 +58,23 @@ export function useWalletsPage() {
 
     setCurrency(data.currency);
     setMonthStartDay(data.monthStartDay);
+    setSharedMonthStartDay(data.monthStartDay);
     setWallets(data.wallets);
     setInvestments(data.investments);
     setTransactions(data.transactions);
     setMonthTransactions(data.monthTransactions);
     setReconciliations(data.reconciliations);
     transfers.setTransferHistory(data.internalTransfers);
+    const dependent = await loadDependentWallets(supabase);
+    setDependentWallets(dependent.wallets);
     setLoading(false);
-  }, [locale, setError, transfers.setTransferHistory]);
+  }, [locale, referenceDate, setError, setSharedMonthStartDay, transfers.setTransferHistory]);
 
   useEffect(() => {
     void loadData();
   }, [loadData]);
+
+  useSyncCompleteListener(loadData);
 
   const mutations = useWalletMutations({
     wallets,
@@ -85,6 +96,7 @@ export function useWalletsPage() {
   return {
     loading,
     currency,
+    dependentWallets,
     wallets,
     investments,
     transactions,

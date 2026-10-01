@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import Link from "@/components/router/Link";
+import { useRouter } from "@/lib/router/navigation";
 import { FormEvent, useState } from "react";
 import SiteFooter from "@/components/layout/SiteFooter";
 import PasswordInput from "@/components/ui/PasswordInput";

@@ -2,9 +2,22 @@ import { loadSignedAttachmentUrls } from "@/lib/attachments";
 import { loadExpensesCache, saveExpensesCache } from "@/lib/offline";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Category, Transaction, Wallet } from "@/lib/types/database";
-import { getMonthRange, isDateInMonthRange, normalizeMonthStartDay } from "@/lib/calendar";
+import { isDateInMonthRange, normalizeMonthStartDay } from "@/lib/calendar";
 import type { ExpensesPageSnapshot } from "@/lib/expenses/append-transaction";
 import { normalizeWallets } from "@/lib/wallets/normalize";
+
+function sliceExpensesSnapshot(
+  snapshot: ExpensesPageSnapshot,
+  monthStart: string,
+  monthEnd: string,
+): ExpensesPageSnapshot {
+  return {
+    ...snapshot,
+    monthTransactions: snapshot.transactions.filter((transaction) =>
+      isDateInMonthRange(transaction.transaction_date, { start: monthStart, end: monthEnd }),
+    ),
+  };
+}
 
 export type LoadExpensesPageResult =
   | { kind: "success"; snapshot: ExpensesPageSnapshot; attachmentUrls: Record<string, string> }
@@ -31,7 +44,7 @@ export async function loadExpensesPageData(
       };
     }
 
-    return { kind: "offline-cache", snapshot: cached };
+    return { kind: "offline-cache", snapshot: sliceExpensesSnapshot(cached, monthStart, monthEnd) };
   }
 
   try {
@@ -53,7 +66,7 @@ export async function loadExpensesPageData(
     ]);
 
     const monthStartDay = normalizeMonthStartDay(profile?.month_start_day);
-    const month = getMonthRange(new Date(), "ar", monthStartDay);
+    const month = { start: monthStart, end: monthEnd };
     const expenseTransactions = ((transactionRows ?? []) as Transaction[]).filter(
       (transaction) => transaction.type !== "transfer",
     );
@@ -101,7 +114,7 @@ export async function loadExpensesPageData(
       return {
         kind: "error",
         message: "تعذر الاتصال — تم عرض آخر نسخة محفوظة محلياً.",
-        fallbackSnapshot: cached,
+        fallbackSnapshot: sliceExpensesSnapshot(cached, monthStart, monthEnd),
       };
     }
 

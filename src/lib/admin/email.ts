@@ -4,6 +4,19 @@ export function getAdminEmail() {
   return ADMIN_EMAIL;
 }
 
+export function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+export function plainNotificationText(value: string) {
+  return value.replace(/[\r\n\t]+/g, " ").trim().slice(0, 120);
+}
+
 export async function sendAdminEmail(subject: string, html: string) {
   const apiKey = process.env.RESEND_API_KEY?.trim();
 

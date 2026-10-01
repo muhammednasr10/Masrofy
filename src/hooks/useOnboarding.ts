@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/lib/router/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { completeOnboardingSetup } from "@/lib/onboarding/complete";
 import { ONBOARDING_CATEGORY_PRESETS } from "@/lib/onboarding/presets";

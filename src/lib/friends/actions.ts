@@ -9,6 +9,7 @@ export async function inviteFriendByEmail(
     email: string;
     relationshipType: string;
     shareMyActivity: boolean;
+    makeDependent: boolean;
   },
 ) {
   const { data: foundUsers, error: lookupError } = await supabase.rpc("find_user_by_email", {
@@ -35,10 +36,14 @@ export async function inviteFriendByEmail(
     addressee_id: foundUser.id,
     relationship_type: params.relationshipType,
     requester_shares_activity: params.shareMyActivity,
+    dependent_user_id: params.makeDependent ? foundUser.id : null,
   });
 
   if (insertError) {
-    return { error: insertError.message };
+    const missing = insertError.code === "42703" || insertError.message.includes("dependent_user_id");
+    return {
+      error: missing ? "ربط الحساب التابع محتاج تطبيق ملف الهجرة 031." : insertError.message,
+    };
   }
 
   return {
@@ -128,4 +133,42 @@ export async function sendFriendTransfer(
   }
 
   return { message: "تم إرسال التحويل بنجاح." };
+}
+
+export async function updateFriendshipLink(
+  supabase: SupabaseClient,
+  friendshipId: string,
+  patch: {
+    relationshipType?: string;
+    dependentUserId?: string | null;
+  },
+) {
+  const updates: {
+    relationship_type?: string;
+    dependent_user_id?: string | null;
+    updated_at: string;
+  } = { updated_at: new Date().toISOString() };
+
+  if (patch.relationshipType) {
+    updates.relationship_type = patch.relationshipType;
+  }
+
+  if (patch.dependentUserId !== undefined) {
+    updates.dependent_user_id = patch.dependentUserId;
+  }
+
+  const { error } = await supabase.from("friendships").update(updates).eq("id", friendshipId);
+
+  if (error) {
+    const missing =
+      error.code === "42703" || error.message.includes("dependent_user_id");
+
+    return {
+      error: missing
+        ? "ربط الحساب التابع محتاج تطبيق ملف الهجرة 031."
+        : error.message,
+    };
+  }
+
+  return { message: "تم تحديث العلاقة." };
 }

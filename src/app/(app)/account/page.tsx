@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/router/Link";
 import AccountAppSection from "@/components/account/AccountAppSection";
 import AccountDataSection from "@/components/account/AccountDataSection";
 import AccountLanguageSection from "@/components/account/AccountLanguageSection";

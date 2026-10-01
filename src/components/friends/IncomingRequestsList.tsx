@@ -37,6 +37,9 @@ export default function IncomingRequestsList({ requests, onRespond }: IncomingRe
                 </p>
                 <p className="text-sm text-slate-500">
                   {getRelationshipLabel(friendship.relationship_type, false)}
+                  {friendship.dependent_user_id === friendship.addressee_id
+                    ? " • كل محافظك هتظهر لصاحب الطلب"
+                    : ""}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">

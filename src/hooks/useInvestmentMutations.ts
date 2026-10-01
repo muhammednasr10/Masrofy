@@ -51,7 +51,6 @@ type UseInvestmentMutationsOptions = InvestmentMutationFeedback & {
 export function useInvestmentMutations({
   investments,
   setInvestments,
-  profitEntriesByInvestment,
   setProfitEntriesByInvestment,
   setValueUpdatesByInvestment,
   addForm,

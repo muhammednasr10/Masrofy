@@ -9,6 +9,7 @@ import type {
   Wallet,
   WalletReconciliation,
 } from "@/lib/types/database";
+import type { Locale } from "@/i18n/config";
 import { getMonthRange, normalizeMonthStartDay } from "@/lib/calendar";
 
 export type AlertInputs = {
@@ -29,12 +30,15 @@ function filterMonthTransactions(transactions: Transaction[] | null | undefined)
 
 export async function fetchAlertInputs(
   supabase: SupabaseClient,
+  referenceDate = new Date(),
+  locale: Locale = "ar",
 ): Promise<AlertInputs> {
   const { data: profile } = await supabase
     .from("profiles")
     .select("currency, locale, month_start_day, is_admin")
     .maybeSingle();
-  const month = getMonthRange(new Date(), "ar", profile?.month_start_day);
+  const monthStartDay = normalizeMonthStartDay(profile?.month_start_day);
+  const month = getMonthRange(referenceDate, locale, monthStartDay);
   const today = new Date().toISOString().slice(0, 10);
 
   const [
@@ -73,7 +77,9 @@ export async function fetchAlertInputs(
     month.start,
     categories,
     monthTransactions,
-    normalizeMonthStartDay(profile?.month_start_day),
+    monthStartDay,
+    referenceDate,
+    locale,
   );
 
   let pendingCategorySuggestions = 0;

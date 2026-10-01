@@ -29,7 +29,10 @@ export function useDashboardCards(data: DashboardData): {
       expenses: formatAmount(data.summary.totalExpenses),
     });
 
-    const planStatus = getDashboardPlanStatus(data.planComparison, formatAmount, t);
+    const planComparison = data.planComparison;
+    const planRemaining = planComparison.expenses.planned - planComparison.expenses.actual;
+    const planHasBudget = planComparison.hasPlan && planComparison.expenses.planned > 0;
+    const planStatus = getDashboardPlanStatus(planComparison, formatAmount, t);
 
     const primaryCards: DashboardSectionCardProps[] = [
       {
@@ -58,10 +61,14 @@ export function useDashboardCards(data: DashboardData): {
         icon: "📋",
         title: t("dashboard.planTitle"),
         description: t("dashboard.planDesc"),
-        primaryValue: data.planComparison.hasPlan
-          ? maskBalance(formatAmount(data.planComparison.expenses.actual))
+        primaryValue: planHasBudget
+          ? formatAmount(Math.abs(planRemaining))
           : t("dashboard.planNoPlanValue"),
-        secondaryValue: planStatus,
+        secondaryValue: planHasBudget
+          ? planRemaining < 0
+            ? t("dashboard.planOverValue")
+            : t("dashboard.planRemainingValue")
+          : planStatus,
         tone: "amber",
       },
       {

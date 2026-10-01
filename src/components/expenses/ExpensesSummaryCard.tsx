@@ -4,13 +4,11 @@ import { useFormat } from "@/hooks/useFormat";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 
 export default function ExpensesSummaryCard({
-  monthLabel,
   totalExpenses,
   totalIncome,
   balance,
   currency,
 }: {
-  monthLabel: string;
   totalExpenses: number;
   totalIncome: number;
   balance: number;
@@ -21,10 +19,7 @@ export default function ExpensesSummaryCard({
 
   return (
     <section className="space-y-4">
-      <div>
-        <p className="text-sm text-emerald-700">{t("expenses.monthSummaryLabel")}</p>
-        <h2 className="wrap-text text-xl font-semibold text-slate-900 sm:text-2xl">{monthLabel}</h2>
-      </div>
+      <p className="text-sm text-emerald-700">{t("expenses.monthSummaryLabel")}</p>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <article className="rounded-3xl border border-white bg-gradient-to-br from-red-50 to-white p-6 shadow-sm">

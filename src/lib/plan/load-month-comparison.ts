@@ -1,3 +1,4 @@
+import type { Locale } from "@/i18n/config";
 import { buildPlanComparison } from "@/lib/plan/summary";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Category, MonthlyPlan, PlanComparison, PlanItem, Transaction } from "@/lib/types/database";
@@ -8,6 +9,8 @@ export async function loadMonthPlanComparison(
   categories: Category[],
   monthTransactions: Transaction[],
   monthStartDay = 1,
+  referenceDate = new Date(),
+  locale: Locale = "ar",
 ): Promise<PlanComparison> {
   const { data: planRow } = await supabase
     .from("monthly_plans")
@@ -33,5 +36,7 @@ export async function loadMonthPlanComparison(
     planItems,
     transactions: monthTransactions,
     monthStartDay,
+    referenceDate,
+    locale,
   });
 }

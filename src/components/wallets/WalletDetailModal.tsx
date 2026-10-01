@@ -28,6 +28,7 @@ type WalletDetailModalProps = {
   monthTransactions: Transaction[];
   monthLabel: string;
   monthStartDay: number;
+  referenceDate: Date;
   investments: Investment[];
   currency: string;
   hasChildren: boolean;
@@ -47,6 +48,7 @@ export default function WalletDetailModal({
   monthTransactions,
   monthLabel,
   monthStartDay,
+  referenceDate,
   investments,
   currency,
   hasChildren,
@@ -79,8 +81,9 @@ export default function WalletDetailModal({
       getWalletMonthlyTransactions(wallet.id, wallets, monthTransactions, {
         includeDescendants: hasChildren,
         monthStartDay,
+        referenceDate,
       }),
-    [wallet.id, wallets, monthTransactions, hasChildren, monthStartDay],
+    [wallet.id, wallets, monthTransactions, hasChildren, monthStartDay, referenceDate],
   );
 
   function runAndClose(action: () => void) {

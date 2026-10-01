@@ -1,18 +1,34 @@
+import { readPublicEnv } from "@/lib/public-env";
+
+function readNodeEnv(name: string) {
+  if (typeof process === "undefined" || !process.env) {
+    return undefined;
+  }
+
+  return process.env[name];
+}
+
 export function getSiteUrl() {
-  if (process.env.NEXT_PUBLIC_SITE_URL) {
-    return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
+  const configured = readPublicEnv("NEXT_PUBLIC_SITE_URL");
+
+  if (configured) {
+    return configured.replace(/\/$/, "");
   }
 
   if (typeof window !== "undefined") {
     return window.location.origin;
   }
 
-  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
-    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  const productionHost = readNodeEnv("VERCEL_PROJECT_PRODUCTION_URL");
+
+  if (productionHost) {
+    return `https://${productionHost}`;
   }
 
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
+  const vercelHost = readNodeEnv("VERCEL_URL");
+
+  if (vercelHost) {
+    return `https://${vercelHost}`;
   }
 
   return "http://localhost:3000";
@@ -23,7 +39,14 @@ export function getSafeNextPath(next: string | null | undefined, fallback = "/da
     return fallback;
   }
 
-  if (!next.startsWith("/") || next.startsWith("//") || next.includes("://")) {
+  if (
+    !next.startsWith("/") ||
+    next.startsWith("//") ||
+    next.includes("\\") ||
+    next.includes("%") ||
+    next.includes("..") ||
+    next.includes("://")
+  ) {
     return fallback;
   }
 

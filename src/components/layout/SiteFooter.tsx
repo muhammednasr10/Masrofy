@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/router/Link";
 
 export default function SiteFooter() {
   return (

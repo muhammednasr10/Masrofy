@@ -71,18 +71,32 @@ export async function insertCategory(
   }
 
   if (!defaultMatch) {
-    notifyAdminOfCategory(data.id);
+    notifyAdminOfCategory(supabase, data.id);
   }
 
   return { category: data as Category, error: null };
 }
 
-function notifyAdminOfCategory(categoryId: string) {
-  void fetch("/api/admin/notify-category-suggestion", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ categoryId }),
-  }).catch(() => {
+function notifyAdminOfCategory(supabase: SupabaseClient, categoryId: string) {
+  void (async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const token = session?.access_token;
+
+    if (!token) {
+      return;
+    }
+
+    await fetch("/api/admin/notify-category-suggestion", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ categoryId }),
+    });
+  })().catch(() => {
     // Notification is best-effort.
   });
 }

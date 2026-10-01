@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/router/Link";
 import SiteFooter from "@/components/layout/SiteFooter";
 
 export default function Home() {

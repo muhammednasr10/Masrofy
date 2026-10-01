@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
+import Link from "@/components/router/Link";
+import { useRouter } from "@/lib/router/navigation";
 import AuthShell, {
   authInputClassName,
   authLabelClassName,
@@ -12,6 +12,7 @@ import { useTranslations } from "@/components/i18n/LocaleProvider";
 import PasswordInput from "@/components/ui/PasswordInput";
 import { createClient } from "@/lib/supabase/client";
 import { getSupabaseConfigHint, translateAuthError } from "@/lib/supabase/auth-errors";
+import { checkSupabaseHealth } from "@/lib/supabase/health";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -30,11 +31,10 @@ export default function LoginPage() {
 
     let cancelled = false;
 
-    void fetch("/api/health/supabase")
-      .then(async (response) => {
-        const data = (await response.json()) as { connected?: boolean; message?: string };
+    void checkSupabaseHealth(createClient())
+      .then((data) => {
         if (!cancelled && !data.connected) {
-          setConnectionWarning(data.message ?? t("auth.connectionFailed"));
+          setConnectionWarning(data.message || t("auth.connectionFailed"));
         }
       })
       .catch(() => {

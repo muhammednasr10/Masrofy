@@ -1,5 +1,6 @@
 "use client";
 
+import DependentWalletsList from "@/components/friends/DependentWalletsList";
 import InternalTransfersList from "@/components/wallets/InternalTransfersList";
 import { FeedbackBanner } from "@/components/ui/FeedbackBanner";
 import WalletReconciliationHistory from "@/components/wallets/WalletReconciliationHistory";
@@ -55,6 +56,18 @@ export default function WalletsPage() {
           onDeleteWallet={page.handleDelete}
         />
       </section>
+
+      {page.dependentWallets.length > 0 ? (
+        <section className="rounded-3xl border border-white bg-white p-4 shadow-sm sm:p-6">
+          <h2 className="text-xl font-semibold text-slate-900">محافظ تابعة</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            محافظ الحسابات اللي اخترت إنها تابعة لك.
+          </p>
+          <div className="mt-4">
+            <DependentWalletsList wallets={page.dependentWallets} currency={page.currency} />
+          </div>
+        </section>
+      ) : null}
 
       <InternalTransfersList
         transfers={page.internalTransfers}

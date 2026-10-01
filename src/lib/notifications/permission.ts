@@ -1,3 +1,6 @@
+import { readPublicEnv } from "@/lib/public-env";
+import { createClient } from "@/lib/supabase/client";
+
 export function getNotificationPermission(): NotificationPermission | "unsupported" {
   if (typeof window === "undefined" || !("Notification" in window)) {
     return "unsupported";
@@ -28,7 +31,7 @@ function urlBase64ToUint8Array(base64String: string) {
 }
 
 export async function subscribeToPushNotifications() {
-  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const publicKey = readPublicEnv("NEXT_PUBLIC_VAPID_PUBLIC_KEY");
 
   if (!publicKey || !("serviceWorker" in navigator) || !("PushManager" in window)) {
     return false;
@@ -48,13 +51,36 @@ export async function subscribeToPushNotifications() {
       applicationServerKey: urlBase64ToUint8Array(publicKey),
     }));
 
-  const response = await fetch("/api/push/subscribe", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(subscription),
-  });
+  const json = subscription.toJSON();
+  const endpoint = subscription.endpoint;
+  const p256dh = json.keys?.p256dh;
+  const auth = json.keys?.auth;
 
-  return response.ok;
+  if (!endpoint || !p256dh || !auth) {
+    return false;
+  }
+
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return false;
+  }
+
+  const { error } = await supabase.from("push_subscriptions").upsert(
+    {
+      user_id: user.id,
+      endpoint,
+      p256dh,
+      auth,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "endpoint" },
+  );
+
+  return !error;
 }
 
 export async function unsubscribeFromPushNotifications() {
@@ -69,10 +95,18 @@ export async function unsubscribeFromPushNotifications() {
     return;
   }
 
-  await fetch("/api/push/subscribe", {
-    method: "DELETE",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ endpoint: subscription.endpoint }),
-  });
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    await supabase
+      .from("push_subscriptions")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("endpoint", subscription.endpoint);
+  }
+
   await subscription.unsubscribe();
 }

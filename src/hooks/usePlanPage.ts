@@ -1,63 +1,89 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { usePageFeedback } from "@/hooks/usePageFeedback";
 import {
-  applyAnnualTemplateToYear,
   buildPlanComparison,
   categoryPlansFromItems,
   categoryPlansFromTemplateItems,
   emptyCategoryPlans,
-  persistAnnualTemplate,
+  persistHorizonPlan,
   persistMonthlyPlan,
 } from "@/lib/plan";
+import { useAnnualPlanForm } from "@/hooks/useAnnualPlanForm";
 import { useCategoryForm } from "@/hooks/useCategoryForm";
+import { useSyncCompleteListener } from "@/hooks/useSyncCompleteListener";
 import { useMonthPeriod } from "@/hooks/useMonthPeriod";
-import { getPlanMonthKey, normalizeMonthStartDay } from "@/lib/calendar";
+import { getMonthRange, normalizeMonthStartDay, parsePlanMonthKey } from "@/lib/calendar";
+import { buildPlanWealthForecast, sumAnnualPlannedExpenses } from "@/lib/plan/wealth-forecast";
+import {
+  emptyHorizonLine,
+  horizonOverlapsRange,
+  isHorizonCadence,
+  sumHorizonExpenses,
+  type HorizonLineDraft,
+} from "@/lib/plan/horizon";
 import type {
   AnnualPlanTemplate,
   AnnualPlanTemplateItem,
   Category,
+  HorizonPlan,
+  HorizonPlanItem,
+  Investment,
   MonthlyPlan,
   PlanItem,
   Transaction,
+  Wallet,
 } from "@/lib/types/database";
 
 export function usePlanPage() {
-  const pathname = usePathname();
   const { error, message, setError, setMessage, clearFeedback } = usePageFeedback();
-  const [monthStartDay, setMonthStartDay] = useState(1);
-  const { locale, planMonthKey, setPlanMonthKey, referenceDate, month, planYear } =
-    useMonthPeriod(monthStartDay);
+  const {
+    locale,
+    planMonthKey,
+    setPlanMonthKey,
+    referenceDate,
+    month,
+    planYear,
+    setMonthStartDay,
+    monthStartDay,
+  } = useMonthPeriod();
   const [categories, setCategories] = useState<Category[]>([]);
   const [plan, setPlan] = useState<MonthlyPlan | null>(null);
   const [planItems, setPlanItems] = useState<PlanItem[]>([]);
   const [annualTemplate, setAnnualTemplate] = useState<AnnualPlanTemplate | null>(null);
   const [annualTemplateItems, setAnnualTemplateItems] = useState<AnnualPlanTemplateItem[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactionsBeforeMonth, setTransactionsBeforeMonth] = useState<Transaction[]>([]);
+  const [wallets, setWallets] = useState<Wallet[]>([]);
+  const [investments, setInvestments] = useState<Investment[]>([]);
   const [currency, setCurrency] = useState("EGP");
   const [plannedIncome, setPlannedIncome] = useState("");
   const [categoryPlans, setCategoryPlans] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState("");
-  const [annualModalOpen, setAnnualModalOpen] = useState(false);
-  const [annualPlannedIncome, setAnnualPlannedIncome] = useState("");
-  const [annualCategoryPlans, setAnnualCategoryPlans] = useState<Record<string, string>>({});
-  const [annualNotes, setAnnualNotes] = useState("");
+  const [horizonPlan, setHorizonPlan] = useState<HorizonPlan | null>(null);
+  const [horizonLines, setHorizonLines] = useState<Record<string, HorizonLineDraft>>({});
+  const [horizonItems, setHorizonItems] = useState<HorizonPlanItem[]>([]);
+  const [horizonSaving, setHorizonSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [annualSaving, setAnnualSaving] = useState(false);
-  const [annualApplying, setAnnualApplying] = useState(false);
-  const [annualError, setAnnualError] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     clearFeedback();
 
     const supabase = createClient();
-    const [{ data: profile }, { data: categoryRows }, { data: transactionRows }, { data: annualRow }] =
-      await Promise.all([
+    const [
+      { data: profile },
+      { data: categoryRows },
+      { data: transactionRows },
+      { data: priorTransactionRows },
+      { data: walletRows },
+      { data: investmentRows },
+      { data: annualRow },
+      { data: horizonRow },
+    ] = await Promise.all([
         supabase.from("profiles").select("currency, month_start_day").maybeSingle(),
         supabase.from("categories").select("*").order("sort_order", { ascending: true }),
         supabase
@@ -66,11 +92,15 @@ export function usePlanPage() {
           .gte("transaction_date", month.start)
           .lte("transaction_date", month.end)
           .order("transaction_date", { ascending: false }),
+        supabase.from("transactions").select("*").lt("transaction_date", month.start),
+        supabase.from("wallets").select("*"),
+        supabase.from("investments").select("*"),
         supabase
           .from("annual_plan_templates")
           .select("*")
           .eq("plan_year", planYear)
           .maybeSingle(),
+        supabase.from("horizon_plans").select("*").maybeSingle(),
       ]);
 
     const typedCategories = (categoryRows ?? []) as Category[];
@@ -93,10 +123,54 @@ export function usePlanPage() {
       typedAnnualItems = (annualItemRows ?? []) as AnnualPlanTemplateItem[];
     }
 
+    const typedHorizonPlan = (horizonRow as HorizonPlan | null) ?? null;
+    let typedHorizonItems: HorizonPlanItem[] = [];
+
+    if (typedHorizonPlan) {
+      const { data: horizonItemRows, error: horizonItemsError } = await supabase
+        .from("horizon_plan_items")
+        .select("*")
+        .eq("plan_id", typedHorizonPlan.id)
+        .order("sort_order", { ascending: true });
+
+      if (horizonItemsError) {
+        setError(horizonItemsError.message);
+        setLoading(false);
+        return;
+      }
+
+      typedHorizonItems = (horizonItemRows ?? []) as HorizonPlanItem[];
+    }
+
+    setHorizonPlan(typedHorizonPlan);
+    setHorizonItems(typedHorizonItems);
+    setHorizonLines(
+      Object.fromEntries(
+        typedCategories.map((category) => {
+          const saved = typedHorizonItems.find((item) => item.category_id === category.id);
+
+          return [
+            category.id,
+            saved
+              ? {
+                  amount: String(saved.planned_amount),
+                  cadence: isHorizonCadence(saved.cadence) ? saved.cadence : "monthly",
+                  startDate: String(saved.start_date).slice(0, 10),
+                  endDate: String(saved.end_date).slice(0, 10),
+                }
+              : emptyHorizonLine(month.start),
+          ];
+        }),
+      ),
+    );
+
     setCurrency(profile?.currency ?? "EGP");
     setMonthStartDay(normalizeMonthStartDay(profile?.month_start_day));
     setCategories(typedCategories);
     setTransactions((transactionRows ?? []) as Transaction[]);
+    setTransactionsBeforeMonth((priorTransactionRows ?? []) as Transaction[]);
+    setWallets((walletRows ?? []) as Wallet[]);
+    setInvestments((investmentRows ?? []) as Investment[]);
     setAnnualTemplate(typedAnnualTemplate);
     setAnnualTemplateItems(typedAnnualItems);
 
@@ -159,14 +233,10 @@ export function usePlanPage() {
   }, [clearFeedback, month.end, month.start, planYear, setError]);
 
   useEffect(() => {
-    if (pathname === "/plan") {
-      setPlanMonthKey(getPlanMonthKey(new Date(), monthStartDay));
-    }
-  }, [pathname, monthStartDay]);
-
-  useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useSyncCompleteListener(loadData);
 
   const comparison = useMemo(
     () =>
@@ -182,15 +252,101 @@ export function usePlanPage() {
     [categories, locale, plan, planItems, referenceDate, transactions, monthStartDay],
   );
 
+  const wealthForecast = useMemo(() => {
+    const yearEnd = getMonthRange(
+      parsePlanMonthKey(`${planYear}-12`, monthStartDay),
+      "en",
+      monthStartDay,
+    ).end;
+    const savedHorizonLines = horizonItems
+      .filter((item) => Number(item.planned_amount) > 0)
+      .map((item) => ({
+        amount: Number(item.planned_amount),
+        cadence: isHorizonCadence(item.cadence) ? item.cadence : ("monthly" as const),
+        startDate: String(item.start_date).slice(0, 10),
+        endDate: String(item.end_date).slice(0, 10),
+      }));
+    const horizonApplies = savedHorizonLines.some((line) =>
+      horizonOverlapsRange(line.startDate, line.endDate, month.start, yearEnd),
+    );
+    const templateIncome = annualTemplate ? Number(annualTemplate.planned_income) : null;
+    const templateExpenses = annualTemplate
+      ? sumAnnualPlannedExpenses(categories, annualTemplateItems)
+      : null;
+    const annualIncome = horizonApplies ? (comparison.hasPlan ? comparison.income.planned : 0) : templateIncome;
+    const annualExpenses = horizonApplies ? 0 : templateExpenses;
+    const monthPlanNet =
+      comparison.hasPlan || annualIncome == null || annualExpenses == null
+        ? comparison.balance.planned
+        : annualIncome - annualExpenses;
+    const forecast = buildPlanWealthForecast({
+      wallets,
+      transactionsBeforeMonth,
+      investments,
+      monthPlanNet,
+      annualPlannedIncome: horizonApplies ? null : annualIncome,
+      annualPlannedExpenses: horizonApplies ? null : annualExpenses,
+      planMonthKey,
+      planYear,
+    });
+    const monthlyIncome = comparison.hasPlan ? comparison.income.planned : (templateIncome ?? 0);
+    const yearExpenses = horizonApplies
+      ? sumHorizonExpenses(savedHorizonLines, month.start, yearEnd)
+      : 0;
+
+    return {
+      ...forecast,
+      expectedYearEnd: horizonApplies
+        ? forecast.monthStart + forecast.monthsLeftInYear * monthlyIncome - yearExpenses
+        : forecast.expectedYearEnd,
+      yearForecastSource: horizonApplies ? ("horizon" as const) : annualTemplate ? ("annual" as const) : null,
+    };
+  }, [
+    annualTemplate,
+    annualTemplateItems,
+    categories,
+    comparison.balance.planned,
+    comparison.hasPlan,
+    comparison.income.planned,
+    horizonItems,
+    investments,
+    month.start,
+    monthStartDay,
+    planMonthKey,
+    planYear,
+    transactionsBeforeMonth,
+    wallets,
+  ]);
+
+  const { addAnnualCategory, ...annual } = useAnnualPlanForm({
+    categories,
+    planYear,
+    monthStartDay,
+    plannedIncome,
+    notes,
+    categoryPlans,
+    annualTemplate,
+    annualTemplateItems,
+    setAnnualTemplate,
+    setAnnualTemplateItems,
+    setPlannedIncome,
+    setNotes,
+    setCategoryPlans,
+    loadData,
+    clearFeedback,
+    setMessage,
+  });
+
   function handleCategoryCreated(category: Category) {
     setCategories((current) => [...current, category]);
     setCategoryPlans((current) => ({
       ...current,
       [category.id]: current[category.id] ?? "",
     }));
-    setAnnualCategoryPlans((current) => ({
+    addAnnualCategory(category.id);
+    setHorizonLines((current) => ({
       ...current,
-      [category.id]: current[category.id] ?? "",
+      [category.id]: current[category.id] ?? emptyHorizonLine(month.start),
     }));
     setMessage(`تمت إضافة فئة "${category.name}".`);
   }
@@ -204,111 +360,20 @@ export function usePlanPage() {
     }));
   }
 
-  function handleAnnualCategoryPlanChange(categoryId: string, value: string) {
-    setAnnualCategoryPlans((current) => ({
-      ...current,
-      [categoryId]: value,
-    }));
-  }
-
-  function openAnnualModal() {
-    if (annualTemplate) {
-      setAnnualPlannedIncome(String(annualTemplate.planned_income));
-      setAnnualNotes(annualTemplate.notes ?? "");
-      setAnnualCategoryPlans(categoryPlansFromTemplateItems(categories, annualTemplateItems));
-    } else {
-      setAnnualPlannedIncome(plannedIncome);
-      setAnnualNotes(notes);
-      setAnnualCategoryPlans({ ...categoryPlans });
-    }
-
-    setAnnualError(null);
-    setAnnualModalOpen(true);
-  }
-
-  function closeAnnualModal() {
-    setAnnualModalOpen(false);
-    setAnnualError(null);
-  }
-
-  async function saveAnnualTemplate() {
-    const supabase = createClient();
-    const result = await persistAnnualTemplate(
-      supabase,
-      categories,
-      planYear,
-      annualPlannedIncome,
-      annualNotes,
-      annualCategoryPlans,
-    );
-
-    setAnnualTemplate(result.template);
-    setAnnualTemplateItems(result.items);
-    return result.template;
-  }
-
-  async function handleSaveAnnualTemplate() {
-    setAnnualSaving(true);
-    setAnnualError(null);
-    clearFeedback();
-
-    try {
-      await saveAnnualTemplate();
-      setMessage(`تم حفظ الخطة الافتراضية لسنة ${planYear}.`);
-      closeAnnualModal();
-    } catch (saveError) {
-      setAnnualError(saveError instanceof Error ? saveError.message : "تعذر حفظ القالب.");
-    } finally {
-      setAnnualSaving(false);
-    }
-  }
-
-  async function handleApplyAnnualToCurrentMonth() {
-    setAnnualSaving(true);
-    setAnnualError(null);
-    clearFeedback();
-
-    try {
-      await saveAnnualTemplate();
-      setPlannedIncome(annualPlannedIncome);
-      setNotes(annualNotes);
-      setCategoryPlans({ ...annualCategoryPlans });
-      setMessage("تم تطبيق الخطة الافتراضية على الشهر الحالي. احفظ لو عايز تثبتها.");
-      closeAnnualModal();
-    } catch (applyError) {
-      setAnnualError(
-        applyError instanceof Error ? applyError.message : "تعذر تطبيق القالب.",
-      );
-    } finally {
-      setAnnualSaving(false);
-    }
-  }
-
-  async function handleApplyAnnualToYear() {
-    setAnnualApplying(true);
-    setAnnualError(null);
+  async function handleSaveHorizonPlan() {
+    setHorizonSaving(true);
     clearFeedback();
 
     try {
       const supabase = createClient();
-      await applyAnnualTemplateToYear(
-        supabase,
-        categories,
-        planYear,
-        annualPlannedIncome,
-        annualNotes,
-        annualCategoryPlans,
-        monthStartDay,
-      );
-      await loadData();
-      setMessage(`تم تطبيق الخطة الافتراضية على كل شهور ${planYear}.`);
-      closeAnnualModal();
-    } catch (applyError) {
-      setAnnualError(
-        applyError instanceof Error ? applyError.message : "تعذر تطبيق القالب على السنة.",
-      );
+      const saved = await persistHorizonPlan(supabase, categories, horizonLines);
+      setHorizonPlan(saved.plan);
+      setHorizonItems(saved.items);
+      setMessage("تم حفظ الخطة الكاملة.");
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "تعذر حفظ الخطة الكاملة.");
     } finally {
-      setAnnualApplying(false);
+      setHorizonSaving(false);
     }
   }
 
@@ -353,20 +418,31 @@ export function usePlanPage() {
     error,
     message,
     currency,
+    locale,
     planMonthKey,
     planYear,
+    monthStart: month.start,
+    monthEnd: month.end,
     comparison,
+    wealthForecast,
+    horizonLines,
+    horizonSaving,
+    hasHorizonPlan: Boolean(horizonPlan),
+    setHorizonLine: (categoryId: string, patch: Partial<HorizonLineDraft>) => {
+      setHorizonLines((current) => {
+        const line = current[categoryId] ?? emptyHorizonLine(month.start);
+
+        return {
+          ...current,
+          [categoryId]: { ...line, ...patch },
+        };
+      });
+    },
+    handleSaveHorizonPlan,
     categories,
     plannedIncome,
     categoryPlans,
     notes,
-    annualModalOpen,
-    annualPlannedIncome,
-    annualCategoryPlans,
-    annualNotes,
-    annualSaving,
-    annualApplying,
-    annualError,
     hasAnnualTemplate: Boolean(annualTemplate),
     monthStartDay,
     setPlanMonthKey,
@@ -375,13 +451,6 @@ export function usePlanPage() {
     setNotes,
     handleSavePlan,
     categoryForm,
-    openAnnualModal,
-    closeAnnualModal,
-    setAnnualPlannedIncome,
-    handleAnnualCategoryPlanChange,
-    setAnnualNotes,
-    handleSaveAnnualTemplate,
-    handleApplyAnnualToCurrentMonth,
-    handleApplyAnnualToYear,
+    ...annual,
   };
 }

@@ -21,11 +21,12 @@ export function getWalletMonthlyTransactions(
   options: {
     includeDescendants?: boolean;
     monthStartDay?: number;
+    referenceDate?: Date;
     limit?: number;
   } = {},
 ) {
-  const { includeDescendants = false, monthStartDay = 1, limit } = options;
-  const month = getMonthRange(new Date(), "ar", monthStartDay);
+  const { includeDescendants = false, monthStartDay = 1, referenceDate = new Date(), limit } = options;
+  const month = getMonthRange(referenceDate, "ar", monthStartDay);
   const scopeIds = new Set(getWalletScopeIds(walletId, wallets, includeDescendants));
 
   const filtered = transactions.filter(

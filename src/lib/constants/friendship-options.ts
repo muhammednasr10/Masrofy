@@ -28,3 +28,22 @@ export function getRelationshipLabel(
 export function shouldDefaultShareActivity(relationship: RelationshipType): boolean {
   return relationship === "spouse" || relationship === "child" || relationship === "parent";
 }
+
+export function canBeDependent(relationship: RelationshipType): boolean {
+  return relationship === "spouse" || relationship === "child" || relationship === "parent";
+}
+
+export function getDependentLink(friendship: {
+  requester_id: string;
+  addressee_id: string;
+  dependent_user_id: string | null;
+}, currentUserId: string) {
+  const otherUserId =
+    friendship.requester_id === currentUserId ? friendship.addressee_id : friendship.requester_id;
+
+  return {
+    otherUserId,
+    otherIsDependent: friendship.dependent_user_id === otherUserId,
+    iAmDependent: friendship.dependent_user_id === currentUserId,
+  };
+}

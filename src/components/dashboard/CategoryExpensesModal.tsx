@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/router/Link";
 import EmptyState from "@/components/ui/EmptyState";
 import ModalEntityHeader from "@/components/ui/ModalEntityHeader";
 import ModalShell from "@/components/ui/ModalShell";

@@ -45,6 +45,8 @@ describe("getSafeNextPath", () => {
     expect(getSafeNextPath("/dashboard")).toBe("/dashboard");
     expect(getSafeNextPath("https://evil.com")).toBe("/dashboard");
     expect(getSafeNextPath("//evil.com")).toBe("/dashboard");
+    expect(getSafeNextPath("/\\evil.com")).toBe("/dashboard");
+    expect(getSafeNextPath("/%2f%2fevil.com")).toBe("/dashboard");
   });
 });
 

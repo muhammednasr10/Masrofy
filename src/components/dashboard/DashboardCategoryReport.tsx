@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import Link from "@/components/router/Link";
 import CategoryBreakdownReport from "@/components/reports/CategoryBreakdownReport";
 import CategoryExpensesModal from "@/components/dashboard/CategoryExpensesModal";
 import { useDashboardBalanceVisibility } from "@/components/dashboard/DashboardBalanceVisibility";

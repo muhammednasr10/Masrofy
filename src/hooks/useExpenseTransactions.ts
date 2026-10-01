@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useMemo, useState, type Dispatch, type SetStateAction } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/lib/router/navigation";
 import {
   appendTransactionToSnapshot,
   removeTransactionFromSnapshot,
@@ -19,7 +19,6 @@ import {
   buildLocalTransaction,
   enqueueTransactionInsert,
   isBrowserOnline,
-  saveExpensesCache,
   type OfflineTransaction,
 } from "@/lib/offline";
 import { getSelectedWalletSnapshot } from "@/lib/expenses";

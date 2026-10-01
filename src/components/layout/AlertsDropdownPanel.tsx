@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/router/Link";
 import DueNotificationPrompt from "@/components/layout/DueNotificationPrompt";
 import DueRecurringAlertsList from "@/components/layout/DueRecurringAlertsList";
 import { useTranslations } from "@/components/i18n/LocaleProvider";

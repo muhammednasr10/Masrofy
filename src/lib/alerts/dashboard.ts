@@ -3,6 +3,7 @@ import {
   getDaysUntilCollection,
 } from "@/lib/investments/utils";
 import type { Translator } from "@/i18n/translate";
+import { CATEGORY_BUDGET_WARNING_RATIO } from "@/lib/plan/budget-warning";
 import type { PlanComparison } from "@/lib/types/database";
 import type { Investment, Wallet, WalletReconciliation } from "@/lib/types/database";
 import {
@@ -56,6 +57,48 @@ export function buildDashboardAlerts({
       href: "/plan",
     });
   }
+
+  const categoryBudgetAlerts = planComparison.expenseRows
+    .map((row) => {
+      if (row.planned <= 0) {
+        return null;
+      }
+
+      const ratio = row.actual / row.planned;
+
+      if (ratio < CATEGORY_BUDGET_WARNING_RATIO) {
+        return null;
+      }
+
+      const overBudget = row.actual > row.planned;
+
+      const alert: DashboardAlert = {
+        id: `category-budget-${row.categoryId}`,
+        tone: overBudget ? "red" : "amber",
+        icon: row.icon,
+        title: overBudget
+          ? t("alertItems.categoryBudgetOverTitle", { name: row.name })
+          : t("alertItems.categoryBudgetNearTitle", { name: row.name }),
+        description: overBudget
+          ? t("alertItems.categoryBudgetOverDesc", {
+              amount: formatAmount(row.actual - row.planned),
+            })
+          : t("alertItems.categoryBudgetNearDesc", {
+              percent: String(Math.round(ratio * 100)),
+              remaining: formatAmount(row.planned - row.actual),
+            }),
+        actionLabel: t("alertItems.categoryBudgetAction"),
+        href: `/plan?category=${row.categoryId}`,
+      };
+
+      return { ratio, alert };
+    })
+    .filter((item): item is { ratio: number; alert: DashboardAlert } => item !== null)
+    .sort((a, b) => b.ratio - a.ratio)
+    .slice(0, 5)
+    .map((item) => item.alert);
+
+  alerts.push(...categoryBudgetAlerts);
 
   const upcomingCollections = investments.filter((investment) => {
     if (!investment.is_fixed_return || !investment.collection_date) {

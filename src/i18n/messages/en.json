@@ -33,6 +33,12 @@
     "more": "More",
     "primarySection": "Main"
   },
+  "monthSwitcher": {
+    "previous": "Previous month",
+    "next": "Next month",
+    "pick": "Choose month",
+    "current": "Current month"
+  },
   "categories": {
     "searchPlaceholder": "Search categories... (e.g. food, vegetables, tomatoes)",
     "searchEmpty": "No matching category",
@@ -125,6 +131,12 @@
   "dashboard": {
     "showBalances": "Show balances",
     "hideBalances": "Hide balances",
+    "spendLeft": "{amount} left to spend",
+    "spendOver": "Over the plan by {amount}",
+    "closestCategory": "Closest to the limit: {icon} {name} {percent}%",
+    "closestCategoryOver": "{icon} {name} is over budget",
+    "spendNoPlan": "No plan for this month yet",
+    "recordOnCategory": "Add expense",
     "summaryWallets": "Wallets: {amount}",
     "summaryExpenses": "Expenses: {amount}",
     "openCard": "Open →",
@@ -142,6 +154,8 @@
     "planTitle": "Plan",
     "planDesc": "Compare plan vs actual",
     "planNoPlanValue": "No plan",
+    "planRemainingValue": "Left to spend",
+    "planOverValue": "Over the plan",
     "planNoPlan": "No plan saved for this month",
     "planMatched": "Spending matches the plan",
     "planOver": "Over plan by {amount}",
@@ -268,6 +282,15 @@
     "summaryLine": "Expenses {expenses} • Income {income}",
     "addExpense": "Add expense",
     "addTransaction": "Add transaction",
+    "quickAddTitle": "Quick add",
+    "quickAddSave": "Save expense",
+    "quickAddSaving": "Saving...",
+    "quickAddSaved": "Expense saved",
+    "quickAddSavedOffline": "Saved on this device. It will upload when you're back online",
+    "quickAddMore": "More details",
+    "quickAddDateHint": "It will be recorded on {date} so it shows in the open month",
+    "quickAddDateToday": "It will be recorded today, {date}",
+    "quickAddNeedAmount": "Enter an amount greater than zero",
     "exportCsv": "Export CSV",
     "exportCurrency": "Currency",
     "addRecurring": "Recurring transactions",
@@ -438,7 +461,7 @@
     "loading": "Loading reports...",
     "eyebrow": "Financial analytics",
     "title": "Reports",
-    "subtitle": "All the reports you need in one place — pick a month and review summaries.",
+    "subtitle": "All the reports you need in one place, for the month selected in the bar.",
     "navCashFlow": "Cash flow",
     "navCategories": "Categories",
     "navWallets": "Wallets",
@@ -510,7 +533,12 @@
     "recurringDueAction": "Record transactions",
     "categorySuggestionTitle": "Category suggestions pending review",
     "categorySuggestionDesc": "{count} new categories from users",
-    "categorySuggestionAction": "Review categories"
+    "categorySuggestionAction": "Review categories",
+    "categoryBudgetNearTitle": "{name} is almost used up",
+    "categoryBudgetNearDesc": "{percent}% of the budget is used. {remaining} left",
+    "categoryBudgetOverTitle": "{name} is over budget",
+    "categoryBudgetOverDesc": "Spent {amount} more than planned",
+    "categoryBudgetAction": "Open category"
   },
   "pwa": {
     "installTitle": "Install Masrofy on your device",

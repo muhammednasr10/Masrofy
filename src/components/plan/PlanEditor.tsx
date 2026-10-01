@@ -1,7 +1,8 @@
 "use client";
 
 import type { Category } from "@/lib/types/database";
-import { buildCategoryDisplayRows } from "@/lib/categories/hierarchy";
+import { getParentCategories } from "@/lib/categories/hierarchy";
+import { formatCurrency } from "@/lib/utils/format";
 
 type PlanEditorProps = {
   plannedIncome: string;
@@ -18,6 +19,7 @@ type PlanEditorProps = {
   hideSaveButton?: boolean;
   incomeLabel?: string;
   notesPlaceholder?: string;
+  currency?: string;
 };
 
 export default function PlanEditor({
@@ -35,7 +37,17 @@ export default function PlanEditor({
   hideSaveButton = false,
   incomeLabel = "الدخل المخطط للشهر",
   notesPlaceholder = "مثال: الشهر ده فيه مصاريف مدرسة وزيادة فواتير...",
+  currency = "EGP",
 }: PlanEditorProps) {
+  const parentCategories = getParentCategories(categories).sort(
+    (a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name, "ar"),
+  );
+  const plannedIncomeAmount = Number(plannedIncome) || 0;
+  const allocatedExpenses = parentCategories.reduce(
+    (total, category) => total + (Number(categoryPlans[category.id]) || 0),
+    0,
+  );
+  const remainingIncome = plannedIncomeAmount - allocatedExpenses;
   return (
     <form
       onSubmit={(event) => {
@@ -62,7 +74,7 @@ export default function PlanEditor({
           <div>
             <h3 className="text-sm font-medium text-slate-700">مصروفات مخططة حسب الفئة</h3>
             <p className="mt-1 text-xs text-slate-500">
-              ارسم ميزانيتك الشهرية لكل فئة، وبعد الحفظ هتقارنها بالمصروفات الفعلية.
+              ارسم ميزانيتك لكل فئة رئيسية. مصروفات الفئات الفرعية بتتحسب جواها.
             </p>
           </div>
           {!hideCategoryAddButton ? (
@@ -82,14 +94,11 @@ export default function PlanEditor({
           </p>
         ) : (
         <div className="space-y-3">
-          {buildCategoryDisplayRows(categories).map(({ category, depth }) => (
+          {parentCategories.map((category) => (
             <label key={category.id} className="flex items-center gap-3">
-              <span
-                className="flex w-40 shrink-0 items-center gap-2 text-sm text-slate-700"
-                style={{ paddingRight: `${depth * 0.75}rem` }}
-              >
+              <span className="flex w-40 shrink-0 items-center gap-2 text-sm text-slate-700">
                 <span>{category.icon}</span>
-                {depth > 0 ? `↳ ${category.name}` : category.name}
+                {category.name}
               </span>
               <input
                 type="number"
@@ -104,6 +113,20 @@ export default function PlanEditor({
           ))}
         </div>
         )}
+
+        {parentCategories.length > 0 ? (
+          <div className="mt-4 space-y-1 rounded-2xl bg-slate-50 px-4 py-3 text-sm">
+            <p className="text-slate-600">
+              مجموع الفئات{" "}
+              <span className="font-semibold text-slate-900">
+                {formatCurrency(allocatedExpenses, currency)}
+              </span>
+            </p>
+            <p className={remainingIncome < 0 ? "font-medium text-red-600" : "font-medium text-emerald-700"}>
+              المتبقي من الدخل {formatCurrency(remainingIncome, currency)}
+            </p>
+          </div>
+        ) : null}
       </div>
 
       <label className="block space-y-2">

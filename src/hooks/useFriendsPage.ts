@@ -3,20 +3,23 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
-  getRelationshipLabel,
+  canBeDependent,
   relationshipOptions,
   shouldDefaultShareActivity,
 } from "@/lib/constants/friendship-options";
 import { usePageFeedback } from "@/hooks/usePageFeedback";
 import {
   inviteFriendByEmail,
+  loadDependentWallets,
   loadFriendActivity,
   loadFriendsPageData,
   loadFriendWallets,
   respondToFriendRequest,
   sendFriendTransfer,
+  updateFriendshipLink,
 } from "@/lib/friends";
-import type { FriendActivity, Friendship, Wallet, WalletTransfer } from "@/lib/types/database";
+import type { FriendActivity, Friendship, RelationshipType, Wallet, WalletTransfer } from "@/lib/types/database";
+import type { DependentWallet } from "@/lib/friends/dependent";
 import type { FriendWallet } from "@/lib/friends/types";
 
 export function useFriendsPage() {
@@ -34,6 +37,8 @@ export function useFriendsPage() {
   const [relationshipType, setRelationshipType] =
     useState<(typeof relationshipOptions)[number]["value"]>("friend");
   const [shareMyActivity, setShareMyActivity] = useState(false);
+  const [makeDependent, setMakeDependent] = useState(false);
+  const [dependentWallets, setDependentWallets] = useState<DependentWallet[]>([]);
 
   const [selectedFriendId, setSelectedFriendId] = useState("");
   const [senderWalletId, setSenderWalletId] = useState("");
@@ -46,6 +51,7 @@ export function useFriendsPage() {
 
   useEffect(() => {
     setShareMyActivity(shouldDefaultShareActivity(relationshipType));
+    setMakeDependent(relationshipType === "spouse");
   }, [relationshipType]);
 
   const loadData = useCallback(async () => {
@@ -63,6 +69,8 @@ export function useFriendsPage() {
     setFriendships(data.friendships);
     setTransfers(data.transfers);
     setSenderWalletId(data.defaultSenderWalletId);
+    const dependent = await loadDependentWallets(supabase);
+    setDependentWallets(dependent.wallets);
     setLoading(false);
   }, []);
 
@@ -95,6 +103,7 @@ export function useFriendsPage() {
       email: inviteEmail,
       relationshipType,
       shareMyActivity,
+      makeDependent: canBeDependent(relationshipType) && makeDependent,
     });
 
     if (result.error) {
@@ -124,6 +133,37 @@ export function useFriendsPage() {
     }
 
     setMessage(result.message ?? "");
+    await loadData();
+  }
+
+  async function handleRelationshipChange(friendshipId: string, nextType: RelationshipType) {
+    clearFeedback();
+    const supabase = createClient();
+    const result = await updateFriendshipLink(supabase, friendshipId, {
+      relationshipType: nextType,
+      ...(canBeDependent(nextType) ? {} : { dependentUserId: null }),
+    });
+
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+
+    setMessage(result.message ?? "");
+    await loadData();
+  }
+
+  async function handleDependentChange(friendshipId: string, dependentUserId: string | null) {
+    clearFeedback();
+    const supabase = createClient();
+    const result = await updateFriendshipLink(supabase, friendshipId, { dependentUserId });
+
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+
+    setMessage(dependentUserId ? "الحساب بقى تابع، ومحافظه هتظهر عندك." : "اتوقف ظهور المحافظ.");
     await loadData();
   }
 
@@ -206,17 +246,22 @@ export function useFriendsPage() {
     inviteEmail,
     relationshipType,
     shareMyActivity,
+    makeDependent,
+    dependentWallets,
     transfers,
     currentUserId,
     setInviteEmail,
     setRelationshipType,
     setShareMyActivity,
+    setMakeDependent,
     setSenderWalletId,
     setReceiverWalletId,
     setTransferAmount,
     setTransferNote,
     handleInvite,
     handleRespond,
+    handleRelationshipChange,
+    handleDependentChange,
     handleSelectFriend,
     handleViewActivity,
     handleTransfer,

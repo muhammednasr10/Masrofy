@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/router/Link";
 import type { LegalSection } from "@/lib/legal/content";
 
 type LegalDocumentLayoutProps = {

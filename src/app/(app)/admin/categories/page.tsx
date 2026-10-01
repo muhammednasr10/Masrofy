@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { Navigate } from "react-router-dom";
 
 export default function AdminCategoriesRedirectPage() {
-  redirect("/admin/settings");
+  return <Navigate to="/admin/settings" replace />;
 }

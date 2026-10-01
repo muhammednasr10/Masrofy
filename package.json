@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "dev:clean": "powershell -Command \"if (Test-Path .next) { Remove-Item .next -Recurse -Force }; next dev --turbopack\"",
-    "build": "next build",
-    "start": "next start",
+    "dev": "vite",
+    "dev:clean": "powershell -Command \"if (Test-Path dist) { Remove-Item dist -Recurse -Force }; vite\"",
+    "build": "vite build",
+    "start": "tsx server/prod.ts",
+    "preview": "vite preview",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -14,13 +15,13 @@
     "setup:supabase": "powershell -ExecutionPolicy Bypass -File ./scripts/setup-supabase.ps1"
   },
   "dependencies": {
-    "@sentry/nextjs": "^10.68.0",
+    "@sentry/react": "^11.1.0",
     "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.110.8",
     "dexie": "^4.4.4",
-    "next": "16.2.11",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-router-dom": "^7.9.4",
     "web-push": "^3.6.7"
   },
   "devDependencies": {
@@ -28,10 +29,13 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^5.0.4",
     "eslint": "^9",
-    "eslint-config-next": "16.2.11",
     "tailwindcss": "^4",
+    "tsx": "^4.20.6",
     "typescript": "^5",
+    "typescript-eslint": "^8.71.0",
+    "vite": "^7.1.7",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4"
   }

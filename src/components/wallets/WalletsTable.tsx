@@ -5,7 +5,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import WalletDetailModal from "@/components/wallets/WalletDetailModal";
 import WalletListItem from "@/components/wallets/WalletListItem";
-import { useFormat } from "@/hooks/useFormat";
+import { useSelectedMonth } from "@/components/month/SelectedMonthProvider";
 import type { Investment, Transaction, Wallet, WalletReconciliation } from "@/lib/types/database";
 import type { WalletDisplayRow } from "@/lib/wallets/hierarchy";
 import { getVisibleWalletTableRows } from "@/lib/wallets";
@@ -46,8 +46,8 @@ export default function WalletsTable({
   onDeleteWallet,
 }: WalletsTableProps) {
   const t = useTranslations();
-  const { getMonthRange } = useFormat();
-  const monthLabel = getMonthRange(new Date(), monthStartDay).label;
+  const { month, referenceDate } = useSelectedMonth();
+  const monthLabel = month.label;
   const [expandedParents, setExpandedParents] = useState<Set<string>>(() => new Set());
   const [selectedWalletId, setSelectedWalletId] = useState<string | null>(null);
 
@@ -114,6 +114,7 @@ export default function WalletsTable({
           monthTransactions={monthTransactions}
           monthLabel={monthLabel}
           monthStartDay={monthStartDay}
+          referenceDate={referenceDate}
           investments={investments}
           currency={currency}
           hasChildren={selectedRow.hasChildren}

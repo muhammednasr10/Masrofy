@@ -9,13 +9,16 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/lib/router/navigation";
 import {
   defaultLocale,
   getLocaleAttributes,
+  isLocale,
   LOCALE_COOKIE,
   type Locale,
 } from "@/i18n/config";
+import arMessages from "@/i18n/messages/ar.json";
+import enMessages from "@/i18n/messages/en.json";
 import { createTranslator, getMessages, type Messages, type Translator } from "@/i18n/translate";
 
 type LocaleContextValue = {
@@ -33,18 +36,30 @@ function applyDocumentLocale(locale: Locale) {
   document.documentElement.dir = dir;
 }
 
+function readLocaleCookie(): Locale {
+  if (typeof document === "undefined") {
+    return defaultLocale;
+  }
+
+  const match = document.cookie.match(new RegExp(`(?:^|; )${LOCALE_COOKIE}=([^;]*)`));
+  const value = match ? decodeURIComponent(match[1]) : null;
+  return isLocale(value) ? value : defaultLocale;
+}
+
 export function LocaleProvider({
   initialLocale,
   initialMessages,
   children,
 }: {
-  initialLocale: Locale;
-  initialMessages: Messages;
+  initialLocale?: Locale;
+  initialMessages?: Messages;
   children: ReactNode;
 }) {
   const router = useRouter();
-  const [locale, setLocaleState] = useState<Locale>(initialLocale);
-  const [messages, setMessages] = useState<Messages>(initialMessages);
+  const [locale, setLocaleState] = useState<Locale>(() => initialLocale ?? readLocaleCookie());
+  const [messages, setMessages] = useState<Messages>(
+    () => initialMessages ?? ((initialLocale ?? readLocaleCookie()) === "en" ? enMessages : arMessages),
+  );
 
   useEffect(() => {
     applyDocumentLocale(locale);
@@ -110,8 +125,6 @@ export function useTranslations() {
 export function useOptionalLocale() {
   return useContext(LocaleContext);
 }
-
-import arMessages from "@/i18n/messages/ar.json";
 
 export function getFallbackLocaleContext(): LocaleContextValue {
   return {

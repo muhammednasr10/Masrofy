@@ -47,6 +47,26 @@ describe("isAuthorizedCron", () => {
     ).toBe(true);
   });
 
+  it("rejects a public server when the environment is unset and no secret exists", () => {
+    expect(
+      isAuthorizedCron(requestWithAuth(null), {
+        cronSecret: "",
+        nodeEnv: "",
+        vercelEnv: undefined,
+      }),
+    ).toBe(false);
+  });
+
+  it("rejects preview deployments without a secret", () => {
+    expect(
+      isAuthorizedCron(requestWithAuth(null), {
+        cronSecret: "",
+        nodeEnv: "production",
+        vercelEnv: "preview",
+      }),
+    ).toBe(false);
+  });
+
   it("still enforces the secret in development when configured", () => {
     expect(
       isAuthorizedCron(requestWithAuth("Bearer wrong"), {

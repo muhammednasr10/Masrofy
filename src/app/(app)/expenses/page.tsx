@@ -1,14 +1,12 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import ExpensesToolbar from "@/components/expenses/ExpensesToolbar";
+import { useRouter, useSearchParams } from "@/lib/router/navigation";
 import ExpensesSummaryCard from "@/components/expenses/ExpensesSummaryCard";
+import ExpensesTransactionLog from "@/components/expenses/ExpensesTransactionLog";
 import RecurringTransactionFormModal from "@/components/expenses/RecurringTransactionFormModal";
 import RecurringTransactionsSection from "@/components/expenses/RecurringTransactionsSection";
-import TransactionFiltersPanel from "@/components/expenses/TransactionFiltersPanel";
 import TransactionFormModal from "@/components/expenses/TransactionFormModal";
-import TransactionsTable from "@/components/expenses/TransactionsTable";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import { FeedbackBanner } from "@/components/ui/FeedbackBanner";
 import { useExpensesPage } from "@/hooks/useExpensesPage";
@@ -28,7 +26,6 @@ function ExpensesPageContent() {
 
   const {
     loading,
-    monthLabel,
     monthSummary,
     categories,
     wallets,
@@ -112,7 +109,6 @@ function ExpensesPageContent() {
   return (
     <div className="space-y-6">
       <ExpensesSummaryCard
-        monthLabel={monthLabel}
         totalExpenses={monthSummary.totalExpenses}
         totalIncome={monthSummary.totalIncome}
         balance={monthSummary.balance}
@@ -124,54 +120,31 @@ function ExpensesPageContent() {
         message={message ?? recurring.message}
       />
 
-      <section className="rounded-3xl border border-white bg-white p-4 shadow-sm sm:p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-slate-900">{t("expenses.transactionLog")}</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              {t("expenses.transactionCount", {
-                filtered: transactions.length,
-                total: allTransactionsCount,
-              })}
-              {summaryLine ? ` • ${summaryLine}` : ""}
-            </p>
-          </div>
-
-          <ExpensesToolbar
-            transactions={transactions}
-            wallets={wallets}
-            currency={currency}
-            submitting={submitting}
-            onAddTransaction={() => {
-              closeTransactionModal();
-              setShowTransactionModal(true);
-            }}
-            onAddRecurring={() => setShowRecurringPanel(true)}
-            onImport={handleImportTransactions}
-          />
-        </div>
-
-        <TransactionFiltersPanel
-          filters={filters}
-          categories={categories}
-          wallets={wallets}
-          defaultDateFrom={monthStart}
-          defaultDateTo={monthEnd}
-          onChange={setFilters}
-        />
-
-        <TransactionsTable
-          transactions={transactions}
-          wallets={wallets}
-          currency={currency}
-          attachmentUrls={attachmentUrls}
-          onDelete={handleDelete}
-          onEdit={(transaction) => {
-            openEditTransaction(transaction);
-            setShowTransactionModal(true);
-          }}
-        />
-      </section>
+      <ExpensesTransactionLog
+        transactions={transactions}
+        allTransactionsCount={allTransactionsCount}
+        summaryLine={summaryLine}
+        wallets={wallets}
+        categories={categories}
+        currency={currency}
+        submitting={submitting}
+        filters={filters}
+        monthStart={monthStart}
+        monthEnd={monthEnd}
+        attachmentUrls={attachmentUrls}
+        onFiltersChange={setFilters}
+        onAddTransaction={() => {
+          closeTransactionModal();
+          setShowTransactionModal(true);
+        }}
+        onAddRecurring={() => setShowRecurringPanel(true)}
+        onImport={handleImportTransactions}
+        onDelete={handleDelete}
+        onEdit={(transaction) => {
+          openEditTransaction(transaction);
+          setShowTransactionModal(true);
+        }}
+      />
 
       <RecurringTransactionsSection
         open={showRecurringPanel}

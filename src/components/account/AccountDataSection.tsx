@@ -1,7 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useRouter } from "@/lib/router/navigation";
+import { buildAccountExport, downloadAccountExport } from "@/lib/account/export-data";
 import { createClient } from "@/lib/supabase/client";
 
 type AccountDataSectionProps = {
@@ -20,20 +21,17 @@ export default function AccountDataSection({ email, onFeedback }: AccountDataSec
     onFeedback(null, null);
 
     try {
-      const response = await fetch("/api/account/export");
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-      if (!response.ok) {
-        const payload = (await response.json()) as { error?: string };
-        throw new Error(payload.error ?? "تعذر تصدير البيانات.");
+      if (!user) {
+        throw new Error("يجب تسجيل الدخول أولاً.");
       }
 
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = `masrofy-export-${new Date().toISOString().slice(0, 10)}.json`;
-      anchor.click();
-      URL.revokeObjectURL(url);
+      const payload = await buildAccountExport(supabase, user.id, user.email ?? null);
+      downloadAccountExport(payload);
       onFeedback(null, "تم تنزيل نسخة من بياناتك.");
     } catch (exportError) {
       onFeedback(
@@ -63,14 +61,25 @@ export default function AccountDataSection({ email, onFeedback }: AccountDataSec
     onFeedback(null, null);
 
     try {
-      const response = await fetch("/api/account/delete", { method: "DELETE" });
+      const supabase = createClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        throw new Error("يجب تسجيل الدخول أولاً.");
+      }
+
+      const response = await fetch("/api/account/delete", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
       const payload = (await response.json()) as { error?: string; success?: boolean };
 
       if (!response.ok || !payload.success) {
         throw new Error(payload.error ?? "تعذر حذف الحساب.");
       }
 
-      const supabase = createClient();
       await supabase.auth.signOut();
       router.push("/register");
       router.refresh();

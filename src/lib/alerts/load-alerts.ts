@@ -17,12 +17,13 @@ export async function loadHeaderAlerts(
   supabase: SupabaseClient,
   userId: string | undefined,
   locale: Locale = "ar",
+  referenceDate = new Date(),
 ): Promise<AlertsPanelData> {
   if (!userId) {
     return { alerts: [], dueRecurrings: [], currency: "EGP" };
   }
 
-  const inputs = await fetchAlertInputs(supabase);
+  const inputs = await fetchAlertInputs(supabase, referenceDate, locale);
   const { t, formatAmount } = await createServerFormatters(inputs.profile, locale);
   const currency = inputs.profile?.currency ?? "EGP";
   const dueRecurrings = getDueRecurringTransactions(inputs.dueRecurrings);

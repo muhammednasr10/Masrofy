@@ -110,6 +110,7 @@ export type Friendship = {
   relationship_type: RelationshipType;
   requester_shares_activity: boolean;
   addressee_shares_activity: boolean;
+  dependent_user_id: string | null;
   created_at: string;
   updated_at: string;
   requester?: Pick<Profile, "full_name" | "email"> | null;
@@ -293,6 +294,37 @@ export type AnnualPlanTemplateItem = {
   created_at: string;
 };
 
+export type HorizonCadence = "daily" | "weekly" | "monthly" | "yearly";
+
+export type HorizonPlan = {
+  id: string;
+  user_id: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type HorizonPlanItem = {
+  id: string;
+  user_id: string;
+  plan_id: string;
+  category_id: string;
+  planned_amount: number;
+  cadence: HorizonCadence;
+  start_date: string;
+  end_date: string;
+  sort_order: number;
+  created_at: string;
+};
+
+export type PlanComparisonChildRow = {
+  categoryId: string;
+  name: string;
+  icon: string;
+  planned: number;
+  actual: number;
+};
+
 export type PlanComparisonRow = {
   categoryId: string;
   name: string;
@@ -302,6 +334,7 @@ export type PlanComparisonRow = {
   actual: number;
   difference: number;
   progressPercent: number | null;
+  children?: PlanComparisonChildRow[];
 };
 
 export type PlanComparison = {
@@ -325,6 +358,7 @@ export type PlanComparison = {
     difference: number;
   };
   expenseRows: PlanComparisonRow[];
+  incomeRows: PlanComparisonRow[];
   uncategorizedExpenses: number;
 };
 

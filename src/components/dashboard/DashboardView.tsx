@@ -1,5 +1,6 @@
 import DashboardCards from "@/components/dashboard/DashboardCards";
 import DashboardCategoryReport from "@/components/dashboard/DashboardCategoryReport";
+import DashboardSpendLeft from "@/components/dashboard/DashboardSpendLeft";
 import DashboardSummary from "@/components/dashboard/DashboardSummary";
 import type { DashboardData } from "@/lib/dashboard";
 
@@ -11,7 +12,10 @@ type DashboardViewProps = {
 export default function DashboardView({ monthLabel, data }: DashboardViewProps) {
   return (
     <div className="space-y-6">
-      <h1 className="wrap-text text-xl font-semibold text-slate-900 sm:text-3xl">{monthLabel}</h1>
+      <div className="space-y-2">
+        <h1 className="wrap-text text-xl font-semibold text-slate-900 sm:text-3xl">{monthLabel}</h1>
+        <DashboardSpendLeft data={data} />
+      </div>
 
       <DashboardSummary data={data} />
 

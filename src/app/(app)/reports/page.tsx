@@ -9,7 +9,6 @@ import WalletBalancesReport from "@/components/reports/WalletBalancesReport";
 import YearlyOverviewReport from "@/components/reports/YearlyOverviewReport";
 import ExpensesSummaryCard from "@/components/expenses/ExpensesSummaryCard";
 import PlanComparisonTable from "@/components/plan/PlanComparisonTable";
-import PlanMonthPicker from "@/components/plan/PlanMonthPicker";
 import PlanOverviewCards from "@/components/plan/PlanOverviewCards";
 import InvestmentsSummaryCard from "@/components/investments/InvestmentsSummaryCard";
 import WalletReconciliationHistory from "@/components/wallets/WalletReconciliationHistory";
@@ -24,10 +23,6 @@ export default function ReportsPage() {
     loading,
     error,
     currency,
-    planMonthKey,
-    setPlanMonthKey,
-    monthStartDay,
-    monthLabel,
     planYear,
     monthSummary,
     walletActivity,
@@ -65,13 +60,6 @@ export default function ReportsPage() {
         <p className="mt-1 text-sm text-slate-500">{t("reports.subtitle")}</p>
       </div>
 
-      <PlanMonthPicker
-        planMonthKey={planMonthKey}
-        monthLabel={monthLabel}
-        monthStartDay={monthStartDay}
-        onChange={setPlanMonthKey}
-      />
-
       <FeedbackBanner error={error} message={null} />
 
       <nav className="x-scroll flex max-w-full gap-2 pb-1">
@@ -93,7 +81,6 @@ export default function ReportsPage() {
           description={t("reports.cashFlowDesc")}
         >
           <ExpensesSummaryCard
-            monthLabel={monthLabel}
             totalExpenses={monthSummary.totalExpenses}
             totalIncome={monthSummary.totalIncome}
             balance={monthSummary.balance}
@@ -124,7 +111,14 @@ export default function ReportsPage() {
         >
           <div className="space-y-6">
             <PlanOverviewCards comparison={planComparison} currency={currency} />
-            <PlanComparisonTable comparison={planComparison} currency={currency} />
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold text-slate-900">الدخل</h3>
+              <PlanComparisonTable comparison={planComparison} currency={currency} rows={planComparison.incomeRows} earnTone />
+            </div>
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold text-slate-900">المصروفات</h3>
+              <PlanComparisonTable comparison={planComparison} currency={currency} />
+            </div>
           </div>
         </ReportSection>
 

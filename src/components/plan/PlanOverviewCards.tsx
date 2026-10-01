@@ -23,6 +23,47 @@ function formatDifference(difference: number) {
   return `${difference > 0 ? "+" : ""}${formatCurrency(difference)}`;
 }
 
+function PlanStatCard({
+  title,
+  titleClassName,
+  cardClassName,
+  planned,
+  actual,
+  difference,
+  currency,
+  invertDifference = false,
+}: {
+  title: string;
+  titleClassName: string;
+  cardClassName: string;
+  planned: number;
+  actual: number;
+  difference: number;
+  currency: string;
+  invertDifference?: boolean;
+}) {
+  return (
+    <article className={`rounded-3xl border border-white p-6 shadow-sm ${cardClassName}`}>
+      <p className={`text-sm ${titleClassName}`}>{title}</p>
+      <p className="mt-3 text-sm text-slate-500">
+        المخطط{" "}
+        <span className="text-lg font-semibold text-slate-900">
+          {formatCurrency(planned, currency)}
+        </span>
+      </p>
+      <p className="mt-1 text-sm text-slate-500">
+        الواقع{" "}
+        <span className="text-lg font-semibold text-slate-900">
+          {formatCurrency(actual, currency)}
+        </span>
+      </p>
+      <p className={`mt-1 text-sm font-medium ${toneClass(difference, invertDifference)}`}>
+        الفرق {formatDifference(difference)}
+      </p>
+    </article>
+  );
+}
+
 export default function PlanOverviewCards({
   comparison,
   currency,
@@ -32,40 +73,34 @@ export default function PlanOverviewCards({
 }) {
   return (
     <section className="grid gap-4 lg:grid-cols-3">
-      <article className="rounded-3xl border border-white bg-gradient-to-br from-emerald-50 to-white p-6 shadow-sm">
-        <p className="text-sm text-emerald-700">الدخل — مخطط / واقع</p>
-        <p className="mt-2 text-lg font-semibold text-slate-900">
-          {formatCurrency(comparison.income.planned, currency)} /{" "}
-          {formatCurrency(comparison.income.actual, currency)}
-        </p>
-        <p className={`mt-2 text-sm font-medium ${toneClass(comparison.income.difference)}`}>
-          الفرق: {formatDifference(comparison.income.difference)}
-        </p>
-      </article>
-
-      <article className="rounded-3xl border border-white bg-gradient-to-br from-red-50 to-white p-6 shadow-sm">
-        <p className="text-sm text-red-700">المصروفات — مخطط / واقع</p>
-        <p className="mt-2 text-lg font-semibold text-slate-900">
-          {formatCurrency(comparison.expenses.planned, currency)} /{" "}
-          {formatCurrency(comparison.expenses.actual, currency)}
-        </p>
-        <p
-          className={`mt-2 text-sm font-medium ${toneClass(comparison.expenses.difference, true)}`}
-        >
-          الفرق: {formatDifference(comparison.expenses.difference)}
-        </p>
-      </article>
-
-      <article className="rounded-3xl border border-white bg-gradient-to-br from-slate-100 to-white p-6 shadow-sm">
-        <p className="text-sm text-slate-600">الرصيد — مخطط / واقع</p>
-        <p className="mt-2 text-lg font-semibold text-slate-900">
-          {formatCurrency(comparison.balance.planned, currency)} /{" "}
-          {formatCurrency(comparison.balance.actual, currency)}
-        </p>
-        <p className={`mt-2 text-sm font-medium ${toneClass(comparison.balance.difference)}`}>
-          الفرق: {formatDifference(comparison.balance.difference)}
-        </p>
-      </article>
+      <PlanStatCard
+        title="الدخل"
+        titleClassName="text-emerald-700"
+        cardClassName="bg-gradient-to-br from-emerald-50 to-white"
+        planned={comparison.income.planned}
+        actual={comparison.income.actual}
+        difference={comparison.income.difference}
+        currency={currency}
+      />
+      <PlanStatCard
+        title="المصروفات"
+        titleClassName="text-red-700"
+        cardClassName="bg-gradient-to-br from-red-50 to-white"
+        planned={comparison.expenses.planned}
+        actual={comparison.expenses.actual}
+        difference={comparison.expenses.difference}
+        currency={currency}
+        invertDifference
+      />
+      <PlanStatCard
+        title="الرصيد"
+        titleClassName="text-slate-600"
+        cardClassName="bg-gradient-to-br from-slate-100 to-white"
+        planned={comparison.balance.planned}
+        actual={comparison.balance.actual}
+        difference={comparison.balance.difference}
+        currency={currency}
+      />
     </section>
   );
 }

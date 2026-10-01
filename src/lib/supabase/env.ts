@@ -1,3 +1,5 @@
+import { readPublicEnv } from "@/lib/public-env";
+
 export function normalizeSupabaseUrl(rawUrl: string | undefined) {
   if (!rawUrl) {
     return "";
@@ -9,7 +11,7 @@ export function normalizeSupabaseUrl(rawUrl: string | undefined) {
 }
 
 export function getSupabaseUrl() {
-  const normalized = normalizeSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
+  const normalized = normalizeSupabaseUrl(readPublicEnv("NEXT_PUBLIC_SUPABASE_URL"));
 
   if (!normalized) {
     throw new Error(
@@ -21,7 +23,7 @@ export function getSupabaseUrl() {
 }
 
 export function getSupabaseAnonKey() {
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const key = readPublicEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
 
   if (!key) {
     throw new Error("NEXT_PUBLIC_SUPABASE_ANON_KEY is missing.");

@@ -1,5 +1,13 @@
 import type { Locale } from "@/i18n/config";
-import type { Category, MonthlyPlan, PlanComparison, PlanItem, Transaction } from "@/lib/types/database";
+import { getCategoryDescendantIds, getParentCategories } from "@/lib/categories/hierarchy";
+import { buildComparisonChildren } from "@/lib/plan/comparison-children";
+import type {
+  Category,
+  MonthlyPlan,
+  PlanComparison,
+  PlanItem,
+  Transaction,
+} from "@/lib/types/database";
 import { getMonthRange, isDateInMonthRange } from "@/lib/calendar";
 
 export function buildCategoryPlanMap(planItems: PlanItem[]) {
@@ -36,15 +44,27 @@ export function buildPlanComparison({
 
   const plannedByCategory = buildCategoryPlanMap(planItems);
   const actualByCategory = new Map<string, number>();
+  const incomeActualByCategory = new Map<string, number>();
   let actualIncome = 0;
   let actualExpenses = 0;
   let uncategorizedExpenses = 0;
+  let uncategorizedIncome = 0;
 
   for (const transaction of monthTransactions) {
     const amount = Number(transaction.amount);
 
     if (transaction.type === "income") {
       actualIncome += amount;
+
+      if (transaction.category_id) {
+        incomeActualByCategory.set(
+          transaction.category_id,
+          (incomeActualByCategory.get(transaction.category_id) ?? 0) + amount,
+        );
+      } else {
+        uncategorizedIncome += amount;
+      }
+
       continue;
     }
 
@@ -60,29 +80,38 @@ export function buildPlanComparison({
     }
   }
 
-  const expenseRows = categories.map((category) => {
-    const planned = plannedByCategory.get(category.id) ?? 0;
-    const actual = actualByCategory.get(category.id) ?? 0;
-    const difference = actual - planned;
+  const expenseRows = getParentCategories(categories)
+    .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name, "ar"))
+    .map((category) => {
+      const categoryIds = [category.id, ...getCategoryDescendantIds(category.id, categories)];
+      const planned = categoryIds.reduce(
+        (total, categoryId) => total + (plannedByCategory.get(categoryId) ?? 0),
+        0,
+      );
+      const actual = categoryIds.reduce(
+        (total, categoryId) => total + (actualByCategory.get(categoryId) ?? 0),
+        0,
+      );
 
-    return {
-      categoryId: category.id,
-      name: category.name,
-      icon: category.icon,
-      color: category.color,
-      planned,
-      actual,
-      difference,
-      progressPercent: planned > 0 ? Math.min(100, (actual / planned) * 100) : null,
-    };
-  });
+      return {
+        categoryId: category.id,
+        name: category.name,
+        icon: category.icon,
+        color: category.color,
+        planned,
+        actual,
+        difference: actual - planned,
+        progressPercent: planned > 0 ? Math.min(100, (actual / planned) * 100) : null,
+        children: buildComparisonChildren(category, categories, plannedByCategory, actualByCategory),
+      };
+    });
 
-  expenseRows.sort((a, b) => {
-    if (b.planned !== a.planned) {
-      return b.planned - a.planned;
+  expenseRows.sort((left, right) => {
+    if (right.planned !== left.planned) {
+      return right.planned - left.planned;
     }
 
-    return b.actual - a.actual;
+    return right.actual - left.actual;
   });
 
   const plannedIncome = Number(plan?.planned_income ?? 0);
@@ -109,6 +138,19 @@ export function buildPlanComparison({
       difference: actualIncome - actualExpenses - (plannedIncome - plannedExpenses),
     },
     expenseRows,
+    incomeRows: [
+      {
+        categoryId: "income",
+        name: "الدخل",
+        icon: "💰",
+        color: "#059669",
+        planned: plannedIncome,
+        actual: actualIncome,
+        difference: actualIncome - plannedIncome,
+        progressPercent: plannedIncome > 0 ? Math.min(100, (actualIncome / plannedIncome) * 100) : null,
+        children: buildIncomeSourceRows(categories, incomeActualByCategory, uncategorizedIncome),
+      },
+    ],
     uncategorizedExpenses,
   };
 }
@@ -121,11 +163,62 @@ export function emptyCategoryPlans(categories: Category[]) {
 }
 
 export function categoryPlansFromItems(categories: Category[], planItems: PlanItem[]) {
-  const plannedByCategory = buildCategoryPlanMap(planItems);
-  return Object.fromEntries(
-    categories.map((category) => [
-      category.id,
-      plannedByCategory.has(category.id) ? String(plannedByCategory.get(category.id)) : "",
-    ]),
-  ) as Record<string, string>;
+  return rollCategoryPlansToParents(categories, buildCategoryPlanMap(planItems));
+}
+
+export function rollCategoryPlansToParents(
+  categories: Category[],
+  plannedByCategory: Map<string, number>,
+) {
+  const plans = Object.fromEntries(categories.map((category) => [category.id, ""])) as Record<
+    string,
+    string
+  >;
+
+  for (const category of getParentCategories(categories)) {
+    const categoryIds = [category.id, ...getCategoryDescendantIds(category.id, categories)];
+    const total = categoryIds.reduce(
+      (sum, categoryId) => sum + (plannedByCategory.get(categoryId) ?? 0),
+      0,
+    );
+    plans[category.id] = total > 0 ? String(total) : "";
+  }
+
+  return plans;
+}
+
+function buildIncomeSourceRows(
+  categories: Category[],
+  incomeActualByCategory: Map<string, number>,
+  uncategorizedIncome: number,
+) {
+  const sources = getParentCategories(categories)
+    .map((category) => {
+      const categoryIds = [category.id, ...getCategoryDescendantIds(category.id, categories)];
+      const actual = categoryIds.reduce(
+        (total, categoryId) => total + (incomeActualByCategory.get(categoryId) ?? 0),
+        0,
+      );
+
+      return {
+        categoryId: category.id,
+        name: category.name,
+        icon: category.icon,
+        planned: 0,
+        actual,
+      };
+    })
+    .filter((row) => row.actual > 0);
+
+  if (uncategorizedIncome > 0) {
+    sources.push({
+      categoryId: "income:uncategorized",
+      name: "بدون فئة",
+      icon: "💰",
+      planned: 0,
+      actual: uncategorizedIncome,
+    });
+  }
+
+  return sources.sort((left, right) => right.actual - left.actual);
 }

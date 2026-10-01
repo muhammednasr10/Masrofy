@@ -25,13 +25,14 @@ export type WalletsPageData = {
 export async function loadWalletsPageData(
   supabase: SupabaseClient,
   locale: Locale = "ar",
+  referenceDate = new Date(),
 ): Promise<WalletsPageData> {
   const { data: profile } = await supabase
     .from("profiles")
     .select("currency, month_start_day")
     .maybeSingle();
   const resolvedMonthStartDay = normalizeMonthStartDay(profile?.month_start_day);
-  const month = getMonthRange(new Date(), locale, resolvedMonthStartDay);
+  const month = getMonthRange(referenceDate, locale, resolvedMonthStartDay);
 
   const [
     walletResult,

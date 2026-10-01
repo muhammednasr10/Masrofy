@@ -1,6 +1,5 @@
 "use client";
 
-import ModalShell from "@/components/ui/ModalShell";
 import type { InternalWalletTransfer, Wallet } from "@/lib/types/database";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
 

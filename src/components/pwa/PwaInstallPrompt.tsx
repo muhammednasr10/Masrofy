@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import ModalShell from "@/components/ui/ModalShell";
 import type { PwaInstallPlatform } from "@/hooks/usePwaInstall";
@@ -32,13 +31,10 @@ export default function PwaInstallPrompt({
     <ModalShell onClose={onClose} maxWidthClassName="sm:max-w-md">
       <div className="text-center">
         <div className="mx-auto flex h-20 w-20 items-center justify-center overflow-hidden rounded-3xl bg-emerald-50">
-          <Image
+          <img
             src="/icons/icon-192.png"
             alt={t("common.appShortName")}
-            width={80}
-            height={80}
             className="h-20 w-20 object-cover"
-            priority
           />
         </div>
 

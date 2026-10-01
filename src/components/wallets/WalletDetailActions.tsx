@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/router/Link";
 import ModalActionButton from "@/components/ui/ModalActionButton";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import type { Wallet } from "@/lib/types/database";

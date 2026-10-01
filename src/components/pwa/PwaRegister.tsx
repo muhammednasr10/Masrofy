@@ -4,7 +4,7 @@ import { useEffect } from "react";
 
 export default function PwaRegister() {
   useEffect(() => {
-    if (process.env.NODE_ENV !== "production") {
+    if (import.meta.env.DEV) {
       if ("serviceWorker" in navigator) {
         void navigator.serviceWorker.getRegistrations().then((registrations) => {
           registrations.forEach((registration) => {

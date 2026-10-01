@@ -11,10 +11,12 @@
 
 ## Tech Stack
 
-- Next.js 16 (App Router)
+- Vite
+- React 19 + React Router
 - TypeScript
 - Tailwind CSS
 - Supabase (Auth + PostgreSQL + RLS)
+- Sentry لمراقبة أخطاء الإنتاج
 
 ## البداية السريعة
 
@@ -52,31 +54,35 @@ npm run dev
 
 افتح [http://localhost:3000](http://localhost:3000)
 
+بناء نسخة الإنتاج وتشغيلها مع مسارات السيرفر:
+
+```bash
+npm run build
+npm start
+```
+
+## النشر
+
+`vercel.json` ينشر مجلد `dist` كواجهة ثابتة، ويبقي ثلاثة مسارات على دوال Vercel لأنها تحتاج مفاتيح سرية:
+
+- `DELETE /api/account/delete`
+- `POST /api/admin/notify-category-suggestion`
+- `GET /api/cron/due-notifications` يوميًا الساعة 05:00 UTC
+
+فعّل `CRON_SECRET` في بيئة الإنتاج حتى يقبل الكرون الطلب.
+
 ## هيكل المشروع
 
 ```text
-src/
-  app/
-    (app)/          # الصفحات المحمية
-    (auth)/         # login / register
-    auth/callback/  # Supabase auth callback
+src/                 # واجهة React
+  app/               # صفحات الشاشات
   components/
   lib/
-    supabase/
-    types/
-    utils/
-supabase/
-  migrations/
+server/              # منطق المسارات السرية
+api/                 # دوال Vercel لنفس المسارات
+supabase/migrations/
 ```
 
 ## GitHub
 
 Repository: https://github.com/muhammednasr10/Masrofy
-
-## الخطوات القادمة المقترحة
-
-- ميزانيات شهرية لكل فئة
-- تصدير CSV / PDF
-- PWA للموبايل
-- رسوم بيانية أسبوعية
-- دعم عملات متعددة

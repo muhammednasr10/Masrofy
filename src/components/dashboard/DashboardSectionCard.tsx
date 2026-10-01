@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/router/Link";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 
 export type DashboardSectionCardProps = {

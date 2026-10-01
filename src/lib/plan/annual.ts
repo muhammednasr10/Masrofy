@@ -1,11 +1,9 @@
-import type {
-  AnnualPlanTemplateItem,
-  Category,
-} from "@/lib/types/database";
+import { rollCategoryPlansToParents } from "@/lib/plan/summary";
+import type { Category } from "@/lib/types/database";
 
 export function categoryPlansFromTemplateItems(
   categories: Category[],
-  templateItems: AnnualPlanTemplateItem[],
+  templateItems: Array<{ category_id: string; planned_amount: number }>,
 ) {
   const plannedByCategory = new Map<string, number>();
 
@@ -13,17 +11,12 @@ export function categoryPlansFromTemplateItems(
     plannedByCategory.set(item.category_id, Number(item.planned_amount));
   }
 
-  return Object.fromEntries(
-    categories.map((category) => [
-      category.id,
-      plannedByCategory.has(category.id) ? String(plannedByCategory.get(category.id)) : "",
-    ]),
-  ) as Record<string, string>;
+  return rollCategoryPlansToParents(categories, plannedByCategory);
 }
 
 export function buildAnnualTemplateFormState(
   categories: Category[],
-  templateItems: AnnualPlanTemplateItem[],
+  templateItems: Array<{ category_id: string; planned_amount: number }>,
 ) {
   return categoryPlansFromTemplateItems(categories, templateItems);
 }

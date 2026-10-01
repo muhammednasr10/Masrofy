@@ -45,12 +45,14 @@ export async function loadDashboardData(
   supabase: SupabaseClient,
   userId: string | undefined,
   locale: Locale = "ar",
+  referenceDate = new Date(),
 ): Promise<DashboardData> {
   const { data: profile } = await supabase
     .from("profiles")
     .select("currency, full_name, month_start_day")
     .maybeSingle();
-  const month = getMonthRange(new Date(), locale, profile?.month_start_day);
+  const monthStartDay = normalizeMonthStartDay(profile?.month_start_day);
+  const month = getMonthRange(referenceDate, locale, monthStartDay);
   const today = new Date().toISOString().slice(0, 10);
 
   const [
@@ -107,7 +109,9 @@ export async function loadDashboardData(
     month.start,
     categories,
     monthTransactions,
-    normalizeMonthStartDay(profile?.month_start_day),
+    monthStartDay,
+    referenceDate,
+    locale,
   );
 
   return {

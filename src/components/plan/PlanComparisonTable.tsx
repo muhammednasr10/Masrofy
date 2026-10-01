@@ -1,13 +1,56 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { PlanComparisonParentRow } from "@/components/plan/PlanComparisonParentRow";
+import { getCategoryBudgetTone } from "@/lib/plan/budget-warning";
 import { formatCurrency } from "@/lib/utils/format";
 import type { PlanComparison } from "@/lib/types/database";
 
 export default function PlanComparisonTable({
   comparison,
   currency,
+  initialOpenCategoryId,
+  categoryPlans,
+  onCategoryPlanChange,
+  rows,
+  earnTone = false,
 }: {
   comparison: PlanComparison;
   currency: string;
+  initialOpenCategoryId?: string | null;
+  categoryPlans?: Record<string, string>;
+  onCategoryPlanChange?: (categoryId: string, value: string) => void;
+  rows?: PlanComparison["expenseRows"];
+  earnTone?: boolean;
 }) {
+  const [openIds, setOpenIds] = useState<Set<string>>(() =>
+    initialOpenCategoryId ? new Set([initialOpenCategoryId]) : new Set(),
+  );
+
+  useEffect(() => {
+    if (!initialOpenCategoryId) {
+      return;
+    }
+
+    document.getElementById(`plan-category-${initialOpenCategoryId}`)?.scrollIntoView({
+      block: "center",
+    });
+  }, [initialOpenCategoryId]);
+
+  function toggleRow(categoryId: string) {
+    setOpenIds((current) => {
+      const next = new Set(current);
+
+      if (next.has(categoryId)) {
+        next.delete(categoryId);
+      } else {
+        next.add(categoryId);
+      }
+
+      return next;
+    });
+  }
+
   return (
     <div className="x-scroll rounded-2xl border border-slate-100">
       <table className="min-w-full text-sm">
@@ -21,67 +64,57 @@ export default function PlanComparisonTable({
           </tr>
         </thead>
         <tbody>
-          {comparison.expenseRows.map((row) => {
-            const overBudget = row.planned > 0 && row.actual > row.planned;
-            const underBudget = row.planned > 0 && row.actual < row.planned;
+          {[...(rows ?? comparison.expenseRows)]
+            .sort((left, right) => {
+              const leftPlanned = onCategoryPlanChange
+                ? Number(categoryPlans?.[left.categoryId] || 0)
+                : left.planned;
+              const rightPlanned = onCategoryPlanChange
+                ? Number(categoryPlans?.[right.categoryId] || 0)
+                : right.planned;
+
+              if (rightPlanned !== leftPlanned) {
+                return rightPlanned - leftPlanned;
+              }
+
+              return right.actual - left.actual;
+            })
+            .map((row) => {
+            const planned = onCategoryPlanChange
+              ? Number(categoryPlans?.[row.categoryId] || 0)
+              : row.planned;
+            const tone = getCategoryBudgetTone(planned, row.actual);
+            const children = row.children ?? [];
 
             return (
-              <tr key={row.categoryId} className="border-b border-slate-100 last:border-0">
-                <td className="px-4 py-4">
-                  <span className="flex items-center gap-2 font-medium text-slate-900">
-                    <span>{row.icon}</span>
-                    {row.name}
-                  </span>
-                </td>
-                <td className="px-4 py-4 text-slate-700">
-                  {formatCurrency(row.planned, currency)}
-                </td>
-                <td className="px-4 py-4 font-medium text-slate-900">
-                  {formatCurrency(row.actual, currency)}
-                </td>
-                <td
-                  className={`px-4 py-4 font-medium ${
-                    row.difference === 0
-                      ? "text-slate-500"
-                      : overBudget
-                        ? "text-red-600"
-                        : underBudget
-                          ? "text-emerald-700"
-                          : "text-slate-700"
-                  }`}
-                >
-                  {row.difference === 0
-                    ? formatCurrency(0, currency)
-                    : `${row.difference > 0 ? "+" : ""}${formatCurrency(row.difference, currency)}`}
-                </td>
-                <td className="px-4 py-4">
-                  {row.planned > 0 ? (
-                    <div className="space-y-1">
-                      <div className="h-2 rounded-full bg-slate-100">
-                        <div
-                          className={`h-2 rounded-full ${
-                            overBudget ? "bg-red-500" : "bg-emerald-500"
-                          }`}
-                          style={{
-                            width: `${Math.min(100, row.progressPercent ?? 0)}%`,
-                          }}
-                        />
-                      </div>
-                      <p className="text-xs text-slate-500">
-                        {Math.round(row.progressPercent ?? 0)}%
-                      </p>
-                    </div>
-                  ) : (
-                    <span className="text-xs text-slate-400">—</span>
-                  )}
-                </td>
-              </tr>
+              <PlanComparisonParentRow
+                key={row.categoryId}
+                categoryId={row.categoryId}
+                name={row.name}
+                icon={row.icon}
+                planned={planned}
+                actual={row.actual}
+                difference={row.actual - planned}
+                progressPercent={planned > 0 ? Math.min(100, (row.actual / planned) * 100) : null}
+                currency={currency}
+                open={openIds.has(row.categoryId)}
+                children={children}
+                onToggle={children.length > 0 ? () => toggleRow(row.categoryId) : undefined}
+                plannedDraft={categoryPlans?.[row.categoryId] ?? ""}
+                onPlannedChange={
+                  onCategoryPlanChange
+                    ? (value) => onCategoryPlanChange(row.categoryId, value)
+                    : undefined
+                }
+                {...tone}
+                earnTone={earnTone}
+              />
             );
           })}
         </tbody>
       </table>
 
-      {comparison.uncategorizedExpenses > 0 ? (
+      {!earnTone && comparison.uncategorizedExpenses > 0 ? (
         <div className="border-t border-slate-100 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           مصروفات بدون فئة هذا الشهر:{" "}
           {formatCurrency(comparison.uncategorizedExpenses, currency)}

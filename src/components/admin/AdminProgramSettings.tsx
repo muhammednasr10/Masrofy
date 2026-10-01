@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/lib/router/navigation";
 import AdminAccountsPanel from "@/components/admin/AdminAccountsPanel";
 import AdminDefaultsPanel from "@/components/admin/AdminDefaultsPanel";
 import { useTranslations } from "@/components/i18n/LocaleProvider";

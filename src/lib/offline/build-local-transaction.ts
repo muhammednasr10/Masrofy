@@ -1,4 +1,4 @@
-import type { Category, Transaction, TransactionType, Wallet } from "@/lib/types/database";
+import type { Category, TransactionType, Wallet } from "@/lib/types/database";
 import type { InsertTransactionPayload, OfflineTransaction } from "@/lib/offline/types";
 
 export function buildLocalTransaction(

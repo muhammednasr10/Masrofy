@@ -1,4 +1,4 @@
-import { relationshipOptions } from "@/lib/constants/friendship-options";
+import { canBeDependent, relationshipOptions } from "@/lib/constants/friendship-options";
 
 type RelationshipType = (typeof relationshipOptions)[number]["value"];
 
@@ -6,10 +6,12 @@ type FriendInviteFormProps = {
   inviteEmail: string;
   relationshipType: RelationshipType;
   shareMyActivity: boolean;
+  makeDependent: boolean;
   submitting: boolean;
   onInviteEmailChange: (value: string) => void;
   onRelationshipTypeChange: (value: RelationshipType) => void;
   onShareMyActivityChange: (value: boolean) => void;
+  onMakeDependentChange: (value: boolean) => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
 };
 
@@ -17,10 +19,12 @@ export default function FriendInviteForm({
   inviteEmail,
   relationshipType,
   shareMyActivity,
+  makeDependent,
   submitting,
   onInviteEmailChange,
   onRelationshipTypeChange,
   onShareMyActivityChange,
+  onMakeDependentChange,
   onSubmit,
 }: FriendInviteFormProps) {
   return (
@@ -68,6 +72,19 @@ export default function FriendInviteForm({
           />
           <span className="text-sm text-slate-700">اسمح له بمتابعة ملخص مصروفاتي الشهرية</span>
         </label>
+
+        {canBeDependent(relationshipType) ? (
+          <label className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 lg:col-span-2">
+            <input
+              type="checkbox"
+              checked={makeDependent}
+              onChange={(event) => onMakeDependentChange(event.target.checked)}
+            />
+            <span className="text-sm text-slate-700">
+              حساب تابع، كل محافظه تظهر عندي بعد ما يقبل الطلب
+            </span>
+          </label>
+        ) : null}
 
         <button
           type="submit"

@@ -13,6 +13,7 @@ import { buildPlanComparison } from "@/lib/plan";
 import { getMonthStartFromPlanMonthKey, normalizeMonthStartDay } from "@/lib/calendar";
 import { summarizeInvestments } from "@/lib/investments/utils";
 import { useMonthPeriod } from "@/hooks/useMonthPeriod";
+import { useSyncCompleteListener } from "@/hooks/useSyncCompleteListener";
 import type {
   Category,
   Investment,
@@ -30,9 +31,16 @@ import {
 } from "@/lib/wallets";
 
 export function useReportsPage() {
-  const [monthStartDay, setMonthStartDay] = useState(1);
-  const { locale, planMonthKey, setPlanMonthKey, referenceDate, month, planYear } =
-    useMonthPeriod(monthStartDay);
+  const {
+    locale,
+    planMonthKey,
+    setPlanMonthKey,
+    referenceDate,
+    month,
+    planYear,
+    monthStartDay,
+    setMonthStartDay,
+  } = useMonthPeriod();
   const [currency, setCurrency] = useState("EGP");
   const [categories, setCategories] = useState<Category[]>([]);
   const [wallets, setWallets] = useState<Wallet[]>([]);
@@ -129,6 +137,8 @@ export function useReportsPage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useSyncCompleteListener(loadData);
 
   const monthTransactions = useMemo(
     () => filterTransactionsForMonth(yearTransactions, planMonthKey, monthStartDay, locale),

@@ -1,8 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { FormEvent, useState } from "react";
+import Link from "@/components/router/Link";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
+import { createClient } from "@/lib/supabase/client";
+import { getAuthCallbackUrl } from "@/lib/supabase/site-url";
 
 export default function ForgotPasswordPage() {
   const t = useTranslations();
@@ -18,16 +20,13 @@ export default function ForgotPasswordPage() {
     setMessage(null);
 
     try {
-      const response = await fetch("/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim() }),
+      const supabase = createClient();
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: getAuthCallbackUrl("/reset-password"),
       });
 
-      const payload = (await response.json()) as { error?: string };
-
-      if (!response.ok) {
-        setError(payload.error ?? t("auth.resetRequestFailed"));
+      if (resetError) {
+        setError(resetError.message || t("auth.resetRequestFailed"));
         return;
       }
 

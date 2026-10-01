@@ -33,6 +33,12 @@
     "more": "المزيد",
     "primarySection": "الأساسي"
   },
+  "monthSwitcher": {
+    "previous": "الشهر السابق",
+    "next": "الشهر التالي",
+    "pick": "اختيار الشهر",
+    "current": "الشهر الحالي"
+  },
   "categories": {
     "searchPlaceholder": "ابحث عن فئة... (مثال: طعام، خضار، طماطم)",
     "searchEmpty": "لا توجد فئة مطابقة",
@@ -125,6 +131,12 @@
   "dashboard": {
     "showBalances": "إظهار الأرصدة",
     "hideBalances": "إخفاء الأرصدة",
+    "spendLeft": "المتبقي للصرف {amount}",
+    "spendOver": "صرفت أكتر من الخطة بـ {amount}",
+    "closestCategory": "أقرب فئة للحد: {icon} {name} {percent}%",
+    "closestCategoryOver": "{icon} {name} عدّت الميزانية",
+    "spendNoPlan": "لسه مفيش خطة للشهر ده",
+    "recordOnCategory": "سجّل مصروف",
     "summaryWallets": "المحافظ فيها {amount}",
     "summaryExpenses": "المصروفات {amount}",
     "openCard": "فتح ←",
@@ -142,6 +154,8 @@
     "planTitle": "الخطة",
     "planDesc": "مقارنة المخطط بالواقع",
     "planNoPlanValue": "بدون خطة",
+    "planRemainingValue": "المتبقي للصرف",
+    "planOverValue": "زيادة عن الخطة",
     "planNoPlan": "لم تُحفظ خطة لهذا الشهر",
     "planMatched": "المصروفات مطابقة للخطة",
     "planOver": "تجاوزت الخطة بـ {amount}",
@@ -268,6 +282,15 @@
     "summaryLine": "مصروفات {expenses} • دخل {income}",
     "addExpense": "إضافة مصروف",
     "addTransaction": "إضافة معاملة",
+    "quickAddTitle": "إضافة سريعة",
+    "quickAddSave": "حفظ المصروف",
+    "quickAddSaving": "جاري الحفظ...",
+    "quickAddSaved": "تم حفظ المصروف",
+    "quickAddSavedOffline": "اتحفظ على الجهاز، وهيرفع لما النت يرجع",
+    "quickAddMore": "تفاصيل أكتر",
+    "quickAddDateHint": "هيتسجل يوم {date} عشان يظهر في الشهر المفتوح",
+    "quickAddDateToday": "هيتسجل النهاردة {date}",
+    "quickAddNeedAmount": "اكتب مبلغ أكبر من صفر",
     "exportCsv": "تصدير CSV",
     "exportCurrency": "العملة",
     "addRecurring": "العمليات المتكررة",
@@ -438,7 +461,7 @@
     "loading": "جاري تحميل التقارير...",
     "eyebrow": "تحليلات مالية",
     "title": "التقارير",
-    "subtitle": "كل التقارير اللي ممكن تحتاجها في مكان واحد — اختر الشهر واستعرض الملخصات.",
+    "subtitle": "كل التقارير اللي ممكن تحتاجها في مكان واحد، حسب الشهر المفتوح في الشريط.",
     "navCashFlow": "التدفق النقدي",
     "navCategories": "الفئات",
     "navWallets": "المحافظ",
@@ -510,7 +533,12 @@
     "recurringDueAction": "سجّل العمليات",
     "categorySuggestionTitle": "اقتراحات فئات بانتظار المراجعة",
     "categorySuggestionDesc": "{count} فئة جديدة من المستخدمين",
-    "categorySuggestionAction": "راجع الفئات"
+    "categorySuggestionAction": "راجع الفئات",
+    "categoryBudgetNearTitle": "{name} قربت تخلّص",
+    "categoryBudgetNearDesc": "استهلكت {percent}% من الميزانية. المتبقي {remaining}",
+    "categoryBudgetOverTitle": "{name} تجاوزت الميزانية",
+    "categoryBudgetOverDesc": "صرفت أكثر من المخطط بـ {amount}",
+    "categoryBudgetAction": "افتح الفئة"
   },
   "pwa": {
     "installTitle": "ثبّت مصروفي على جهازك",

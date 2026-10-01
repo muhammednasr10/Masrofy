@@ -15,7 +15,6 @@ import {
 import type { Category, RecurringTransaction, Transaction, Wallet } from "@/lib/types/database";
 
 export function useRecurringTransactions({
-  wallets,
   categories,
   defaultWalletId,
   onTransactionCreated,

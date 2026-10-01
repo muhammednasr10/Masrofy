@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/router/Link";
 import DashboardSectionCard from "@/components/dashboard/DashboardSectionCard";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import { useDashboardCards } from "@/hooks/useDashboardCards";

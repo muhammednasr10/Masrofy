@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import Link from "@/components/router/Link";
+import { usePathname } from "@/lib/router/navigation";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import { isNavLinkActive, PRIMARY_NAV_LINKS } from "@/lib/navigation/links";
 

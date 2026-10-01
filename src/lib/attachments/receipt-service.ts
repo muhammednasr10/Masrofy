@@ -3,6 +3,7 @@ import {
   buildReceiptStoragePath,
   MAX_RECEIPT_SIZE_BYTES,
   RECEIPT_BUCKET,
+  RECEIPT_MIME_TYPES,
 } from "@/lib/attachments/receipts";
 import type { TransactionAttachment } from "@/lib/types/database";
 
@@ -42,6 +43,10 @@ export async function uploadTransactionReceipt(
   transactionId: string,
   file: File,
 ) {
+  if (!RECEIPT_MIME_TYPES.has(file.type)) {
+    throw new Error("نوع المرفق غير مسموح. استخدم صورة أو PDF.");
+  }
+
   if (file.size > MAX_RECEIPT_SIZE_BYTES) {
     throw new Error("حجم المرفق أكبر من 5 ميجابايت.");
   }

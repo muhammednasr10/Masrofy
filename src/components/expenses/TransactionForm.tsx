@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/router/Link";
 import { FormEvent, useState } from "react";
 import CategoryFormModal from "@/components/categories/CategoryFormModal";
 import WalletSelect from "@/components/wallets/WalletSelect";

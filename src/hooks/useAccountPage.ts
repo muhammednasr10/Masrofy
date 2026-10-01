@@ -1,8 +1,9 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/lib/router/navigation";
 import { useLocale } from "@/components/i18n/LocaleProvider";
+import { useSelectedMonth } from "@/components/month/SelectedMonthProvider";
 import { isLocale } from "@/i18n/config";
 import { createClient } from "@/lib/supabase/client";
 import { loadAccountPageData, saveAccountProfile } from "@/lib/account";
@@ -13,6 +14,7 @@ import type { AccountStats } from "@/lib/account/load-data";
 export function useAccountPage() {
   const router = useRouter();
   const { locale, setLocale } = useLocale();
+  const { setMonthStartDay: setSharedMonthStartDay } = useSelectedMonth();
   const { error, message, setError, setMessage, clearFeedback } = usePageFeedback();
 
   const [loading, setLoading] = useState(true);
@@ -46,6 +48,7 @@ export function useAccountPage() {
     setCurrency(data.currency);
     setDefaultWalletId(data.defaultWalletId);
     setMonthStartDay(data.monthStartDay);
+    setSharedMonthStartDay(data.monthStartDay);
     setWallets(data.wallets);
     setCreatedAt(data.createdAt);
     setStats(data.stats);
@@ -55,7 +58,7 @@ export function useAccountPage() {
     }
 
     setLoading(false);
-  }, [locale, router, setLocale]);
+  }, [locale, router, setLocale, setSharedMonthStartDay]);
 
   useEffect(() => {
     void loadAccount();
@@ -81,6 +84,7 @@ export function useAccountPage() {
     }
 
     setMessage(result.message ?? "تم حفظ بيانات الحساب.");
+    setSharedMonthStartDay(monthStartDay);
     setSaving(false);
     router.refresh();
   }

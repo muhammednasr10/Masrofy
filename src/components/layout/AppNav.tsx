@@ -1,11 +1,12 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import Link from "@/components/router/Link";
+import { usePathname, useRouter } from "@/lib/router/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
 import HeaderAlertsBell from "@/components/layout/HeaderAlertsBell";
+import HeaderMonthSwitcher from "@/components/layout/HeaderMonthSwitcher";
 import HeaderPwaInstallButton from "@/components/layout/HeaderPwaInstallButton";
 import SidebarPwaInstallButton from "@/components/layout/SidebarPwaInstallButton";
 import { MasrofyLogo } from "@/components/layout/MasrofyLogo";
@@ -182,6 +183,9 @@ export function AppNav() {
           </nav>
 
           <div className="ms-auto flex shrink-0 items-center gap-2 md:ms-0">
+            <div className="hidden md:block">
+              <HeaderMonthSwitcher />
+            </div>
             <LanguageSwitcher compact persistProfile />
             <HeaderPwaInstallButton />
             <HeaderAlertsBell />
@@ -194,6 +198,9 @@ export function AppNav() {
               {t("common.signOut")}
             </button>
           </div>
+        </div>
+        <div className="border-t border-emerald-50 px-3 py-2 md:hidden">
+          <HeaderMonthSwitcher />
         </div>
       </header>
 

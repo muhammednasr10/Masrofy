@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import { usePwaInstallContext } from "@/components/pwa/PwaInstallContext";
 
@@ -24,14 +23,7 @@ export default function HeaderPwaInstallButton() {
       title={t("account.pwaInstall")}
     >
       <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white">
-        <Image
-          src="/icons/icon-192.png"
-          alt=""
-          width={24}
-          height={24}
-          className="h-6 w-6 object-cover"
-          aria-hidden
-        />
+        <img src="/icons/icon-192.png" alt="" className="h-6 w-6 object-cover" aria-hidden />
       </span>
       <span className="text-xs font-semibold sm:text-sm">{label}</span>
     </button>

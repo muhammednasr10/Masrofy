@@ -16,6 +16,7 @@ type CategoryFormModalProps = {
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onClose: () => void;
   zIndexClassName?: string;
+  compact?: boolean;
 };
 
 export default function CategoryFormModal({
@@ -27,6 +28,7 @@ export default function CategoryFormModal({
   onSubmit,
   onClose,
   zIndexClassName,
+  compact = false,
 }: CategoryFormModalProps) {
   const t = useTranslations();
   const isEditing = Boolean(form.editingCategoryId);
@@ -35,11 +37,13 @@ export default function CategoryFormModal({
     : form.parentCategoryId
       ? t("categories.addSubTitle")
       : t("categories.addTitle");
-  const description = isEditing
-    ? t("categories.editDesc")
-    : form.parentCategoryId
-      ? t("categories.addSubDesc")
-      : t("categories.addDesc");
+  const description = compact
+    ? t("expenses.newCategoryPrompt")
+    : isEditing
+      ? t("categories.editDesc")
+      : form.parentCategoryId
+        ? t("categories.addSubDesc")
+        : t("categories.addDesc");
 
   return (
     <ModalShell onClose={onClose} maxWidthClassName="sm:max-w-lg" zIndexClassName={zIndexClassName}>
@@ -62,7 +66,8 @@ export default function CategoryFormModal({
             form={form}
             categories={categories}
             onChange={onChange}
-            lockParent={Boolean(form.parentCategoryId && !isEditing)}
+            lockParent={Boolean(form.parentCategoryId && !isEditing && !compact)}
+            compact={compact}
           />
 
           {error ? (

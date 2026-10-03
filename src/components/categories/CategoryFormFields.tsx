@@ -16,6 +16,7 @@ type CategoryFormFieldsProps = {
   idPrefix?: string;
   /** When adding a subcategory from a parent row — hide type/parent pickers */
   lockParent?: boolean;
+  compact?: boolean;
 };
 
 export default function CategoryFormFields({
@@ -24,6 +25,7 @@ export default function CategoryFormFields({
   onChange,
   idPrefix = "category",
   lockParent = false,
+  compact = false,
 }: CategoryFormFieldsProps) {
   const t = useTranslations();
   const parentOptions = buildCategoryParentOptions(
@@ -64,6 +66,7 @@ export default function CategoryFormFields({
               </button>
               <button
                 type="button"
+                disabled={parentOptions.length === 0}
                 onClick={() =>
                   onChange({
                     ...form,
@@ -81,12 +84,12 @@ export default function CategoryFormFields({
             </div>
           </label>
 
-          {form.parentCategoryId || parentOptions.length > 0 ? (
+          {form.parentCategoryId ? (
             <label className="block space-y-2">
               <span className="text-sm font-medium text-slate-700">{t("categories.parentLabel")}</span>
               <select
-                value={form.parentCategoryId ?? ""}
-                required={Boolean(form.parentCategoryId)}
+                value={form.parentCategoryId}
+                required
                 onChange={(event) =>
                   onChange({
                     ...form,
@@ -95,7 +98,6 @@ export default function CategoryFormFields({
                 }
                 className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
               >
-                <option value="">{t("categories.parentNone")}</option>
                 {parentOptions.map(({ category, label }) => (
                   <option key={category.id} value={category.id}>
                     {label}
@@ -119,6 +121,8 @@ export default function CategoryFormFields({
         />
       </label>
 
+      {compact ? null : (
+      <>
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-slate-700">{t("categories.iconLabel")}</span>
@@ -187,6 +191,8 @@ export default function CategoryFormFields({
           <p className="font-medium text-slate-900">{form.name.trim() || t("categories.nameLabel")}</p>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

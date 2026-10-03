@@ -19,6 +19,8 @@ type CategorySearchSelectProps = {
   allowEmpty?: boolean;
   emptyLabel?: string;
   placeholder?: string;
+  listInFlow?: boolean;
+  onQueryChange?: (query: string) => void;
 };
 
 export default function CategorySearchSelect({
@@ -31,6 +33,8 @@ export default function CategorySearchSelect({
   allowEmpty = false,
   emptyLabel,
   placeholder,
+  listInFlow = false,
+  onQueryChange,
 }: CategorySearchSelectProps) {
   const t = useTranslations();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -70,8 +74,11 @@ export default function CategorySearchSelect({
 
     function handleClickOutside(event: MouseEvent) {
       if (!containerRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-        setQuery("");
+        window.setTimeout(() => {
+          setOpen(false);
+          setQuery("");
+          onQueryChange?.("");
+        }, 0);
       }
     }
 
@@ -82,14 +89,14 @@ export default function CategorySearchSelect({
       }
     }
 
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("click", handleClickOutside);
     document.addEventListener("keydown", handleEscape);
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("click", handleClickOutside);
       document.removeEventListener("keydown", handleEscape);
     };
-  }, [open]);
+  }, [onQueryChange, open]);
 
   useEffect(() => {
     setHighlightIndex(0);
@@ -99,6 +106,7 @@ export default function CategorySearchSelect({
     onChange(categoryId);
     setOpen(false);
     setQuery("");
+    onQueryChange?.("");
   }
 
   function handleKeyDown(event: ReactKeyboardEvent<HTMLInputElement>) {
@@ -142,6 +150,7 @@ export default function CategorySearchSelect({
           value={open ? query : selectedLabel}
           onChange={(event) => {
             setQuery(event.target.value);
+            onQueryChange?.(event.target.value);
             if (!open) {
               setOpen(true);
             }
@@ -174,7 +183,13 @@ export default function CategorySearchSelect({
       </div>
 
       {open ? (
-        <div className="absolute inset-x-0 top-[calc(100%+0.35rem)] z-50 max-h-64 overflow-y-auto rounded-2xl border border-slate-200 bg-white py-2 shadow-lg">
+        <div
+          className={
+            listInFlow
+              ? "mt-2 max-h-48 overflow-y-auto rounded-2xl border border-slate-200 bg-white py-2"
+              : "absolute inset-x-0 top-[calc(100%+0.35rem)] z-50 max-h-64 overflow-y-auto rounded-2xl border border-slate-200 bg-white py-2 shadow-lg"
+          }
+        >
           {listItems.length === 0 ? (
             <p className="px-4 py-3 text-sm text-slate-500">{t("categories.searchEmpty")}</p>
           ) : (

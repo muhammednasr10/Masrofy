@@ -75,9 +75,13 @@ export default function TransactionForm({
   const [categoryForm, setCategoryForm] = useState<CategoryFormState | null>(null);
   const [categorySubmitting, setCategorySubmitting] = useState(false);
   const [categoryError, setCategoryError] = useState<string | null>(null);
+  const [typedCategoryName, setTypedCategoryName] = useState("");
 
   function openCategoryForm() {
-    setCategoryForm(emptyCategoryForm(null));
+    setCategoryForm({
+      ...emptyCategoryForm(null),
+      name: typedCategoryName.trim(),
+    });
     setCategoryError(null);
   }
 
@@ -188,14 +192,15 @@ export default function TransactionForm({
             {t("expenses.addCategory")}
           </button>
         </div>
-        <CategorySearchSelect
-          categories={categories}
-          value={categoryId}
-          onChange={onCategoryChange}
-          allowEmpty={type === "income"}
-          required={type === "expense"}
-          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus-within:border-emerald-500"
-        />
+          <CategorySearchSelect
+            categories={categories}
+            value={categoryId}
+            onChange={onCategoryChange}
+            onQueryChange={setTypedCategoryName}
+            allowEmpty={type === "income"}
+            required={type === "expense"}
+            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus-within:border-emerald-500"
+          />
       </div>
 
       <label className="block space-y-2">
@@ -259,7 +264,8 @@ export default function TransactionForm({
           onChange={setCategoryForm}
           onSubmit={handleCategorySubmit}
           onClose={closeCategoryForm}
-          zIndexClassName="z-[60]"
+          zIndexClassName="z-[100]"
+          compact
         />
       ) : null}
     </>

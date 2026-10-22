@@ -9,6 +9,27 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase/env";
 import { getSiteUrl } from "@/lib/supabase/site-url";
 import type { RecurringTransaction } from "@/lib/types/database";
+import { fetchLiveGoldPrices, type GoldPriceQuote } from "@/lib/investments/gold-price";
+
+let goldPriceCache: { quote: GoldPriceQuote; expiresAt: number } | null = null;
+const GOLD_PRICE_CACHE_MS = 5 * 60 * 1000;
+
+async function handleGoldPrice() {
+  try {
+    const now = Date.now();
+
+    if (goldPriceCache && goldPriceCache.expiresAt > now) {
+      return Response.json({ quote: goldPriceCache.quote, cached: true });
+    }
+
+    const quote = await fetchLiveGoldPrices();
+    goldPriceCache = { quote, expiresAt: now + GOLD_PRICE_CACHE_MS };
+    return Response.json({ quote, cached: false });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "تعذر جلب سعر الذهب الآن.";
+    return Response.json({ error: message }, { status: 502 });
+  }
+}
 
 async function getRequestUser(request: Request) {
   const header = request.headers.get("authorization") ?? "";
@@ -244,6 +265,10 @@ export async function handleApiRequest(request: Request) {
 
   if (pathname === "/api/cron/due-notifications" && request.method === "GET") {
     return handleDueNotifications(request);
+  }
+
+  if (pathname === "/api/gold-price" && request.method === "GET") {
+    return handleGoldPrice();
   }
 
   return Response.json({ error: "not_found" }, { status: 404 });

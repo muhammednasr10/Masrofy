@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { PlanComparisonParentRow } from "@/components/plan/PlanComparisonParentRow";
+import { compareWithTrailingNamesLast } from "@/lib/categories/display-order";
 import { getCategoryBudgetTone } from "@/lib/plan/budget-warning";
 import { formatCurrency } from "@/lib/utils/format";
 import type { PlanComparison } from "@/lib/types/database";
@@ -52,8 +53,8 @@ export default function PlanComparisonTable({
   }
 
   return (
-    <div className="x-scroll rounded-2xl border border-slate-100">
-      <table className="min-w-full text-sm">
+    <div className="rounded-2xl border border-slate-100 md:x-scroll">
+      <table className="stack-table min-w-full text-sm">
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50 text-slate-500">
             <th className="px-4 py-3 text-right font-medium">الفئة</th>
@@ -73,11 +74,12 @@ export default function PlanComparisonTable({
                 ? Number(categoryPlans?.[right.categoryId] || 0)
                 : right.planned;
 
-              if (rightPlanned !== leftPlanned) {
-                return rightPlanned - leftPlanned;
-              }
+              const byAmount =
+                rightPlanned !== leftPlanned
+                  ? rightPlanned - leftPlanned
+                  : right.actual - left.actual;
 
-              return right.actual - left.actual;
+              return compareWithTrailingNamesLast(left.name, right.name, byAmount);
             })
             .map((row) => {
             const planned = onCategoryPlanChange

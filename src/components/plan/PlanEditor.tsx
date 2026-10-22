@@ -1,6 +1,7 @@
 "use client";
 
 import type { Category } from "@/lib/types/database";
+import { compareCategoriesForDisplay } from "@/lib/categories/display-order";
 import { getParentCategories } from "@/lib/categories/hierarchy";
 import { formatCurrency } from "@/lib/utils/format";
 
@@ -39,9 +40,7 @@ export default function PlanEditor({
   notesPlaceholder = "مثال: الشهر ده فيه مصاريف مدرسة وزيادة فواتير...",
   currency = "EGP",
 }: PlanEditorProps) {
-  const parentCategories = getParentCategories(categories).sort(
-    (a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name, "ar"),
-  );
+  const parentCategories = getParentCategories(categories).sort(compareCategoriesForDisplay);
   const plannedIncomeAmount = Number(plannedIncome) || 0;
   const allocatedExpenses = parentCategories.reduce(
     (total, category) => total + (Number(categoryPlans[category.id]) || 0),

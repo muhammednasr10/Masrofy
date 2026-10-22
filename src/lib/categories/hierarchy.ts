@@ -1,4 +1,5 @@
 import type { Category } from "@/lib/types/database";
+import { compareCategoriesForDisplay } from "@/lib/categories/display-order";
 import {
   getCategoryParentId,
   normalizeCategories,
@@ -23,7 +24,7 @@ export function buildCategoryDisplayRows(categories: Category[]) {
   }
 
   for (const siblings of byParent.values()) {
-    siblings.sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name, "ar"));
+    siblings.sort(compareCategoriesForDisplay);
   }
 
   const rows: Array<{ category: Category; depth: number }> = [];
@@ -52,9 +53,9 @@ export function categoryHasChildren(categoryId: string, categories: Category[]) 
 }
 
 export function getDirectChildCategories(parentId: string, categories: Category[]) {
-  return normalizeCategories(categories).filter(
-    (category) => getCategoryParentId(category) === parentId,
-  );
+  return normalizeCategories(categories)
+    .filter((category) => getCategoryParentId(category) === parentId)
+    .sort(compareCategoriesForDisplay);
 }
 
 export type CategorySelectGroup = {

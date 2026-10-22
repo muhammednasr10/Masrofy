@@ -1,4 +1,8 @@
 import type { Locale } from "@/i18n/config";
+import {
+  compareCategoriesForDisplay,
+  compareWithTrailingNamesLast,
+} from "@/lib/categories/display-order";
 import { getCategoryDescendantIds, getParentCategories } from "@/lib/categories/hierarchy";
 import { buildComparisonChildren } from "@/lib/plan/comparison-children";
 import type {
@@ -81,7 +85,7 @@ export function buildPlanComparison({
   }
 
   const expenseRows = getParentCategories(categories)
-    .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name, "ar"))
+    .sort(compareCategoriesForDisplay)
     .map((category) => {
       const categoryIds = [category.id, ...getCategoryDescendantIds(category.id, categories)];
       const planned = categoryIds.reduce(
@@ -107,11 +111,12 @@ export function buildPlanComparison({
     });
 
   expenseRows.sort((left, right) => {
-    if (right.planned !== left.planned) {
-      return right.planned - left.planned;
-    }
+    const byAmount =
+      right.planned !== left.planned
+        ? right.planned - left.planned
+        : right.actual - left.actual;
 
-    return right.actual - left.actual;
+    return compareWithTrailingNamesLast(left.name, right.name, byAmount);
   });
 
   const plannedIncome = Number(plan?.planned_income ?? 0);

@@ -140,6 +140,11 @@ export function getWalletTypeLabel(wallet: Wallet) {
 }
 
 export type ParentWalletBalanceSummary = {
+  /** Liquid assets: excludes credit cards and investment wallets. */
+  liquidTotal: number;
+  investmentTotal: number;
+  creditTotal: number;
+  /** Liquid + investment (still excludes credit). */
   assetTotal: number;
   creditNotes: Array<{
     walletName: string;
@@ -156,7 +161,8 @@ export function getAggregatedSubWalletSummary(
   investments: Investment[] = [],
 ): ParentWalletBalanceSummary {
   const creditNotes: ParentWalletBalanceSummary["creditNotes"] = [];
-  let assetTotal = 0;
+  let liquidTotal = 0;
+  let investmentTotal = 0;
 
   for (const child of getDirectChildWallets(parentId, wallets)) {
     if (isCreditWallet(child)) {
@@ -169,10 +175,25 @@ export function getAggregatedSubWalletSummary(
       continue;
     }
 
-    assetTotal += calculateWalletBalance(child, transactions, investments);
+    const balance = calculateWalletBalance(child, transactions, investments);
+
+    if (isInvestmentWallet(child)) {
+      investmentTotal += balance;
+      continue;
+    }
+
+    liquidTotal += balance;
   }
 
-  return { assetTotal, creditNotes };
+  const creditTotal = creditNotes.reduce((total, note) => total + note.owed, 0);
+
+  return {
+    liquidTotal,
+    investmentTotal,
+    creditTotal,
+    assetTotal: liquidTotal + investmentTotal,
+    creditNotes,
+  };
 }
 
 export type WalletDisplayRow = {

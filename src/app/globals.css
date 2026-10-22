@@ -117,3 +117,47 @@ textarea {
   min-height: 44px;
   min-width: 44px;
 }
+
+@media (max-width: 767px) {
+  .stack-table,
+  .stack-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .stack-table thead {
+    display: none;
+  }
+
+  .stack-table tr {
+    display: block;
+    width: 100%;
+    border-bottom-width: 1px;
+    padding: 0.75rem 1rem;
+  }
+
+  .stack-table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.35rem 0;
+    text-align: end;
+  }
+
+  .stack-table td[data-span] {
+    display: block;
+    padding-bottom: 0.65rem;
+    text-align: start;
+  }
+
+  .stack-table td[data-label]::before {
+    content: attr(data-label);
+    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 500;
+    flex-shrink: 0;
+    text-align: start;
+  }
+}

@@ -8,12 +8,14 @@ import { createClient } from "@/lib/supabase/client";
 import {
   categoryToFormState,
   emptyCategoryForm,
+  getCategoryFlow,
   importDefaultCategories,
   insertCategory,
   categoryHasChildren,
   getCategoryDescendantIds,
   updateCategory,
 } from "@/lib/categories";
+import { suggestCategoryIcon } from "@/lib/constants/category-options";
 import type { CategoryFormState } from "@/lib/categories/form";
 import type { Category } from "@/lib/types/database";
 
@@ -35,7 +37,36 @@ export default function CategoriesPage() {
       .select("*")
       .order("sort_order", { ascending: true });
 
-    setCategories((data ?? []) as Category[]);
+    const loaded = (data ?? []) as Category[];
+    const updates = loaded.flatMap((category) => {
+      const suggested = suggestCategoryIcon(category.name);
+
+      if (!suggested || suggested === category.icon) {
+        return [];
+      }
+
+      return [{ id: category.id, icon: suggested }];
+    });
+
+    if (updates.length > 0) {
+      await Promise.all(
+        updates.map((update) =>
+          supabase.from("categories").update({ icon: update.icon }).eq("id", update.id),
+        ),
+      );
+
+      const iconById = new Map(updates.map((update) => [update.id, update.icon]));
+      setCategories(
+        loaded.map((category) =>
+          iconById.has(category.id)
+            ? { ...category, icon: iconById.get(category.id)! }
+            : category,
+        ),
+      );
+    } else {
+      setCategories(loaded);
+    }
+
     setLoading(false);
   }
 
@@ -44,7 +75,15 @@ export default function CategoriesPage() {
   }, []);
 
   function openForm(parentCategoryId: string | null = null) {
-    setForm(emptyCategoryForm(parentCategoryId));
+    const parent = parentCategoryId
+      ? categories.find((category) => category.id === parentCategoryId)
+      : undefined;
+    setForm(
+      emptyCategoryForm(
+        parentCategoryId,
+        parent ? getCategoryFlow(parent) : "expense",
+      ),
+    );
     setError(null);
     setMessage(null);
   }
@@ -64,7 +103,7 @@ export default function CategoriesPage() {
     const supabase = createClient();
 
     if (formState.editingCategoryId) {
-      const result = await updateCategory(supabase, formState);
+      const result = await updateCategory(supabase, formState, categories);
 
       if (result.error || !result.category) {
         setError(result.error ?? "تعذّر حفظ التعديلات.");
@@ -128,7 +167,7 @@ export default function CategoriesPage() {
     setError(null);
     setMessage(null);
 
-    const formState = emptyCategoryForm(parent.id);
+    const formState = emptyCategoryForm(parent.id, getCategoryFlow(parent));
     formState.name = name;
     formState.icon = parent.icon;
     formState.color = parent.color;

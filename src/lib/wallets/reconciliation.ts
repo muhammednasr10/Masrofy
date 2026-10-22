@@ -135,7 +135,8 @@ export function summarizePortfolioWealth(
   investments: Investment[] = [],
 ): ParentWalletBalanceSummary {
   const creditNotes: ParentWalletBalanceSummary["creditNotes"] = [];
-  let assetTotal = 0;
+  let liquidTotal = 0;
+  let investmentTotal = 0;
 
   for (const wallet of normalizeWallets(wallets)) {
     const parentId = getWalletParentId(wallet);
@@ -146,7 +147,8 @@ export function summarizePortfolioWealth(
 
     if (walletHasChildren(wallet.id, wallets)) {
       const summary = getAggregatedSubWalletSummary(wallet.id, wallets, transactions, investments);
-      assetTotal += summary.assetTotal;
+      liquidTotal += summary.liquidTotal;
+      investmentTotal += summary.investmentTotal;
       creditNotes.push(...summary.creditNotes);
       continue;
     }
@@ -161,10 +163,25 @@ export function summarizePortfolioWealth(
       continue;
     }
 
-    assetTotal += calculateWalletBalance(wallet, transactions, investments);
+    const balance = calculateWalletBalance(wallet, transactions, investments);
+
+    if (isInvestmentWallet(wallet)) {
+      investmentTotal += balance;
+      continue;
+    }
+
+    liquidTotal += balance;
   }
 
-  return { assetTotal, creditNotes };
+  const creditTotal = creditNotes.reduce((total, note) => total + note.owed, 0);
+
+  return {
+    liquidTotal,
+    investmentTotal,
+    creditTotal,
+    assetTotal: liquidTotal + investmentTotal,
+    creditNotes,
+  };
 }
 
 export function summarizeWalletBalances(

@@ -1,9 +1,11 @@
+import { getCategoryFlow } from "@/lib/categories/flow";
 import type { Category } from "@/lib/types/database";
 
 export function normalizeCategory(category: Category): Category {
   return {
     ...category,
     parent_category_id: category.parent_category_id ?? null,
+    flow: getCategoryFlow(category),
     sort_order: category.sort_order ?? 0,
   };
 }

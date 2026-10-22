@@ -5,10 +5,11 @@ import { usePathname, useRouter } from "@/lib/router/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
+import AppNavMoreMenu from "@/components/layout/AppNavMoreMenu";
+import AppNavSidebar from "@/components/layout/AppNavSidebar";
 import HeaderAlertsBell from "@/components/layout/HeaderAlertsBell";
 import HeaderMonthSwitcher from "@/components/layout/HeaderMonthSwitcher";
 import HeaderPwaInstallButton from "@/components/layout/HeaderPwaInstallButton";
-import SidebarPwaInstallButton from "@/components/layout/SidebarPwaInstallButton";
 import { MasrofyLogo } from "@/components/layout/MasrofyLogo";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { createClient } from "@/lib/supabase/client";
@@ -103,7 +104,7 @@ export function AppNav() {
   return (
     <>
       <header className="sticky top-0 z-40 w-full overflow-visible border-b border-emerald-100 bg-white/95 backdrop-blur safe-top">
-        <div className="mx-auto flex w-full min-w-0 max-w-7xl items-center gap-2 px-3 py-3 sm:gap-3 sm:px-4">
+        <div className="mx-auto flex w-full min-w-0 max-w-7xl items-center gap-1.5 px-3 py-2 sm:gap-3 sm:px-4 sm:py-3">
           <button
             type="button"
             onClick={() => setSidebarOpen(true)}
@@ -156,29 +157,7 @@ export function AppNav() {
               >
                 {t("nav.more")}
               </button>
-
-              {moreOpen ? (
-                <div className="absolute start-0 top-[calc(100%+0.5rem)] z-50 min-w-56 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
-                  {moreLinks.map((link) => {
-                    const active = isNavLinkActive(pathname, link.href);
-
-                    return (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${
-                          active
-                            ? "bg-emerald-50 font-medium text-emerald-700"
-                            : "text-slate-700 hover:bg-slate-50"
-                        }`}
-                      >
-                        <span aria-hidden>{link.icon}</span>
-                        <span>{t(link.key)}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              ) : null}
+              {moreOpen ? <AppNavMoreMenu pathname={pathname} moreLinks={moreLinks} /> : null}
             </div>
           </nav>
 
@@ -199,107 +178,19 @@ export function AppNav() {
             </button>
           </div>
         </div>
-        <div className="border-t border-emerald-50 px-3 py-2 md:hidden">
+        <div className="border-t border-emerald-50 px-3 py-1.5 md:hidden">
           <HeaderMonthSwitcher />
         </div>
       </header>
 
       {sidebarOpen ? (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <button
-            type="button"
-            className="absolute inset-0 bg-slate-900/40"
-            onClick={() => setSidebarOpen(false)}
-            aria-label={t("common.close")}
-          />
-
-          <aside
-            id="mobile-nav-sidebar"
-            className="absolute inset-y-0 start-0 flex w-[min(20rem,88vw)] flex-col bg-white shadow-2xl safe-top safe-bottom"
-            aria-label={t("common.mainNav")}
-          >
-            <div className="flex items-center justify-between border-b border-emerald-50 px-4 py-4">
-              <MasrofyLogo href="/dashboard" size="sm" />
-              <button
-                type="button"
-                onClick={() => setSidebarOpen(false)}
-                className="rounded-full px-3 py-1 text-sm text-slate-500 transition hover:bg-slate-100"
-                aria-label={t("common.close")}
-              >
-                ✕
-              </button>
-            </div>
-
-            <nav className="flex-1 overflow-y-auto px-3 py-4">
-              <p className="px-4 pb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                {t("nav.primarySection")}
-              </p>
-              <ul className="space-y-1">
-                {PRIMARY_NAV_LINKS.map((link) => (
-                  <SidebarLink key={link.href} link={link} pathname={pathname} label={t(link.key)} />
-                ))}
-              </ul>
-
-              <p className="mt-6 px-4 pb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                {t("nav.more")}
-              </p>
-              <ul className="space-y-1">
-                {moreLinks.map((link) => (
-                  <SidebarLink key={link.href} link={link} pathname={pathname} label={t(link.key)} />
-                ))}
-              </ul>
-            </nav>
-
-            <div className="space-y-2 border-t border-emerald-50 p-4">
-              <div className="rounded-2xl border border-slate-100 px-4 py-3">
-                <LanguageSwitcher persistProfile />
-              </div>
-              <SidebarPwaInstallButton onOpen={() => setSidebarOpen(false)} />
-              <button
-                type="button"
-                onClick={handleSignOut}
-                className="w-full rounded-2xl px-4 py-3 text-start text-sm text-red-600 transition hover:bg-red-50"
-              >
-                {t("common.signOutFull")}
-              </button>
-            </div>
-          </aside>
-        </div>
+        <AppNavSidebar
+          pathname={pathname}
+          moreLinks={moreLinks}
+          onClose={() => setSidebarOpen(false)}
+          onSignOut={handleSignOut}
+        />
       ) : null}
     </>
-  );
-}
-
-function SidebarLink({
-  link,
-  pathname,
-  label,
-}: {
-  link: AppNavLink;
-  pathname: string;
-  label: string;
-}) {
-  const active = isNavLinkActive(pathname, link.href);
-
-  return (
-    <li>
-      <Link
-        href={link.href}
-        className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm transition ${
-          active
-            ? "bg-emerald-50 font-medium text-emerald-700"
-            : "text-slate-700 hover:bg-slate-50"
-        }`}
-      >
-        <span
-          className={`flex h-9 w-9 items-center justify-center rounded-xl text-base ${
-            active ? "bg-emerald-100" : "bg-slate-50"
-          }`}
-        >
-          {link.icon}
-        </span>
-        <span>{label}</span>
-      </Link>
-    </li>
   );
 }

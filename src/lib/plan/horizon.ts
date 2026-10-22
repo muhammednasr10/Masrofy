@@ -131,6 +131,14 @@ export function occurrenceCount(
   return countCalendarStep(planStart, planEnd, start, end, "yearly");
 }
 
+export const HORIZON_CERTAINTIES = ["confirmed", "contingent"] as const;
+
+export type HorizonCertainty = (typeof HORIZON_CERTAINTIES)[number];
+
+export function isHorizonCertainty(value: string): value is HorizonCertainty {
+  return (HORIZON_CERTAINTIES as readonly string[]).includes(value);
+}
+
 export type HorizonExpenseLine = {
   amount: number;
   cadence: HorizonCadence;
@@ -141,17 +149,28 @@ export type HorizonExpenseLine = {
 export type HorizonLineDraft = {
   amount: string;
   cadence: HorizonCadence;
+  certainty: HorizonCertainty;
   startDate: string;
   endDate: string;
+  /** When true, parent dates stay as edited and are not overwritten by children range. */
+  datesManual?: boolean;
 };
 
 export function emptyHorizonLine(startDate: string): HorizonLineDraft {
   return {
     amount: "",
     cadence: "monthly",
+    certainty: "confirmed",
     startDate,
     endDate: defaultHorizonEndDate(startDate),
+    datesManual: false,
   };
+}
+
+export function isConfirmedHorizonLine(
+  line: Pick<HorizonLineDraft, "certainty"> | { certainty?: string | null },
+) {
+  return !line.certainty || line.certainty === "confirmed";
 }
 
 export function sumHorizonExpenses(

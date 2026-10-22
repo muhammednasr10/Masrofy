@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { makeWallet } from "@/test/factories";
+import { makeInvestment, makeWallet } from "@/test/factories";
 import {
   buildInventoryDisplayRows,
   getInventoryNetAdjustment,
   getReconcilableWallets,
+  summarizePortfolioWealth,
 } from "@/lib/wallets/reconciliation";
 
 describe("reconcilable wallet display", () => {
@@ -82,5 +83,33 @@ describe("reconcilable wallet display", () => {
 
     expect(rows.map((row) => row.wallet.id).sort()).toEqual(["cash", "credit", "debit"]);
     expect(rows.every((row) => row.editable)).toBe(true);
+  });
+
+  it("splits liquid wealth, investments, and credit dues", () => {
+    const liquidCash = makeWallet({
+      ...cash,
+      opening_balance: 1000,
+    });
+    const investWallet = makeWallet({
+      ...investment,
+      opening_balance: 5000,
+    });
+    const creditWallet = makeWallet({
+      ...credit,
+      parent_wallet_id: null,
+      opening_balance: 800,
+      credit_limit: 5000,
+    });
+
+    const summary = summarizePortfolioWealth(
+      [liquidCash, investWallet, creditWallet],
+      [],
+      [makeInvestment({ id: "inv-1", current_value: 5200 })],
+    );
+
+    expect(summary.liquidTotal).toBe(1000);
+    expect(summary.investmentTotal).toBe(5200);
+    expect(summary.creditTotal).toBe(800);
+    expect(summary.assetTotal).toBe(6200);
   });
 });

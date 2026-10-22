@@ -23,7 +23,7 @@ export default function MobileBottomNav() {
               <li key={link.href}>
                 <Link
                   href={link.href}
-                  className={`flex flex-col items-center gap-0.5 rounded-2xl px-2 py-2 text-[11px] transition ${
+                  className={`flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-2xl px-2 py-1.5 text-[11px] transition ${
                     active
                       ? "bg-emerald-50 font-semibold text-emerald-700"
                       : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"

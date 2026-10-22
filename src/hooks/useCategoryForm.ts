@@ -11,8 +11,11 @@ export function useCategoryForm(categories: Category[], onCreated?: (category: C
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function openForm(parentCategoryId: string | null = null) {
-    setForm(emptyCategoryForm(parentCategoryId));
+  function openForm(parentCategoryId: string | null = null, initialName = "") {
+    setForm({
+      ...emptyCategoryForm(parentCategoryId),
+      name: initialName.trim(),
+    });
     setError(null);
   }
 

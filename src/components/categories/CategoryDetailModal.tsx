@@ -5,6 +5,7 @@ import ModalActionButton from "@/components/ui/ModalActionButton";
 import ModalEntityHeader from "@/components/ui/ModalEntityHeader";
 import ModalShell from "@/components/ui/ModalShell";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
+import { getCategoryFlow } from "@/lib/categories/flow";
 import {
   getDirectChildCategories,
   getCategoryFullPathLabel,
@@ -63,6 +64,14 @@ export default function CategoryDetailModal({
       />
 
       <dl className="mt-5 space-y-3 rounded-2xl border border-slate-100 bg-slate-50/80 p-4 text-sm">
+        <div className="flex items-center justify-between gap-3">
+          <dt className="text-slate-500">{t("categories.flowLabel")}</dt>
+          <dd className="font-medium text-slate-800">
+            {getCategoryFlow(category) === "income"
+              ? t("categories.flowIncome")
+              : t("categories.flowExpense")}
+          </dd>
+        </div>
         <div className="flex items-center justify-between gap-3">
           <dt className="text-slate-500">{t("categories.colorLabel")}</dt>
           <dd className="flex items-center gap-2 font-medium text-slate-800">

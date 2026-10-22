@@ -30,7 +30,7 @@ export default function LanguageSwitcher({
             key={item}
             type="button"
             onClick={() => handleChange(item)}
-            className={`rounded-xl px-3 py-1.5 text-xs font-medium transition ${
+            className={`min-h-9 rounded-xl px-2 py-1.5 text-[11px] font-medium transition sm:px-3 sm:text-xs ${
               locale === item
                 ? "bg-emerald-600 text-white"
                 : "text-slate-600 hover:bg-slate-50"

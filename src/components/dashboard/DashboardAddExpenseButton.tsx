@@ -108,23 +108,6 @@ export default function DashboardAddExpenseButton() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={openBlankQuickAdd}
-        aria-label={t("expenses.quickAddTitle")}
-        className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-3xl font-light leading-none text-white shadow-md transition hover:bg-emerald-700 md:hidden"
-      >
-        +
-      </button>
-
-      <button
-        type="button"
-        onClick={openBlankQuickAdd}
-        className="hidden items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700 md:inline-flex"
-      >
-        + {t("expenses.addExpense")}
-      </button>
-
       {quickOpen ? (
         <QuickAddExpenseSheet
           initialCategoryId={presetCategoryId}
@@ -134,7 +117,26 @@ export default function DashboardAddExpenseButton() {
             setFullOpen(true);
           }}
         />
-      ) : null}
+      ) : (
+        <>
+          <button
+            type="button"
+            onClick={openBlankQuickAdd}
+            aria-label={t("expenses.quickAddTitle")}
+            className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-3xl font-light leading-none text-white shadow-md transition hover:bg-emerald-700 md:hidden"
+          >
+            +
+          </button>
+
+          <button
+            type="button"
+            onClick={openBlankQuickAdd}
+            className="hidden items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700 md:inline-flex"
+          >
+            + {t("expenses.addExpense")}
+          </button>
+        </>
+      )}
 
       {fullOpen ? <DashboardAddExpenseModal onClose={() => setFullOpen(false)} /> : null}
     </>

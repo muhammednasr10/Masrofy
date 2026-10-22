@@ -188,6 +188,8 @@ export async function persistHorizonPlan(
     const line = lines[category.id];
     const amount = Number(line?.amount || 0);
 
+    // Rollup parents are still saved (amount = children sum + optional manual dates)
+    // so the UI can restore them; totals skip them separately.
     if (amount <= 0) {
       return [];
     }
@@ -203,6 +205,7 @@ export async function persistHorizonPlan(
         category_id: category.id,
         planned_amount: amount,
         cadence: isHorizonCadence(line.cadence) ? line.cadence : "monthly",
+        certainty: line.certainty === "contingent" ? "contingent" : "confirmed",
         start_date: line.startDate,
         end_date: line.endDate,
         sort_order: index + 1,
@@ -226,8 +229,8 @@ export async function persistHorizonPlan(
     const missingTable = planError?.code === "42P01" || planError?.message?.includes("horizon_plans");
     throw new Error(
       missingTable
-        ? "جداول الخطة الكاملة لسه مش موجودة. طبّق ملف الهجرة 030 من مجلد supabase/migrations ثم احفظ تاني."
-        : (planError?.message ?? "تعذر حفظ الخطة الكاملة."),
+        ? "جداول وضع الخطة لسه مش موجودة. طبّق ملفات الهجرة 030 و 033 من مجلد supabase/migrations ثم احفظ تاني."
+        : (planError?.message ?? "تعذر حفظ وضع الخطة."),
     );
   }
 

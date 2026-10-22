@@ -1,3 +1,4 @@
+import { compareWithTrailingNamesLast } from "@/lib/categories/display-order";
 import {
   getCategoryDescendantIds,
   getDirectChildCategories,
@@ -27,7 +28,13 @@ export function buildComparisonChildren(
       };
     })
     .filter((row) => row.planned > 0 || row.actual > 0)
-    .sort((left, right) => right.actual - left.actual || right.planned - left.planned);
+    .sort((left, right) =>
+      compareWithTrailingNamesLast(
+        left.name,
+        right.name,
+        right.actual - left.actual || right.planned - left.planned,
+      ),
+    );
 
   const directActual = actualByCategory.get(parent.id) ?? 0;
 

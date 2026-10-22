@@ -64,7 +64,7 @@ export function PlanComparisonParentRow({
   return (
     <>
       <tr id={`plan-category-${categoryId}`} className="border-b border-slate-100 last:border-0">
-        <td className="px-4 py-4">
+        <td data-span className="px-4 py-4">
           <span className="flex items-center gap-2 font-medium text-slate-900">
             {onToggle ? (
               <button
@@ -83,7 +83,7 @@ export function PlanComparisonParentRow({
             {name}
           </span>
         </td>
-        <td className="px-4 py-4 text-slate-700">
+        <td data-label="المخطط" className="px-4 py-4 text-slate-700">
           {onPlannedChange ? (
             <input
               type="number"
@@ -94,19 +94,19 @@ export function PlanComparisonParentRow({
               onChange={(event) => onPlannedChange(event.target.value)}
               aria-label={`المخطط لفئة ${name}`}
               placeholder="0"
-              className="w-28 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-emerald-500"
+              className="w-full min-w-0 max-w-40 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-emerald-500 md:w-28"
             />
           ) : (
             formatCurrency(planned, currency)
           )}
         </td>
-        <td className="px-4 py-4 font-medium text-slate-900">{formatCurrency(actual, currency)}</td>
-        <td className={`px-4 py-4 font-medium ${differenceClass}`}>
+        <td data-label="الواقع" className="px-4 py-4 font-medium text-slate-900">{formatCurrency(actual, currency)}</td>
+        <td data-label="الفرق" className={`px-4 py-4 font-medium ${differenceClass}`}>
           {difference === 0
             ? formatCurrency(0, currency)
             : `${difference > 0 ? "+" : ""}${formatCurrency(difference, currency)}`}
         </td>
-        <td className="px-4 py-4">
+        <td data-label="التقدم" className="px-4 py-4">
           {planned > 0 ? (
             <div className="space-y-1">
               <div className="h-2 rounded-full bg-slate-100">

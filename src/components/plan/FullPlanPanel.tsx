@@ -1,27 +1,25 @@
 "use client";
 
-import { buildCategoryDisplayRows } from "@/lib/categories/hierarchy";
+import { useEffect, useState } from "react";
+import FullPlanRow from "@/components/plan/FullPlanRow";
 import {
-  HORIZON_CADENCES,
-  isDateKey,
-  occurrenceCount,
-  sumHorizonExpenses,
-  type HorizonCadence,
-  type HorizonLineDraft,
-} from "@/lib/plan/horizon";
+  buildScopedPlanRows,
+  collectConfirmedScopedLines,
+  isCategoryRowVisible,
+  type PlanKindTab,
+} from "@/lib/plan/full-plan-rows";
+import {
+  buildRollupParentPatch,
+  widestPlannedChildrenRange,
+} from "@/lib/plan/horizon-rollup";
+import { sumHorizonExpenses, type HorizonLineDraft } from "@/lib/plan/horizon";
 import { formatCurrency } from "@/lib/utils/format";
 import type { Category } from "@/lib/types/database";
 
-const CADENCE_LABELS: Record<HorizonCadence, string> = {
-  daily: "يومي",
-  weekly: "أسبوعي",
-  monthly: "شهري",
-  yearly: "سنوي",
-};
-
-function lineDatesReady(line: HorizonLineDraft) {
-  return isDateKey(line.startDate) && isDateKey(line.endDate) && line.endDate >= line.startDate;
-}
+const PLAN_KIND_TABS: Array<{ id: PlanKindTab; label: string }> = [
+  { id: "income", label: "خطة الدخل" },
+  { id: "expense", label: "خطة المصاريف" },
+];
 
 export default function FullPlanPanel({
   currency,
@@ -44,31 +42,86 @@ export default function FullPlanPanel({
   onAddCategory: () => void;
   onSave: () => void;
 }) {
-  const rows = buildCategoryDisplayRows(categories);
-  const expenseLines = rows.flatMap(({ category }) => {
-    const line = lines[category.id];
+  const [planKind, setPlanKind] = useState<PlanKindTab>("expense");
+  const [expandedParentIds, setExpandedParentIds] = useState<Set<string>>(() => new Set());
+  const { scopedCategories, rows } = buildScopedPlanRows(categories, lines, planKind);
+  const categoriesById = new Map(scopedCategories.map((category) => [category.id, category]));
+  const visibleRows = rows.filter(({ category }) =>
+    isCategoryRowVisible(category, categoriesById, expandedParentIds),
+  );
+  const scopedLines = collectConfirmedScopedLines(rows, scopedCategories, lines);
+  const periodTotal = sumHorizonExpenses(scopedLines);
+  const monthTotal = sumHorizonExpenses(scopedLines, monthStart, monthEnd);
+  const emptyLabel =
+    planKind === "income"
+      ? "مفيش فئات دخل لسه. اضغط «إضافة فئة» واختَر نوعها دخل."
+      : "مفيش فئات مصاريف لسه. اضغط «إضافة فئة» للبدء.";
+  const amountAriaPrefix = planKind === "income" ? "دخل" : "مصروف";
+  const totalLabel = planKind === "income" ? "إجمالي الدخل" : "إجمالي المصاريف";
 
-    if (!line || !lineDatesReady(line)) {
-      return [];
+  useEffect(() => {
+    for (const category of scopedCategories) {
+      const patch = buildRollupParentPatch(category.id, scopedCategories, lines);
+
+      if (patch) {
+        onLineChange(category.id, patch);
+      }
+    }
+    // Sync derived parent amount/dates when children change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- onLineChange identity is unstable
+  }, [scopedCategories, lines]);
+
+  function toggleParent(categoryId: string) {
+    setExpandedParentIds((current) => {
+      const next = new Set(current);
+
+      if (next.has(categoryId)) {
+        next.delete(categoryId);
+      } else {
+        next.add(categoryId);
+      }
+
+      return next;
+    });
+  }
+
+  function syncParentDatesFromChildren(categoryId: string) {
+    const widest = widestPlannedChildrenRange(categoryId, scopedCategories, lines);
+
+    if (!widest) {
+      return;
     }
 
-    return [
-      {
-        amount: Number(line.amount || 0),
-        cadence: line.cadence,
-        startDate: line.startDate,
-        endDate: line.endDate,
-      },
-    ];
-  });
-  const periodTotal = sumHorizonExpenses(expenseLines);
-  const monthTotal = sumHorizonExpenses(expenseLines, monthStart, monthEnd);
+    onLineChange(categoryId, {
+      startDate: widest.startDate,
+      endDate: widest.endDate,
+      datesManual: false,
+    });
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap gap-2">
+        {PLAN_KIND_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setPlanKind(tab.id)}
+            className={`rounded-2xl px-4 py-2 text-sm font-medium transition ${
+              planKind === tab.id
+                ? "bg-emerald-600 text-white"
+                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-slate-500">
-          لكل فئة مبلغ، وتكرار يومي أو أسبوعي أو شهري أو سنوي، ويوم بداية ويوم نهاية خاصين بيها.
+          لو الفئة فيها فروع بمبلغ: المبلغ مجموع الفروع، والفترة أوسع مدى منهم (وتقدر تعدّلها يدوي). «محتمل»
+          مش بيتحسب في الإجماليات.
         </p>
         <button
           type="button"
@@ -81,104 +134,65 @@ export default function FullPlanPanel({
 
       {rows.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
-          مفيش فئات لسه. اضغط «إضافة فئة» للبدء.
+          {emptyLabel}
         </p>
       ) : (
-        <div className="space-y-3">
-          {rows.map(({ category, depth }) => {
-            const line = lines[category.id];
+        <div className="rounded-2xl border border-slate-100 md:overflow-hidden">
+          <table className="stack-table w-full text-sm md:table-fixed">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50 text-slate-500">
+                <th className="w-[22%] px-2 py-3 text-center font-medium">الفئة</th>
+                <th className="w-[12%] px-1 py-3 text-center font-medium">المبلغ</th>
+                <th className="w-[12%] px-1 py-3 text-center font-medium">التكرار</th>
+                <th className="w-[12%] px-1 py-3 text-center font-medium">الحالة</th>
+                <th className="w-[14%] px-1 py-3 text-center font-medium">البداية</th>
+                <th className="w-[14%] px-1 py-3 text-center font-medium">النهاية</th>
+                <th className="w-[14%] px-1 py-3 text-center font-medium">إجمالي الفترة</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleRows.map(({ category, depth }) => {
+                const line = lines[category.id];
 
-            if (!line) {
-              return null;
-            }
+                if (!line) {
+                  return null;
+                }
 
-            const ready = lineDatesReady(line);
-            const amount = Number(line.amount || 0);
-            const repeats = ready ? occurrenceCount(line.cadence, line.startDate, line.endDate) : 0;
-
-            return (
-              <article
-                key={category.id}
-                className="space-y-3 rounded-2xl border border-slate-200 p-4"
-                style={{ marginInlineStart: depth > 0 ? `${depth * 1.25}rem` : undefined }}
-              >
-                <span className="flex items-center gap-2 text-sm font-medium text-slate-800">
-                  <span>{category.icon}</span>
-                  {category.name}
-                </span>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="block space-y-1">
-                    <span className="text-xs text-slate-500">المبلغ</span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      inputMode="decimal"
-                      value={line.amount}
-                      onChange={(event) => onLineChange(category.id, { amount: event.target.value })}
-                      placeholder="0"
-                      aria-label={`مصروف ${category.name}`}
-                      className="w-full rounded-2xl border border-slate-200 px-3 py-2 outline-none focus:border-emerald-500"
-                    />
-                  </label>
-                  <label className="block space-y-1">
-                    <span className="text-xs text-slate-500">التكرار</span>
-                    <select
-                      value={line.cadence}
-                      onChange={(event) =>
-                        onLineChange(category.id, { cadence: event.target.value as HorizonCadence })
-                      }
-                      aria-label={`تكرار ${category.name}`}
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 outline-none focus:border-emerald-500"
-                    >
-                      {HORIZON_CADENCES.map((cadence) => (
-                        <option key={cadence} value={cadence}>
-                          {CADENCE_LABELS[cadence]}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="block space-y-1">
-                    <span className="text-xs text-slate-500">يوم البداية</span>
-                    <input
-                      type="date"
-                      value={line.startDate}
-                      onChange={(event) => onLineChange(category.id, { startDate: event.target.value })}
-                      aria-label={`بداية ${category.name}`}
-                      className="w-full rounded-2xl border border-slate-200 px-3 py-2 outline-none focus:border-emerald-500"
-                    />
-                  </label>
-                  <label className="block space-y-1">
-                    <span className="text-xs text-slate-500">يوم النهاية</span>
-                    <input
-                      type="date"
-                      value={line.endDate}
-                      min={line.startDate || undefined}
-                      onChange={(event) => onLineChange(category.id, { endDate: event.target.value })}
-                      aria-label={`نهاية ${category.name}`}
-                      className="w-full rounded-2xl border border-slate-200 px-3 py-2 outline-none focus:border-emerald-500"
-                    />
-                  </label>
-                </div>
-                <p className="text-sm text-slate-500">
-                  {ready && amount > 0
-                    ? `${formatCurrency(amount * repeats, currency)} في فترة الفئة`
-                    : ready
-                      ? "—"
-                      : "يوم النهاية لازم يكون بعد يوم البداية."}
-                </p>
-              </article>
-            );
-          })}
+                return (
+                  <FullPlanRow
+                    key={category.id}
+                    category={category}
+                    depth={depth}
+                    line={line}
+                    scopedCategories={scopedCategories}
+                    lines={lines}
+                    currency={currency}
+                    amountAriaPrefix={amountAriaPrefix}
+                    isOpen={expandedParentIds.has(category.id)}
+                    onToggleParent={toggleParent}
+                    onLineChange={onLineChange}
+                    onSyncParentDates={syncParentDatesFromChildren}
+                  />
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
 
-      <div className="space-y-1 rounded-2xl bg-slate-50 px-4 py-3 text-sm">
-        <p className="text-slate-600">
-          إجمالي كل الفئات{" "}
-          <span className="font-semibold text-slate-900">{formatCurrency(periodTotal, currency)}</span>
-        </p>
-        <p className="font-medium text-emerald-800">في الشهر المفتوح {formatCurrency(monthTotal, currency)}</p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          {totalLabel} (مؤكد فقط){" "}
+          <span className="mt-1 block text-lg font-semibold text-slate-900">
+            {formatCurrency(periodTotal, currency)}
+          </span>
+        </div>
+        <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          في الشهر المفتوح (مؤكد فقط){" "}
+          <span className="mt-1 block text-lg font-semibold text-emerald-900">
+            {formatCurrency(monthTotal, currency)}
+          </span>
+        </div>
       </div>
 
       <button
@@ -187,7 +201,7 @@ export default function FullPlanPanel({
         disabled={saving}
         className="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60"
       >
-        {saving ? "جاري الحفظ..." : "حفظ الخطة الكاملة"}
+        {saving ? "جاري الحفظ..." : "حفظ وضع الخطة"}
       </button>
     </div>
   );

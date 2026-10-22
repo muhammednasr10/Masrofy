@@ -36,6 +36,8 @@ export type Wallet = {
   created_at: string;
 };
 
+export type CategoryFlow = "income" | "expense";
+
 export type Category = {
   id: string;
   user_id: string;
@@ -43,6 +45,7 @@ export type Category = {
   icon: string;
   color: string;
   parent_category_id: string | null;
+  flow: CategoryFlow;
   sort_order: number;
   created_at: string;
 };
@@ -296,6 +299,8 @@ export type AnnualPlanTemplateItem = {
 
 export type HorizonCadence = "daily" | "weekly" | "monthly" | "yearly";
 
+export type HorizonCertainty = "confirmed" | "contingent";
+
 export type HorizonPlan = {
   id: string;
   user_id: string;
@@ -311,6 +316,7 @@ export type HorizonPlanItem = {
   category_id: string;
   planned_amount: number;
   cadence: HorizonCadence;
+  certainty?: HorizonCertainty | null;
   start_date: string;
   end_date: string;
   sort_order: number;
@@ -368,6 +374,7 @@ export type DefaultCategory = {
   icon: string;
   color: string;
   parent_name: string | null;
+  flow: CategoryFlow;
   sort_order: number;
   is_active: boolean;
   created_at: string;

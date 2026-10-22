@@ -46,7 +46,7 @@ export default function ModalShell({
 
   return createPortal(
     <div
-      className={`fixed inset-0 ${zIndexClassName} flex items-center justify-center p-3 sm:p-4`}
+      className={`fixed inset-0 ${zIndexClassName} flex items-end justify-center p-0 sm:items-center sm:p-4`}
     >
       <button
         type="button"
@@ -55,7 +55,7 @@ export default function ModalShell({
         aria-label="إغلاق"
       />
       <section
-        className={`relative max-h-[88dvh] w-full overflow-x-hidden overflow-y-auto overscroll-contain rounded-3xl border border-white bg-white p-4 shadow-2xl sm:max-h-[90vh] sm:p-6 ${maxWidthClassName}`}
+        className={`relative max-h-[92dvh] w-full overflow-x-hidden overflow-y-auto overscroll-contain rounded-t-3xl border border-white bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-h-[90vh] sm:rounded-3xl sm:p-6 ${maxWidthClassName}`}
       >
         {children}
       </section>

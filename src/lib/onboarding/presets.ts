@@ -5,6 +5,10 @@ export const ONBOARDING_CATEGORY_PRESETS = [
   { name: "تسوق", icon: "🛒", color: "#ec4899" },
   { name: "صحة", icon: "💊", color: "#22c55e" },
   { name: "ترفيه", icon: "🎬", color: "#a855f7" },
+  { name: "ملابس", icon: "👕", color: "#6366f1" },
+  { name: "هدايا", icon: "🎁", color: "#f43f5e" },
+  { name: "اشتراكات", icon: "🔁", color: "#0ea5e9" },
+  { name: "أقساط", icon: "📅", color: "#78716c" },
   { name: "ادّخار", icon: "🎯", color: "#10b981" },
   { name: "أخرى", icon: "📦", color: "#64748b" },
 ];

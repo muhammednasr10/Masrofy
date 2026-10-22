@@ -4,6 +4,7 @@ import {
   buildCategoryUpdatePayload,
   type CategoryFormState,
 } from "@/lib/categories/form";
+import { getCategoryFlow } from "@/lib/categories/flow";
 import { getNextCategorySortOrder } from "@/lib/categories/hierarchy";
 import {
   findMatchingDefaultCategory,
@@ -11,13 +12,27 @@ import {
 } from "@/lib/categories/import-defaults";
 import type { Category } from "@/lib/types/database";
 
+function withInheritedFlow(form: CategoryFormState, categories: Category[]): CategoryFormState {
+  if (!form.parentCategoryId) {
+    return form;
+  }
+
+  const parent = categories.find((category) => category.id === form.parentCategoryId);
+
+  if (!parent) {
+    return form;
+  }
+
+  return { ...form, flow: getCategoryFlow(parent) };
+}
+
 export async function insertCategory(
   supabase: SupabaseClient,
   userId: string,
   form: CategoryFormState,
   categories: Category[],
 ): Promise<{ category: Category | null; error: string | null }> {
-  let resolvedForm = form;
+  let resolvedForm = withInheritedFlow(form, categories);
   const { catalog } = await loadActiveDefaultCategories(supabase);
   const defaultMatch = findMatchingDefaultCategory(
     catalog,
@@ -32,6 +47,7 @@ export async function insertCategory(
       name: defaultMatch.name,
       icon: defaultMatch.icon,
       color: defaultMatch.color,
+      flow: defaultMatch.flow ?? form.flow,
     };
 
     const existing = categories.find(
@@ -46,6 +62,7 @@ export async function insertCategory(
         .update({
           icon: defaultMatch.icon,
           color: defaultMatch.color,
+          flow: defaultMatch.flow ?? existing.flow,
         })
         .eq("id", existing.id)
         .select("*")
@@ -104,14 +121,17 @@ function notifyAdminOfCategory(supabase: SupabaseClient, categoryId: string) {
 export async function updateCategory(
   supabase: SupabaseClient,
   form: CategoryFormState,
+  categories: Category[] = [],
 ): Promise<{ category: Category | null; error: string | null }> {
   if (!form.editingCategoryId) {
     return { category: null, error: "missing_category_id" };
   }
 
+  const resolvedForm = withInheritedFlow(form, categories);
+
   const { data, error } = await supabase
     .from("categories")
-    .update(buildCategoryUpdatePayload(form))
+    .update(buildCategoryUpdatePayload(resolvedForm))
     .eq("id", form.editingCategoryId)
     .select("*")
     .single();

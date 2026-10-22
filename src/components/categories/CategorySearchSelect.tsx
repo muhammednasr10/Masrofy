@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import CategorySearchOption from "@/components/categories/CategorySearchOption";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import {
   buildCategorySearchIndex,
@@ -21,6 +22,7 @@ type CategorySearchSelectProps = {
   placeholder?: string;
   listInFlow?: boolean;
   onQueryChange?: (query: string) => void;
+  onCreateNew?: (query: string) => void;
 };
 
 export default function CategorySearchSelect({
@@ -35,6 +37,7 @@ export default function CategorySearchSelect({
   placeholder,
   listInFlow = false,
   onQueryChange,
+  onCreateNew,
 }: CategorySearchSelectProps) {
   const t = useTranslations();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -107,6 +110,14 @@ export default function CategorySearchSelect({
     setOpen(false);
     setQuery("");
     onQueryChange?.("");
+  }
+
+  function createNew() {
+    const name = query.trim();
+    setOpen(false);
+    setQuery("");
+    onQueryChange?.("");
+    onCreateNew?.(name);
   }
 
   function handleKeyDown(event: ReactKeyboardEvent<HTMLInputElement>) {
@@ -186,58 +197,46 @@ export default function CategorySearchSelect({
         <div
           className={
             listInFlow
-              ? "mt-2 max-h-48 overflow-y-auto rounded-2xl border border-slate-200 bg-white py-2"
-              : "absolute inset-x-0 top-[calc(100%+0.35rem)] z-50 max-h-64 overflow-y-auto rounded-2xl border border-slate-200 bg-white py-2 shadow-lg"
+              ? "mt-2 max-h-32 overflow-y-auto rounded-2xl border border-slate-200 bg-white py-1 md:max-h-48 md:py-2"
+              : "absolute inset-x-0 top-[calc(100%+0.35rem)] z-50 max-h-56 overflow-y-auto rounded-2xl border border-slate-200 bg-white py-2 shadow-lg md:max-h-64"
           }
         >
           {listItems.length === 0 ? (
-            <p className="px-4 py-3 text-sm text-slate-500">{t("categories.searchEmpty")}</p>
+            <div className="px-4 py-3">
+              <p className="text-sm text-slate-500">{t("categories.searchEmpty")}</p>
+              {onCreateNew ? (
+                <button
+                  type="button"
+                  onClick={createNew}
+                  className="mt-2 text-sm font-medium text-emerald-700 transition hover:text-emerald-800"
+                >
+                  {t("expenses.addCategory")}
+                </button>
+              ) : null}
+            </div>
           ) : (
             <ul role="listbox">
-              {listItems.map((item, index) => {
-                const isSelected = item.id === value;
-                const isHighlighted = index === highlightIndex;
-
-                return (
-                  <li key={item.id || "__empty__"} role="option" aria-selected={isSelected}>
-                    <button
-                      type="button"
-                      onMouseEnter={() => setHighlightIndex(index)}
-                      onClick={() => selectItem(item.id)}
-                      className={`flex w-full items-start gap-3 px-3 py-2.5 text-start transition ${
-                        isHighlighted ? "bg-emerald-50" : "hover:bg-slate-50"
-                      } ${isSelected ? "font-medium text-emerald-800" : "text-slate-800"}`}
-                    >
-                      {item.category ? (
-                        <>
-                          <span
-                            className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-base"
-                            style={{ backgroundColor: `${item.category.color}22` }}
-                          >
-                            {item.category.icon}
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block text-sm">{item.category.name}</span>
-                            {item.depth > 0 ? (
-                              <span className="mt-0.5 block text-xs text-slate-500">
-                                {item.pathLabel}
-                              </span>
-                            ) : item.hasChildren ? (
-                              <span className="mt-0.5 block text-xs text-slate-500">
-                                {t("categories.hasSubcategories")}
-                              </span>
-                            ) : null}
-                          </span>
-                        </>
-                      ) : (
-                        <span className="text-sm text-slate-600">{item.pathLabel}</span>
-                      )}
-                    </button>
-                  </li>
-                );
-              })}
+              {listItems.map((item, index) => (
+                <CategorySearchOption
+                  key={item.id || "__empty__"}
+                  item={item}
+                  selected={item.id === value}
+                  highlighted={index === highlightIndex}
+                  onHighlight={() => setHighlightIndex(index)}
+                  onSelect={() => selectItem(item.id)}
+                />
+              ))}
             </ul>
           )}
+          {onCreateNew && listItems.length > 0 ? (
+            <button
+              type="button"
+              onClick={createNew}
+              className="mt-1 w-full border-t border-slate-100 px-4 py-2.5 text-start text-sm font-medium text-emerald-700 transition hover:bg-emerald-50"
+            >
+              {t("expenses.addCategory")}
+            </button>
+          ) : null}
         </div>
       ) : null}
     </div>

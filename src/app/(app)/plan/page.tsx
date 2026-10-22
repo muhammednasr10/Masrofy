@@ -2,16 +2,28 @@
 
 import { useState } from "react";
 import FullPlanPanel from "@/components/plan/FullPlanPanel";
-import PlanComparisonTable from "@/components/plan/PlanComparisonTable";
+import PlanHorizonOverview from "@/components/plan/PlanHorizonOverview";
+import PlanHorizonSandbox from "@/components/plan/PlanHorizonSandbox";
+import PlanMonthPanel from "@/components/plan/PlanMonthPanel";
 import PlanOverviewCards from "@/components/plan/PlanOverviewCards";
 import PlanWealthForecast from "@/components/plan/PlanWealthForecast";
 import CategoryFormModal from "@/components/categories/CategoryFormModal";
 import { FeedbackBanner } from "@/components/ui/FeedbackBanner";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import { getParentCategories } from "@/lib/categories/hierarchy";
-import { formatCurrency } from "@/lib/utils/format";
+import { isExpenseCategory } from "@/lib/categories/flow";
+import { filterMonthComparisonExpenseRows } from "@/lib/plan/horizon-visibility";
 import { useSearchParams } from "@/lib/router/navigation";
 import { usePlanPage } from "@/hooks/usePlanPage";
+
+type PlanTab = "overview" | "accounts" | "month" | "horizon";
+
+const PLAN_TABS: Array<{ id: PlanTab; label: string }> = [
+  { id: "month", label: "الشهر الحالي" },
+  { id: "horizon", label: "وضع الخطة" },
+  { id: "overview", label: "نظرة عامة" },
+  { id: "accounts", label: "حسابات" },
+];
 
 export default function PlanPage() {
   const t = useTranslations();
@@ -42,19 +54,37 @@ export default function PlanPage() {
     setHorizonLine,
     handleSaveHorizonPlan,
   } = usePlanPage();
-  const [planTab, setPlanTab] = useState<"month" | "horizon">("month");
+  const [planTab, setPlanTab] = useState<PlanTab>("month");
 
   if (loading) {
     return <p className="text-sm text-slate-500">{t("plan.loading")}</p>;
   }
 
-  const parentCategories = getParentCategories(categories);
-  const plannedIncomeAmount = Number(plannedIncome) || 0;
-  const allocatedExpenses = parentCategories.reduce(
-    (total, category) => total + (Number(categoryPlans[category.id]) || 0),
-    0,
+  const monthExpenseRows = filterMonthComparisonExpenseRows(
+    comparison.expenseRows,
+    categories,
+    horizonLines,
   );
+  const monthExpenseParentIds = new Set(monthExpenseRows.map((row) => row.categoryId));
+  const plannedIncomeAmount = Number(plannedIncome) || 0;
+  const allocatedExpenses = getParentCategories(categories)
+    .filter(
+      (category) =>
+        isExpenseCategory(category) && monthExpenseParentIds.has(category.id),
+    )
+    .reduce((total, category) => total + (Number(categoryPlans[category.id]) || 0), 0);
   const remainingIncome = plannedIncomeAmount - allocatedExpenses;
+
+  const overviewProps = {
+    currency,
+    categories,
+    lines: horizonLines,
+    plannedMonthlyIncome: plannedIncomeAmount,
+    initialRangeStart: monthStart,
+    currentMonthStart: monthStart,
+    actualMonthIncome: comparison.income.actual,
+    actualMonthExpense: comparison.expenses.actual,
+  };
 
   return (
     <div className="space-y-6">
@@ -74,29 +104,33 @@ export default function PlanPage() {
 
       <section className="rounded-3xl border border-white bg-white p-6 shadow-sm">
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setPlanTab("month")}
-            className={`rounded-2xl px-4 py-2 text-sm font-medium transition ${
-              planTab === "month"
-                ? "bg-emerald-600 text-white"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-            }`}
-          >
-            الشهر الحالي
-          </button>
-          <button
-            type="button"
-            onClick={() => setPlanTab("horizon")}
-            className={`rounded-2xl px-4 py-2 text-sm font-medium transition ${
-              planTab === "horizon"
-                ? "bg-emerald-600 text-white"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-            }`}
-          >
-            الخطة الكاملة
-          </button>
+          {PLAN_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setPlanTab(tab.id)}
+              className={`rounded-2xl px-4 py-2 text-sm font-medium transition ${
+                planTab === tab.id
+                  ? "bg-emerald-600 text-white"
+                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
+
+        {planTab === "overview" ? (
+          <div className="mt-6">
+            <PlanHorizonOverview {...overviewProps} />
+          </div>
+        ) : null}
+
+        {planTab === "accounts" ? (
+          <div className="mt-6">
+            <PlanHorizonSandbox {...overviewProps} />
+          </div>
+        ) : null}
 
         {planTab === "horizon" ? (
           <div className="mt-6">
@@ -112,93 +146,28 @@ export default function PlanPage() {
               onSave={handleSaveHorizonPlan}
             />
           </div>
-        ) : (
-          <>
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold text-slate-900">مقارنة الواقع بالخطة</h2>
-        </div>
-        <p className="mt-1 text-sm text-slate-500">
-          عدّل المبلغ المخطط في جدول الدخل وجدول المصروفات، ثم احفظ الخطة.
-        </p>
+        ) : null}
 
-        <form
-          className="mt-6 space-y-8"
-          onSubmit={(event) => {
-            event.preventDefault();
-            handleSavePlan();
-          }}
-        >
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-slate-900">الدخل</h3>
-            <PlanComparisonTable
-              comparison={comparison}
-              currency={currency}
-              rows={comparison.incomeRows}
-              earnTone
-              categoryPlans={{ income: plannedIncome }}
-              onCategoryPlanChange={(_categoryId, value) => setPlannedIncome(value)}
-            />
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h3 className="text-lg font-semibold text-slate-900">المصروفات</h3>
-              <button
-                type="button"
-                onClick={() => categoryForm.openForm()}
-                className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 transition hover:bg-emerald-100"
-              >
-                + إضافة فئة
-              </button>
-            </div>
-            <PlanComparisonTable
-              comparison={comparison}
-              currency={currency}
-              initialOpenCategoryId={openCategoryId}
-              categoryPlans={categoryPlans}
-              onCategoryPlanChange={handleCategoryPlanChange}
-            />
-          </div>
-
-          {parentCategories.length > 0 ? (
-            <div className="space-y-1 rounded-2xl bg-slate-50 px-4 py-3 text-sm">
-              <p className="text-slate-600">
-                مجموع الفئات{" "}
-                <span className="font-semibold text-slate-900">
-                  {formatCurrency(allocatedExpenses, currency)}
-                </span>
-              </p>
-              <p className={remainingIncome < 0 ? "font-medium text-red-600" : "font-medium text-emerald-700"}>
-                المتبقي من الدخل {formatCurrency(remainingIncome, currency)}
-              </p>
-            </div>
-          ) : (
-            <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
-              مفيش فئات لسه. اضغط «إضافة فئة» للبدء.
-            </p>
-          )}
-
-          <label className="block space-y-2">
-            <span className="text-sm font-medium text-slate-700">ملاحظات على الخطة</span>
-            <textarea
-              value={notes}
-              onChange={(event) => setNotes(event.target.value)}
-              rows={3}
-              placeholder="مثال: الشهر ده فيه مصاريف مدرسة وزيادة فواتير..."
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
-            />
-          </label>
-
-          <button
-            type="submit"
-            disabled={saving}
-            className="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60"
-          >
-            {saving ? "جاري الحفظ..." : "حفظ الخطة"}
-          </button>
-        </form>
-          </>
-        )}
+        {planTab === "month" ? (
+          <PlanMonthPanel
+            currency={currency}
+            comparison={comparison}
+            incomeRows={comparison.incomeRows}
+            expenseRows={monthExpenseRows}
+            plannedIncome={plannedIncome}
+            categoryPlans={categoryPlans}
+            notes={notes}
+            saving={saving}
+            allocatedExpenses={allocatedExpenses}
+            remainingIncome={remainingIncome}
+            openCategoryId={openCategoryId}
+            onPlannedIncomeChange={setPlannedIncome}
+            onCategoryPlanChange={handleCategoryPlanChange}
+            onNotesChange={setNotes}
+            onAddCategory={() => categoryForm.openForm()}
+            onSave={handleSavePlan}
+          />
+        ) : null}
       </section>
 
       {categoryForm.form ? (

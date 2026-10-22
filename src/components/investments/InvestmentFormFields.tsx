@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   defaultInvestmentColor,
   defaultInvestmentIcon,
@@ -9,6 +10,14 @@ import {
   investmentTypeOptions,
   investmentUnitOptions,
 } from "@/lib/constants/investment-options";
+import {
+  GOLD_KARATS,
+  goldCostFromGrams,
+  goldUnitLabel,
+  parseGoldKarat,
+  type GoldKarat,
+  type GoldPriceQuote,
+} from "@/lib/investments/gold-price";
 import {
   getCollectionDateLabel,
   getExpectedProfitLabel,
@@ -28,6 +37,7 @@ export type InvestmentFormState = {
   currentValue: string;
   quantity: string;
   unitLabel: string;
+  goldKarat: GoldKarat;
   notes: string;
   isFixedReturn: boolean;
   fixedReturnPercent: string;
@@ -45,6 +55,7 @@ export function emptyInvestmentForm(): InvestmentFormState {
     currentValue: "0",
     quantity: "",
     unitLabel: "",
+    goldKarat: 21,
     notes: "",
     isFixedReturn: false,
     fixedReturnPercent: "",
@@ -63,6 +74,7 @@ export function investmentToForm(investment: Investment): InvestmentFormState {
     currentValue: String(investment.current_value),
     quantity: investment.quantity != null ? String(investment.quantity) : "",
     unitLabel: investment.unit_label ?? "",
+    goldKarat: parseGoldKarat(investment.unit_label) ?? 21,
     notes: investment.notes ?? "",
     isFixedReturn: investment.is_fixed_return,
     fixedReturnPercent:
@@ -76,23 +88,31 @@ export function buildInvestmentPayload(
   form: InvestmentFormState,
   options?: { includeCurrentValue?: boolean },
 ) {
+  const isGold = form.investmentType === "gold";
   const payload: Record<string, unknown> = {
     name: form.name.trim(),
     investment_type: form.investmentType,
     icon: form.icon,
     color: form.color,
     cost_basis: Number(form.costBasis) || 0,
-    quantity: form.isFixedReturn || !form.quantity.trim() ? null : Number(form.quantity) || 0,
-    unit_label: form.isFixedReturn || !form.unitLabel.trim() ? null : form.unitLabel.trim(),
+    quantity:
+      isGold || (!form.isFixedReturn && form.quantity.trim())
+        ? Number(form.quantity) || 0
+        : null,
+    unit_label: isGold
+      ? goldUnitLabel(form.goldKarat)
+      : form.isFixedReturn || !form.unitLabel.trim()
+        ? null
+        : form.unitLabel.trim(),
     notes: form.notes.trim() || null,
-    is_fixed_return: form.isFixedReturn,
+    is_fixed_return: isGold ? false : form.isFixedReturn,
     fixed_return_percent:
-      form.isFixedReturn && form.fixedReturnPercent.trim()
+      !isGold && form.isFixedReturn && form.fixedReturnPercent.trim()
         ? Number(form.fixedReturnPercent) || 0
         : null,
-    collection_period: form.isFixedReturn ? form.collectionPeriod : null,
+    collection_period: !isGold && form.isFixedReturn ? form.collectionPeriod : null,
     collection_date:
-      form.isFixedReturn && form.collectionDate.trim() ? form.collectionDate : null,
+      !isGold && form.isFixedReturn && form.collectionDate.trim() ? form.collectionDate : null,
   };
 
   if (options?.includeCurrentValue !== false) {
@@ -126,6 +146,99 @@ export default function InvestmentFormFields({
   onChange: (next: InvestmentFormState) => void;
   idPrefix: string;
 }) {
+  const isGold = form.investmentType === "gold";
+  const [goldQuote, setGoldQuote] = useState<GoldPriceQuote | null>(null);
+  const [goldPriceLoading, setGoldPriceLoading] = useState(false);
+  const [goldPriceError, setGoldPriceError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isGold) {
+      return;
+    }
+
+    const controller = new AbortController();
+    setGoldPriceLoading(true);
+    setGoldPriceError(null);
+
+    void (async () => {
+      try {
+        const response = await fetch("/api/gold-price", { signal: controller.signal });
+        const payload = (await response.json()) as { quote?: GoldPriceQuote; error?: string };
+
+        if (!response.ok || !payload.quote) {
+          throw new Error(payload.error ?? "تعذر جلب سعر الذهب الآن.");
+        }
+
+        if (!controller.signal.aborted) {
+          setGoldQuote(payload.quote);
+        }
+      } catch (error) {
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        setGoldQuote(null);
+        setGoldPriceError(error instanceof Error ? error.message : "تعذر جلب سعر الذهب الآن.");
+      } finally {
+        if (!controller.signal.aborted) {
+          setGoldPriceLoading(false);
+        }
+      }
+    })();
+
+    return () => controller.abort();
+  }, [isGold]);
+
+  useEffect(() => {
+    if (!isGold || !goldQuote) {
+      return;
+    }
+
+    const grams = Number(form.quantity);
+    const price = goldQuote.prices[form.goldKarat];
+    const nextCost = goldCostFromGrams(grams, price);
+
+    if (nextCost <= 0) {
+      return;
+    }
+
+    const nextCostText = String(nextCost);
+    const nextUnit = goldUnitLabel(form.goldKarat);
+
+    if (nextCostText === form.costBasis && form.unitLabel === nextUnit) {
+      return;
+    }
+
+    onChange(
+      patchForm(form, {
+        costBasis: nextCostText,
+        unitLabel: nextUnit,
+      }),
+    );
+    // Recalculate once when the live quote arrives or karat/grams change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional field sync
+  }, [form.goldKarat, form.quantity, goldQuote, isGold]);
+
+  function applyGoldFields(patch: Partial<InvestmentFormState>) {
+    const next = patchForm(form, {
+      ...patch,
+      investmentType: "gold",
+      isFixedReturn: false,
+      unitLabel: goldUnitLabel(patch.goldKarat ?? form.goldKarat),
+    });
+
+    if (goldQuote) {
+      const grams = Number(next.quantity);
+      const price = goldQuote.prices[next.goldKarat];
+      const nextCost = goldCostFromGrams(grams, price);
+      if (nextCost > 0) {
+        next.costBasis = String(nextCost);
+      }
+    }
+
+    onChange(next);
+  }
+
   return (
     <>
       <label className="block space-y-2">
@@ -136,7 +249,7 @@ export default function InvestmentFormFields({
           required
           value={form.name}
           onChange={(event) => onChange(patchForm(form, { name: event.target.value }))}
-          placeholder="مثال: شهادة 18% أو وديعة بنكية"
+          placeholder={isGold ? "مثال: سلسلة ذهب أو سبيكة" : "مثال: شهادة 18% أو وديعة بنكية"}
           className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
         />
       </label>
@@ -146,11 +259,26 @@ export default function InvestmentFormFields({
         <select
           id={`${idPrefix}-type`}
           value={form.investmentType}
-          onChange={(event) =>
+          onChange={(event) => {
+            const nextType = event.target.value as InvestmentType;
+
+            if (nextType === "gold") {
+              applyGoldFields({
+                investmentType: "gold",
+                icon: "🪙",
+                color: "#eab308",
+                unitLabel: goldUnitLabel(form.goldKarat),
+              });
+              return;
+            }
+
             onChange(
-              patchForm(form, { investmentType: event.target.value as InvestmentType }),
-            )
-          }
+              patchForm(form, {
+                investmentType: nextType,
+                unitLabel: form.unitLabel.startsWith("عيار") ? "" : form.unitLabel,
+              }),
+            );
+          }}
           className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
         >
           {investmentTypeOptions.map((option) => (
@@ -161,32 +289,87 @@ export default function InvestmentFormFields({
         </select>
       </label>
 
-      <label className="flex items-start gap-3 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
-        <input
-          id={`${idPrefix}-fixed-return`}
-          type="checkbox"
-          checked={form.isFixedReturn}
-          onChange={(event) =>
-            onChange(
-              patchForm(form, {
-                isFixedReturn: event.target.checked,
-                fixedReturnPercent: event.target.checked ? form.fixedReturnPercent : "",
-                collectionPeriod: event.target.checked ? form.collectionPeriod : "annual",
-                collectionDate: event.target.checked ? form.collectionDate : "",
-              }),
-            )
-          }
-          className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600"
-        />
-        <span>
-          <span className="block text-sm font-medium text-slate-800">
-            استثمار بربح ثابت وميعاد قبض
+      {isGold ? (
+        <div className="space-y-4 rounded-2xl border border-amber-100 bg-amber-50/70 p-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block space-y-2">
+              <span className="text-sm font-medium text-slate-700">العيار</span>
+              <select
+                id={`${idPrefix}-gold-karat`}
+                value={form.goldKarat}
+                onChange={(event) =>
+                  applyGoldFields({ goldKarat: Number(event.target.value) as GoldKarat })
+                }
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-emerald-500"
+              >
+                {GOLD_KARATS.map((karat) => (
+                  <option key={karat} value={karat}>
+                    عيار {karat}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block space-y-2">
+              <span className="text-sm font-medium text-slate-700">الكمية بالجرام</span>
+              <input
+                id={`${idPrefix}-gold-grams`}
+                type="number"
+                min="0.001"
+                step="0.001"
+                required
+                value={form.quantity}
+                onChange={(event) => applyGoldFields({ quantity: event.target.value })}
+                placeholder="مثال: 10"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-emerald-500"
+              />
+            </label>
+          </div>
+
+          {goldPriceLoading ? (
+            <p className="text-sm text-slate-600">جاري جلب سعر الجرام من النت...</p>
+          ) : goldPriceError ? (
+            <p className="text-sm text-red-600">{goldPriceError}</p>
+          ) : goldQuote ? (
+            <p className="text-sm text-amber-900">
+              سعر جرام عيار {form.goldKarat}:{" "}
+              <span className="font-semibold">
+                {formatCurrency(goldQuote.prices[form.goldKarat])}
+              </span>
+              <span className="mt-1 block text-xs text-amber-800/80">
+                السعر بيتحدث أوتوماتيك، والمبلغ المستثمر بيتحسب من العيار والجرام.
+              </span>
+            </p>
+          ) : null}
+        </div>
+      ) : (
+        <label className="flex items-start gap-3 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
+          <input
+            id={`${idPrefix}-fixed-return`}
+            type="checkbox"
+            checked={form.isFixedReturn}
+            onChange={(event) =>
+              onChange(
+                patchForm(form, {
+                  isFixedReturn: event.target.checked,
+                  fixedReturnPercent: event.target.checked ? form.fixedReturnPercent : "",
+                  collectionPeriod: event.target.checked ? form.collectionPeriod : "annual",
+                  collectionDate: event.target.checked ? form.collectionDate : "",
+                }),
+              )
+            }
+            className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600"
+          />
+          <span>
+            <span className="block text-sm font-medium text-slate-800">
+              استثمار بربح ثابت وميعاد قبض
+            </span>
+            <span className="mt-1 block text-xs text-slate-600">
+              مناسب للودائع والشهادات والاستثمارات اللي ليها ربح محدد وتاريخ استحقاق.
+            </span>
           </span>
-          <span className="mt-1 block text-xs text-slate-600">
-            مناسب للودائع والشهادات والاستثمارات اللي ليها ربح محدد وتاريخ استحقاق.
-          </span>
-        </span>
-      </label>
+        </label>
+      )}
 
       <label className="block space-y-2">
         <span className="text-sm font-medium text-slate-700">المبلغ المستثمر</span>
@@ -199,6 +382,9 @@ export default function InvestmentFormFields({
           onChange={(event) => onChange(patchForm(form, { costBasis: event.target.value }))}
           className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
         />
+        {isGold ? (
+          <p className="text-xs text-slate-500">تقدر تعدّل المبلغ لو اشتريت بسعر مختلف عن السوق.</p>
+        ) : null}
       </label>
 
       {form.isFixedReturn ? (
@@ -293,7 +479,7 @@ export default function InvestmentFormFields({
         </div>
       )}
 
-      {!form.isFixedReturn ? (
+      {!form.isFixedReturn && !isGold ? (
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block space-y-2">
             <span className="text-sm font-medium text-slate-700">الكمية (اختياري)</span>

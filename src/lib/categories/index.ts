@@ -1,4 +1,6 @@
 export * from "@/lib/categories/normalize";
+export * from "@/lib/categories/flow";
+export * from "@/lib/categories/display-order";
 export * from "@/lib/categories/hierarchy";
 export * from "@/lib/categories/form";
 export * from "@/lib/categories/create";

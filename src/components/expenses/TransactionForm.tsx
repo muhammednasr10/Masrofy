@@ -7,12 +7,7 @@ import WalletSelect from "@/components/wallets/WalletSelect";
 import CategorySearchSelect from "@/components/categories/CategorySearchSelect";
 import SelectedWalletPanel from "@/components/expenses/SelectedWalletPanel";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
-import { createClient } from "@/lib/supabase/client";
-import {
-  emptyCategoryForm,
-  insertCategory,
-  type CategoryFormState,
-} from "@/lib/categories";
+import { useCategoryForm } from "@/hooks/useCategoryForm";
 import type { Category, TransactionType, Wallet } from "@/lib/types/database";
 import type { getSelectedWalletSnapshot } from "@/lib/expenses/display";
 
@@ -72,57 +67,8 @@ export default function TransactionForm({
   onCategoryCreated,
 }: TransactionFormProps) {
   const t = useTranslations();
-  const [categoryForm, setCategoryForm] = useState<CategoryFormState | null>(null);
-  const [categorySubmitting, setCategorySubmitting] = useState(false);
-  const [categoryError, setCategoryError] = useState<string | null>(null);
   const [typedCategoryName, setTypedCategoryName] = useState("");
-
-  function openCategoryForm() {
-    setCategoryForm({
-      ...emptyCategoryForm(null),
-      name: typedCategoryName.trim(),
-    });
-    setCategoryError(null);
-  }
-
-  function closeCategoryForm() {
-    setCategoryForm(null);
-    setCategoryError(null);
-  }
-
-  async function handleCategorySubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!categoryForm) {
-      return;
-    }
-
-    setCategorySubmitting(true);
-    setCategoryError(null);
-
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      setCategoryError(t("expenses.categoryLoginRequired"));
-      setCategorySubmitting(false);
-      return;
-    }
-
-    const result = await insertCategory(supabase, user.id, categoryForm, categories);
-
-    if (result.error || !result.category) {
-      setCategoryError(result.error ?? t("expenses.categorySaveFailed"));
-      setCategorySubmitting(false);
-      return;
-    }
-
-    onCategoryCreated?.(result.category);
-    closeCategoryForm();
-    setCategorySubmitting(false);
-  }
+  const categoryForm = useCategoryForm(categories, onCategoryCreated);
 
   if (wallets.length === 0) {
     return (
@@ -186,7 +132,7 @@ export default function TransactionForm({
           </span>
           <button
             type="button"
-            onClick={openCategoryForm}
+            onClick={() => categoryForm.openForm(null, typedCategoryName)}
             className="text-sm font-medium text-emerald-700 transition hover:text-emerald-800"
           >
             {t("expenses.addCategory")}
@@ -255,15 +201,15 @@ export default function TransactionForm({
       ) : null}
       </form>
 
-      {categoryForm ? (
+      {categoryForm.form ? (
         <CategoryFormModal
-          form={categoryForm}
+          form={categoryForm.form}
           categories={categories}
-          submitting={categorySubmitting}
-          error={categoryError}
-          onChange={setCategoryForm}
-          onSubmit={handleCategorySubmit}
-          onClose={closeCategoryForm}
+          submitting={categoryForm.submitting}
+          error={categoryForm.error}
+          onChange={categoryForm.setForm}
+          onSubmit={categoryForm.handleSubmit}
+          onClose={categoryForm.closeForm}
           zIndexClassName="z-[100]"
           compact
         />

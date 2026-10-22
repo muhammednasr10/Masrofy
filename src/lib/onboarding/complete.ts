@@ -60,6 +60,7 @@ export async function completeOnboardingSetup(
           name: category.name,
           icon: category.icon,
           color: category.color,
+          flow: "flow" in category && category.flow === "income" ? "income" : "expense",
           sort_order: index,
         })),
       )
@@ -83,6 +84,7 @@ export async function completeOnboardingSetup(
           name: category.name,
           icon: category.icon,
           color: category.color,
+          flow: "flow" in category && category.flow === "income" ? "income" : "expense",
           parent_category_id: parentId,
           sort_order: index + 1,
         };

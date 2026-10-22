@@ -1,8 +1,9 @@
-import type { Category } from "@/lib/types/database";
+import type { Category, CategoryFlow } from "@/lib/types/database";
 import {
   defaultCategoryColor,
   defaultCategoryIcon,
 } from "@/lib/constants/category-options";
+import { getCategoryFlow } from "@/lib/categories/flow";
 
 export type CategoryFormState = {
   editingCategoryId: string | null;
@@ -10,15 +11,20 @@ export type CategoryFormState = {
   icon: string;
   color: string;
   parentCategoryId: string | null;
+  flow: CategoryFlow;
 };
 
-export function emptyCategoryForm(parentCategoryId: string | null = null): CategoryFormState {
+export function emptyCategoryForm(
+  parentCategoryId: string | null = null,
+  flow: CategoryFlow = "expense",
+): CategoryFormState {
   return {
     editingCategoryId: null,
     name: "",
     icon: defaultCategoryIcon,
     color: defaultCategoryColor,
     parentCategoryId,
+    flow,
   };
 }
 
@@ -29,6 +35,7 @@ export function categoryToFormState(category: Category): CategoryFormState {
     icon: category.icon,
     color: category.color,
     parentCategoryId: category.parent_category_id,
+    flow: getCategoryFlow(category),
   };
 }
 
@@ -38,6 +45,7 @@ export function buildCategoryUpdatePayload(form: CategoryFormState) {
     icon: form.icon,
     color: form.color,
     parent_category_id: form.parentCategoryId,
+    flow: form.flow,
   };
 }
 
@@ -52,6 +60,7 @@ export function buildCategoryPayload(
     icon: form.icon,
     color: form.color,
     parent_category_id: form.parentCategoryId,
+    flow: form.flow,
     sort_order: sortOrder,
   };
 }

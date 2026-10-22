@@ -2,11 +2,12 @@ import type { DefaultCategory } from "@/lib/types/database";
 import { ONBOARDING_CATEGORY_PRESETS } from "@/lib/onboarding/presets";
 
 export function fallbackDefaultCategories(): Array<
-  Pick<DefaultCategory, "name" | "icon" | "color" | "parent_name" | "sort_order">
+  Pick<DefaultCategory, "name" | "icon" | "color" | "parent_name" | "flow" | "sort_order">
 > {
   return ONBOARDING_CATEGORY_PRESETS.map((category, index) => ({
     ...category,
     parent_name: null,
+    flow: "expense" as const,
     sort_order: index + 1,
   }));
 }

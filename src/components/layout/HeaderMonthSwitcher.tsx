@@ -11,11 +11,11 @@ export default function HeaderMonthSwitcher() {
   const isCurrent = planMonthKey === currentKey;
 
   return (
-    <div className="flex items-center justify-center gap-1">
+    <div className="flex min-w-0 items-center justify-center gap-1">
       <button
         type="button"
         onClick={() => setPlanMonthKey(shiftPlanMonthKey(planMonthKey, -1, monthStartDay))}
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:bg-slate-50"
+        className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:bg-slate-50 sm:h-9 sm:w-9"
         aria-label={t("monthSwitcher.previous")}
       >
         <span aria-hidden className="rtl:hidden">
@@ -26,7 +26,7 @@ export default function HeaderMonthSwitcher() {
         </span>
       </button>
 
-      <label className="relative inline-flex h-9 min-w-36 items-center justify-center rounded-full border border-emerald-100 bg-emerald-50 px-3">
+      <label className="relative inline-flex h-10 min-w-0 items-center justify-center rounded-full border border-emerald-100 bg-emerald-50 px-3 sm:h-9 sm:min-w-36">
         <span className="text-sm font-semibold text-emerald-900">{month.label}</span>
         <input
           type="month"
@@ -40,7 +40,7 @@ export default function HeaderMonthSwitcher() {
       <button
         type="button"
         onClick={() => setPlanMonthKey(shiftPlanMonthKey(planMonthKey, 1, monthStartDay))}
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:bg-slate-50"
+        className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:bg-slate-50 sm:h-9 sm:w-9"
         aria-label={t("monthSwitcher.next")}
       >
         <span aria-hidden className="rtl:hidden">

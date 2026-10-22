@@ -10,6 +10,7 @@ const categories: Category[] = [
     icon: "🍔",
     color: "#f97316",
     parent_category_id: null,
+    flow: "expense",
     sort_order: 1,
     created_at: "2026-01-01T00:00:00.000Z",
   },

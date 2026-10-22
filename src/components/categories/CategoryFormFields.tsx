@@ -1,13 +1,15 @@
 "use client";
 
+import CategorySearchSelect from "@/components/categories/CategorySearchSelect";
+import { useTranslations } from "@/components/i18n/LocaleProvider";
+import { buildCategoryParentOptions, getCategoryFlow } from "@/lib/categories";
+import type { CategoryFormState } from "@/lib/categories/form";
 import {
   categoryColorOptions,
   categoryIconOptions,
+  suggestCategoryIcon,
 } from "@/lib/constants/category-options";
-import { buildCategoryParentOptions } from "@/lib/categories";
-import type { CategoryFormState } from "@/lib/categories/form";
 import type { Category } from "@/lib/types/database";
-import { useTranslations } from "@/components/i18n/LocaleProvider";
 
 type CategoryFormFieldsProps = {
   form: CategoryFormState;
@@ -32,12 +34,56 @@ export default function CategoryFormFields({
     categories,
     form.editingCategoryId,
   );
+  const parentCategories = parentOptions.map(({ category }) => category);
   const lockedParent = lockParent && form.parentCategoryId
     ? categories.find((item) => item.id === form.parentCategoryId)
     : null;
 
+  function setParentCategory(parentId: string) {
+    const parent = categories.find((item) => item.id === parentId);
+
+    onChange({
+      ...form,
+      parentCategoryId: parentId || null,
+      flow: parent ? getCategoryFlow(parent) : form.flow,
+    });
+  }
+
   return (
     <div className="mt-6 space-y-5">
+      <label className="block space-y-2">
+        <span className="text-sm font-medium text-slate-700">{t("categories.flowLabel")}</span>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            disabled={Boolean(form.parentCategoryId)}
+            onClick={() => onChange({ ...form, flow: "income" })}
+            className={`rounded-2xl border px-4 py-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
+              form.flow === "income"
+                ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            {t("categories.flowIncome")}
+          </button>
+          <button
+            type="button"
+            disabled={Boolean(form.parentCategoryId)}
+            onClick={() => onChange({ ...form, flow: "expense" })}
+            className={`rounded-2xl border px-4 py-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
+              form.flow === "expense"
+                ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            {t("categories.flowExpense")}
+          </button>
+        </div>
+        {form.parentCategoryId ? (
+          <p className="text-xs text-slate-500">{t("categories.flowInheritedHint")}</p>
+        ) : null}
+      </label>
+
       {lockedParent ? (
         <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
           <p className="text-xs font-medium text-emerald-700">{t("categories.typeSub")}</p>
@@ -67,12 +113,17 @@ export default function CategoryFormFields({
               <button
                 type="button"
                 disabled={parentOptions.length === 0}
-                onClick={() =>
+                onClick={() => {
+                  const parent = form.parentCategoryId
+                    ? categories.find((item) => item.id === form.parentCategoryId)
+                    : parentOptions[0]?.category;
+
                   onChange({
                     ...form,
-                    parentCategoryId: form.parentCategoryId ?? parentOptions[0]?.category.id ?? null,
-                  })
-                }
+                    parentCategoryId: parent?.id ?? parentOptions[0]?.category.id ?? null,
+                    flow: parent ? getCategoryFlow(parent) : form.flow,
+                  });
+                }}
                 className={`rounded-2xl border px-4 py-3 text-sm font-medium transition ${
                   form.parentCategoryId
                     ? "border-emerald-300 bg-emerald-50 text-emerald-800"
@@ -85,26 +136,18 @@ export default function CategoryFormFields({
           </label>
 
           {form.parentCategoryId ? (
-            <label className="block space-y-2">
+            <div className="space-y-2">
               <span className="text-sm font-medium text-slate-700">{t("categories.parentLabel")}</span>
-              <select
+              <CategorySearchSelect
+                categories={parentCategories}
                 value={form.parentCategoryId}
+                onChange={setParentCategory}
                 required
-                onChange={(event) =>
-                  onChange({
-                    ...form,
-                    parentCategoryId: event.target.value || null,
-                  })
-                }
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
-              >
-                {parentOptions.map(({ category, label }) => (
-                  <option key={category.id} value={category.id}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
+                listInFlow
+                placeholder={t("categories.searchPlaceholder")}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus-within:border-emerald-500"
+              />
+            </div>
           ) : null}
         </>
       )}
@@ -116,7 +159,15 @@ export default function CategoryFormFields({
           type="text"
           required
           value={form.name}
-          onChange={(event) => onChange({ ...form, name: event.target.value })}
+          onChange={(event) => {
+            const name = event.target.value;
+            const hintIcon = suggestCategoryIcon(name);
+            onChange({
+              ...form,
+              name,
+              ...(hintIcon && !form.editingCategoryId ? { icon: hintIcon } : {}),
+            });
+          }}
           className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
         />
       </label>

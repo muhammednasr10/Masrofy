@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import CategoryDetailModal from "@/components/categories/CategoryDetailModal";
 import IconActionButton from "@/components/ui/IconActionButton";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
+import { compareCategoriesForDisplay } from "@/lib/categories/display-order";
+import { getCategoryFlow } from "@/lib/categories/flow";
 import {
   getCategoryDescendantIds,
   getDirectChildCategories,
@@ -29,7 +31,10 @@ export default function CategoriesTable({
   onDelete,
 }: CategoriesTableProps) {
   const t = useTranslations();
-  const roots = useMemo(() => getParentCategories(categories), [categories]);
+  const roots = useMemo(
+    () => getParentCategories(categories).sort(compareCategoriesForDisplay),
+    [categories],
+  );
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
   const selectedCategory = useMemo(
@@ -76,6 +81,14 @@ export default function CategoriesTable({
                     <span className="wrap-text text-base font-semibold tracking-tight text-slate-900 sm:text-lg">
                       {category.name}
                     </span>
+                    <TypeBadge
+                      label={
+                        getCategoryFlow(category) === "income"
+                          ? t("categories.flowIncome")
+                          : t("categories.flowExpense")
+                      }
+                      tone={getCategoryFlow(category) === "income" ? "income" : "expense"}
+                    />
                     <TypeBadge label={t("categories.typeRootShort")} />
                     <SubCountBadges directCount={directCount} totalCount={totalCount} />
                   </div>
@@ -115,11 +128,22 @@ export default function CategoriesTable({
   );
 }
 
-function TypeBadge({ label }: { label: string }) {
+function TypeBadge({
+  label,
+  tone = "neutral",
+}: {
+  label: string;
+  tone?: "neutral" | "income" | "expense";
+}) {
+  const toneClass =
+    tone === "income"
+      ? "bg-emerald-50 text-emerald-700"
+      : tone === "expense"
+        ? "bg-red-50 text-red-700"
+        : "bg-slate-100/80 text-slate-500";
+
   return (
-    <span className="rounded-md bg-slate-100/80 px-2 py-0.5 text-xs font-medium text-slate-500">
-      {label}
-    </span>
+    <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${toneClass}`}>{label}</span>
   );
 }
 

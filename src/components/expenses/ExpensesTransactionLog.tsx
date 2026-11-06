@@ -85,6 +85,7 @@ export default function ExpensesTransactionLog({
       <TransactionsTable
         transactions={transactions}
         wallets={wallets}
+        categories={categories}
         currency={currency}
         attachmentUrls={attachmentUrls}
         onDelete={onDelete}

@@ -2,8 +2,10 @@
 
 import { FormEvent } from "react";
 import ModalShell from "@/components/ui/ModalShell";
+import TransactionBatchForm from "@/components/expenses/TransactionBatchForm";
 import TransactionForm from "@/components/expenses/TransactionForm";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
+import type { ReadyTransactionDraft } from "@/lib/expenses/batch-draft";
 import type { Category, TransactionType, Wallet } from "@/lib/types/database";
 import type { getSelectedWalletSnapshot } from "@/lib/expenses/display";
 
@@ -32,6 +34,7 @@ type TransactionFormModalProps = {
   onReceiptChange: (file: File | null) => void;
   onTransactionDateChange: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onSaveLines?: (lines: ReadyTransactionDraft[]) => void;
   onClose: () => void;
   onCategoryCreated?: (category: Category) => void;
 };
@@ -40,6 +43,7 @@ export default function TransactionFormModal({
   open,
   mode = "add",
   onClose,
+  onSaveLines,
   submitting,
   ...formProps
 }: TransactionFormModalProps) {
@@ -50,7 +54,11 @@ export default function TransactionFormModal({
   }
 
   return (
-    <ModalShell onClose={onClose} maxWidthClassName="sm:max-w-lg">
+    <ModalShell
+      onClose={onClose}
+      dialog
+      maxWidthClassName={mode === "edit" ? "max-w-lg" : "max-w-3xl"}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <h2 className="text-xl font-semibold text-slate-900">
@@ -70,7 +78,25 @@ export default function TransactionFormModal({
       </div>
 
       <div className="mt-6">
-        <TransactionForm {...formProps} mode={mode} submitting={submitting} />
+        {mode === "edit" || !onSaveLines ? (
+          <TransactionForm {...formProps} mode={mode} submitting={submitting} />
+        ) : (
+          <TransactionBatchForm
+            categories={formProps.categories}
+            wallets={formProps.wallets}
+            currency={formProps.currency}
+            walletId={formProps.walletId}
+            transactionDate={formProps.transactionDate}
+            receiptFile={formProps.receiptFile}
+            submitting={submitting}
+            selectedWalletSnapshot={formProps.selectedWalletSnapshot}
+            onWalletChange={formProps.onWalletChange}
+            onTransactionDateChange={formProps.onTransactionDateChange}
+            onReceiptChange={formProps.onReceiptChange}
+            onCategoryCreated={formProps.onCategoryCreated}
+            onSave={onSaveLines}
+          />
+        )}
       </div>
     </ModalShell>
   );

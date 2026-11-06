@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getTransferableWallets } from "@/lib/wallets/transfer";
+import { getTransferableWallets, prefillWalletTransferForm } from "@/lib/wallets/transfer";
 import { makeWallet } from "@/test/factories";
 
 describe("getTransferableWallets", () => {
@@ -16,5 +16,14 @@ describe("getTransferableWallets", () => {
       "cash",
       "bank",
     ]);
+  });
+});
+
+describe("prefillWalletTransferForm", () => {
+  it("picks a different destination wallet so the to field is not visually selected with an empty value", () => {
+    const form = prefillWalletTransferForm(["anoda", "cash", "cib"], "anoda");
+
+    expect(form.fromWalletId).toBe("anoda");
+    expect(form.toWalletId).toBe("cash");
   });
 });

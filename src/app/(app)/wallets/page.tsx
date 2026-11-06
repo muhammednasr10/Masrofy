@@ -48,8 +48,6 @@ export default function WalletsPage() {
           currency={page.currency}
           reconcilableWalletIds={page.reconcilableWalletIds}
           latestReconciliations={page.latestReconciliations}
-          reorderingId={page.reorderingId}
-          onMoveWallet={page.handleMoveWallet}
           onAddSubWallet={page.openAddModal}
           onInventoryWallet={page.openInventoryModal}
           onEditWallet={page.openEditModal}
@@ -104,6 +102,7 @@ export default function WalletsPage() {
         adding={page.adding}
         savingEdit={page.savingEdit}
         transferring={page.transferring}
+        transferError={page.error}
         setAddForm={page.setAddForm}
         setEditForm={page.setEditForm}
         setTransferForm={page.setTransferForm}

@@ -38,6 +38,7 @@ function DashboardAddExpenseModal({ onClose }: DashboardAddExpenseModalProps) {
     setReceiptFile,
     setTransactionDate,
     handleSubmit,
+    handleSaveLines,
     ingestCategory,
   } = useExpensesPage();
 
@@ -72,6 +73,7 @@ function DashboardAddExpenseModal({ onClose }: DashboardAddExpenseModalProps) {
       onReceiptChange={setReceiptFile}
       onTransactionDateChange={setTransactionDate}
       onSubmit={handleSubmit}
+      onSaveLines={handleSaveLines}
       onClose={onClose}
       onCategoryCreated={ingestCategory}
     />

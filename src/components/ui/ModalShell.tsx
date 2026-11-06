@@ -8,6 +8,8 @@ type ModalShellProps = {
   onClose: () => void;
   maxWidthClassName?: string;
   zIndexClassName?: string;
+  /** Centered card on every screen size, including phones. */
+  dialog?: boolean;
 };
 
 export default function ModalShell({
@@ -15,6 +17,7 @@ export default function ModalShell({
   onClose,
   maxWidthClassName = "sm:max-w-2xl",
   zIndexClassName = "z-[80]",
+  dialog = false,
 }: ModalShellProps) {
   const [mounted, setMounted] = useState(false);
 
@@ -46,7 +49,9 @@ export default function ModalShell({
 
   return createPortal(
     <div
-      className={`fixed inset-0 ${zIndexClassName} flex items-end justify-center p-0 sm:items-center sm:p-4`}
+      className={`fixed inset-0 ${zIndexClassName} flex justify-center ${
+        dialog ? "items-center p-3" : "items-end p-0 sm:items-center sm:p-4"
+      }`}
     >
       <button
         type="button"
@@ -55,7 +60,11 @@ export default function ModalShell({
         aria-label="إغلاق"
       />
       <section
-        className={`relative max-h-[92dvh] w-full overflow-x-hidden overflow-y-auto overscroll-contain rounded-t-3xl border border-white bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-h-[90vh] sm:rounded-3xl sm:p-6 ${maxWidthClassName}`}
+        className={`relative w-full overflow-x-hidden overflow-y-auto overscroll-contain border border-white bg-white shadow-2xl ${
+          dialog
+            ? `max-h-[90dvh] rounded-3xl p-4 sm:p-6 ${maxWidthClassName}`
+            : `max-h-[92dvh] rounded-t-3xl p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:max-h-[90vh] sm:rounded-3xl sm:p-6 ${maxWidthClassName}`
+        }`}
       >
         {children}
       </section>

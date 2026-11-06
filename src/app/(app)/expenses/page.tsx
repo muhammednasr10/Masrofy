@@ -57,6 +57,7 @@ function ExpensesPageContent() {
     setReceiptFile,
     setTransactionDate,
     handleSubmit,
+    handleSaveLines,
     handleDelete,
     handleImportTransactions,
     openEditTransaction,
@@ -182,6 +183,7 @@ function ExpensesPageContent() {
         onReceiptChange={setReceiptFile}
         onTransactionDateChange={setTransactionDate}
         onSubmit={handleSubmit}
+        onSaveLines={handleSaveLines}
         onClose={() => {
           setShowTransactionModal(false);
           closeTransactionModal();

@@ -30,6 +30,7 @@ type WalletsPageModalsProps = {
   adding: boolean;
   savingEdit: boolean;
   transferring: boolean;
+  transferError?: string | null;
   setAddForm: (form: WalletFormState) => void;
   setEditForm: (form: WalletFormState) => void;
   setTransferForm: (form: WalletTransferFormState) => void;
@@ -63,6 +64,7 @@ export default function WalletsPageModals({
   adding,
   savingEdit,
   transferring,
+  transferError,
   setAddForm,
   setEditForm,
   setTransferForm,
@@ -84,6 +86,7 @@ export default function WalletsPageModals({
           wallets={transferableWallets}
           form={transferForm}
           submitting={transferring}
+          error={transferError}
           onChange={setTransferForm}
           onSubmit={onTransferSubmit}
           onClose={onCloseTransfer}

@@ -91,25 +91,20 @@ export function getCategorySelectOptionLabel(
   return base;
 }
 
-export function getCategoryPathLabel(
-  category: Pick<Category, "id" | "name" | "icon" | "parent_category_id">,
-  categories: Category[],
-) {
-  return getCategoryFullPathLabel(category, categories);
-}
+export type CategoryPathItem = Pick<Category, "id" | "name" | "icon" | "parent_category_id">;
 
-export function getCategoryFullPathLabel(
-  category: Pick<Category, "id" | "name" | "icon" | "parent_category_id">,
-  categories: Category[],
-  separator = " › ",
-) {
+export function getCategoryChain(category: CategoryPathItem, categories: Category[]) {
   const byId = new Map(categories.map((item) => [item.id, item]));
-  const chain: Array<Pick<Category, "name" | "icon">> = [];
-  let current: Pick<Category, "id" | "name" | "icon" | "parent_category_id"> | undefined =
-    category;
+  const chain: CategoryPathItem[] = [];
+  let current: CategoryPathItem | undefined = category;
 
   while (current) {
-    chain.unshift({ name: current.name, icon: current.icon });
+    chain.unshift({
+      id: current.id,
+      name: current.name,
+      icon: current.icon,
+      parent_category_id: current.parent_category_id,
+    });
 
     const parentId = getCategoryParentId(current);
 
@@ -124,7 +119,34 @@ export function getCategoryFullPathLabel(
     }
   }
 
-  return chain.map((item) => `${item.icon} ${item.name}`).join(separator);
+  return chain;
+}
+
+export function splitCategoryPath(category: CategoryPathItem, categories: Category[]) {
+  const chain = getCategoryChain(category, categories);
+  const [root, ...branches] = chain;
+
+  return {
+    root: root ?? null,
+    branches,
+  };
+}
+
+export function getCategoryPathLabel(
+  category: CategoryPathItem,
+  categories: Category[],
+) {
+  return getCategoryFullPathLabel(category, categories);
+}
+
+export function getCategoryFullPathLabel(
+  category: CategoryPathItem,
+  categories: Category[],
+  separator = " › ",
+) {
+  return getCategoryChain(category, categories)
+    .map((item) => `${item.icon} ${item.name}`)
+    .join(separator);
 }
 
 export function getCategoryDescendantIds(rootId: string, categories: Category[]) {

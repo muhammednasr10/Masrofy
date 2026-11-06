@@ -1,4 +1,5 @@
-import type { Transaction } from "@/lib/types/database";
+import { splitCategoryPath } from "@/lib/categories/hierarchy";
+import type { Category, Transaction } from "@/lib/types/database";
 
 type TransactionLabelMessages = {
   typeIncome: string;
@@ -6,8 +7,12 @@ type TransactionLabelMessages = {
   noCategory: string;
 };
 
+function formatCategoryItem(item: Pick<Category, "name" | "icon">) {
+  return `${item.icon} ${item.name}`.trim();
+}
+
 export function getTransactionCategoryLabel(
-  transaction: Transaction,
+  transaction: Pick<Transaction, "type" | "categories">,
   messages: TransactionLabelMessages,
 ) {
   if (transaction.categories?.name) {
@@ -23,6 +28,32 @@ export function getTransactionCategoryLabel(
   }
 
   return messages.noCategory;
+}
+
+export function getTransactionCategoryColumns(
+  transaction: Pick<Transaction, "category_id" | "type" | "categories">,
+  categories: Category[],
+  messages: TransactionLabelMessages,
+) {
+  const fallback = getTransactionCategoryLabel(transaction, messages);
+  const category = categories.find((item) => item.id === transaction.category_id);
+
+  if (!category) {
+    const icon = transaction.categories?.icon;
+    return {
+      mainLabel: icon ? `${icon} ${fallback}` : fallback,
+      subLabel: "—",
+    };
+  }
+
+  const { root, branches } = splitCategoryPath(category, categories);
+
+  return {
+    mainLabel: root ? formatCategoryItem(root) : fallback,
+    subLabel: branches.length
+      ? branches.map((item) => formatCategoryItem(item)).join(" › ")
+      : "—",
+  };
 }
 
 export function getTransactionAmountTone(transaction: Transaction) {

@@ -20,8 +20,6 @@ type WalletsTableProps = {
   currency: string;
   reconcilableWalletIds: Set<string>;
   latestReconciliations: Map<string, WalletReconciliation>;
-  reorderingId: string | null;
-  onMoveWallet: (walletId: string, direction: "up" | "down") => void;
   onAddSubWallet: (parentWalletId: string) => void;
   onInventoryWallet: (walletId: string) => void;
   onEditWallet: (wallet: Wallet) => void;
@@ -38,8 +36,6 @@ export default function WalletsTable({
   currency,
   reconcilableWalletIds,
   latestReconciliations,
-  reorderingId,
-  onMoveWallet,
   onAddSubWallet,
   onInventoryWallet,
   onEditWallet,
@@ -86,25 +82,33 @@ export default function WalletsTable({
 
   return (
     <>
-      <ul className="mt-6 overflow-hidden rounded-2xl border border-slate-100 bg-white">
-        {visibleRows.map((row, index) => (
-          <WalletListItem
-            key={row.wallet.id}
-            row={row}
-            showDivider={index > 0}
-            wallets={wallets}
-            transactions={transactions}
-            investments={investments}
-            currency={currency}
-            expandedParents={expandedParents}
-            reorderingId={reorderingId}
-            openDetailsLabel={t("wallets.openDetails")}
-            onToggleExpand={toggleParent}
-            onMoveWallet={onMoveWallet}
-            onOpenDetails={setSelectedWalletId}
-          />
-        ))}
-      </ul>
+      <div className="mt-4 overflow-hidden rounded-2xl border border-slate-100">
+        <table className="w-full table-fixed text-sm">
+          <thead>
+            <tr className="border-b border-slate-100 bg-slate-50 text-slate-500">
+              <th className="px-3 py-2 text-start font-medium">{t("wallets.walletColumn")}</th>
+              <th className="w-32 px-3 py-2 text-end font-medium sm:w-40">
+                {t("wallets.balanceLabel")}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {visibleRows.map((row) => (
+              <WalletListItem
+                key={row.wallet.id}
+                row={row}
+                wallets={wallets}
+                transactions={transactions}
+                investments={investments}
+                currency={currency}
+                expandedParents={expandedParents}
+                onToggleExpand={toggleParent}
+                onOpenDetails={setSelectedWalletId}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {selectedRow ? (
         <WalletDetailModal

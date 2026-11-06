@@ -21,8 +21,10 @@ type CategorySearchSelectProps = {
   emptyLabel?: string;
   placeholder?: string;
   listInFlow?: boolean;
+  autoFocus?: boolean;
   onQueryChange?: (query: string) => void;
   onCreateNew?: (query: string) => void;
+  onPicked?: (categoryId: string) => void;
 };
 
 export default function CategorySearchSelect({
@@ -36,8 +38,10 @@ export default function CategorySearchSelect({
   emptyLabel,
   placeholder,
   listInFlow = false,
+  autoFocus = false,
   onQueryChange,
   onCreateNew,
+  onPicked,
 }: CategorySearchSelectProps) {
   const t = useTranslations();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -105,11 +109,18 @@ export default function CategorySearchSelect({
     setHighlightIndex(0);
   }, [query, open]);
 
+  useEffect(() => {
+    if (autoFocus) {
+      inputRef.current?.focus();
+    }
+  }, [autoFocus]);
+
   function selectItem(categoryId: string) {
     onChange(categoryId);
     setOpen(false);
     setQuery("");
     onQueryChange?.("");
+    onPicked?.(categoryId);
   }
 
   function createNew() {
@@ -122,6 +133,7 @@ export default function CategorySearchSelect({
 
   function handleKeyDown(event: ReactKeyboardEvent<HTMLInputElement>) {
     if (!open && (event.key === "ArrowDown" || event.key === "Enter")) {
+      event.preventDefault();
       setOpen(true);
       return;
     }

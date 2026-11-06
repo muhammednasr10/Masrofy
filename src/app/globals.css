@@ -97,6 +97,12 @@ textarea {
   font-size: 16px;
 }
 
+.compact-fields input,
+.compact-fields select,
+.compact-fields textarea {
+  font-size: 0.875rem;
+}
+
 @media (min-width: 640px) {
   input,
   select,

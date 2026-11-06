@@ -2,15 +2,19 @@
 
 import { FormEvent, useCallback, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { executeWalletTransfer } from "@/lib/wallets/transfer-service";
 import {
-  emptyWalletTransferForm,
+  executeWalletTransfer,
+  getWalletTransferErrorMessage,
+} from "@/lib/wallets/transfer-service";
+import {
+  prefillWalletTransferForm,
   type WalletTransferFormState,
 } from "@/lib/wallets/transfer";
 import type { InternalWalletTransfer, Transaction } from "@/lib/types/database";
 
 type UseWalletTransfersOptions = {
   defaultWalletId: string;
+  transferableWalletIds: string[];
   onBalanceTransactionsChange: (transactions: Transaction[]) => void;
   setError: (message: string | null) => void;
   setMessage: (message: string | null) => void;
@@ -19,6 +23,7 @@ type UseWalletTransfersOptions = {
 
 export function useWalletTransfers({
   defaultWalletId,
+  transferableWalletIds,
   onBalanceTransactionsChange,
   setError,
   setMessage,
@@ -27,7 +32,7 @@ export function useWalletTransfers({
   const [internalTransfers, setInternalTransfers] = useState<InternalWalletTransfer[]>([]);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [transferForm, setTransferForm] = useState<WalletTransferFormState>(
-    emptyWalletTransferForm(),
+    prefillWalletTransferForm(transferableWalletIds, defaultWalletId),
   );
   const [transferring, setTransferring] = useState(false);
 
@@ -37,9 +42,9 @@ export function useWalletTransfers({
 
   const openTransferModal = useCallback(() => {
     clearFeedback();
-    setTransferForm(emptyWalletTransferForm(defaultWalletId));
+    setTransferForm(prefillWalletTransferForm(transferableWalletIds, defaultWalletId));
     setShowTransferModal(true);
-  }, [clearFeedback, defaultWalletId]);
+  }, [clearFeedback, defaultWalletId, transferableWalletIds]);
 
   const closeTransferModal = useCallback(() => {
     setShowTransferModal(false);
@@ -48,7 +53,8 @@ export function useWalletTransfers({
   async function handleTransferSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setTransferring(true);
-    clearFeedback();
+    setError(null);
+    setMessage(null);
 
     try {
       const supabase = createClient();
@@ -63,10 +69,10 @@ export function useWalletTransfers({
 
       onBalanceTransactionsChange(balanceTransactions);
       setShowTransferModal(false);
-      setTransferForm(emptyWalletTransferForm(defaultWalletId));
+      setTransferForm(prefillWalletTransferForm(transferableWalletIds, defaultWalletId));
       setMessage("تم التحويل بين المحافظ.");
     } catch (transferError) {
-      setError(transferError instanceof Error ? transferError.message : "تعذر تنفيذ التحويل.");
+      setError(getWalletTransferErrorMessage(transferError));
     } finally {
       setTransferring(false);
     }

@@ -1,10 +1,12 @@
 "use client";
 
 import { useTranslations } from "@/components/i18n/LocaleProvider";
+import IconActionButton from "@/components/ui/IconActionButton";
 import { useFormat } from "@/hooks/useFormat";
-import type { OfflineTransaction } from "@/lib/offline/types";
-import type { Wallet } from "@/lib/types/database";
 import { getTransactionWalletDisplay } from "@/lib/expenses/display";
+import { getTransactionCategoryColumns } from "@/lib/expenses/transaction-display";
+import type { OfflineTransaction } from "@/lib/offline/types";
+import type { Category, Wallet } from "@/lib/types/database";
 
 function getWalletLabel(
   wallets: Wallet[],
@@ -24,9 +26,35 @@ function getWalletLabel(
   }${walletDisplay.typeLabel ? ` • ${walletDisplay.typeLabel}` : ""}`;
 }
 
+function TransactionActions({
+  canEdit,
+  editLabel,
+  deleteLabel,
+  onEdit,
+  onDelete,
+}: {
+  canEdit: boolean;
+  editLabel: string;
+  deleteLabel: string;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-end gap-1">
+      {canEdit ? (
+        <IconActionButton icon="✏️" label={editLabel} onClick={onEdit} tone="slate" />
+      ) : (
+        <span className="inline-block h-9 w-9" aria-hidden />
+      )}
+      <IconActionButton icon="🗑️" label={deleteLabel} onClick={onDelete} tone="red" />
+    </div>
+  );
+}
+
 export default function TransactionsTable({
   transactions,
   wallets,
+  categories,
   currency,
   attachmentUrls,
   onDelete,
@@ -34,6 +62,7 @@ export default function TransactionsTable({
 }: {
   transactions: OfflineTransaction[];
   wallets: Wallet[];
+  categories: Category[];
   currency: string;
   attachmentUrls: Record<string, string>;
   onDelete: (id: string) => void;
@@ -41,6 +70,11 @@ export default function TransactionsTable({
 }) {
   const t = useTranslations();
   const { formatCurrency, formatDate } = useFormat();
+  const categoryMessages = {
+    typeIncome: t("expenses.typeIncome"),
+    typeTransfer: t("wallets.transferTransaction"),
+    noCategory: t("expenses.noCategory"),
+  };
 
   if (transactions.length === 0) {
     return (
@@ -55,9 +89,11 @@ export default function TransactionsTable({
       <div className="mt-6 space-y-3 md:hidden">
         {transactions.map((transaction) => {
           const walletLabel = getWalletLabel(wallets, transaction, t("expenses.noWallet"));
-          const categoryLabel =
-            transaction.categories?.name ??
-            (transaction.type === "income" ? t("expenses.typeIncome") : t("expenses.noCategory"));
+          const { mainLabel, subLabel } = getTransactionCategoryColumns(
+            transaction,
+            categories,
+            categoryMessages,
+          );
           const isExpense = transaction.type === "expense";
           const canEdit = transaction.type !== "transfer" && !transaction.offlinePending;
 
@@ -66,154 +102,72 @@ export default function TransactionsTable({
               key={transaction.id}
               className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm"
             >
-              {canEdit ? (
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => onEdit(transaction)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      onEdit(transaction);
-                    }
-                  }}
-                  className="cursor-pointer p-4 transition active:bg-slate-50"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm text-slate-500">{formatDate(transaction.transaction_date)}</p>
-                      <p className="mt-1 wrap-text font-medium text-slate-900">
-                        {transaction.categories?.icon} {categoryLabel}
-                      </p>
-                    </div>
-                    <p
-                      className={`amount-text shrink-0 ${
-                        isExpense ? "text-red-600" : "text-emerald-600"
-                      }`}
-                    >
-                      {isExpense ? "-" : "+"}
-                      {formatCurrency(Number(transaction.amount), currency)}
-                    </p>
-                  </div>
-
-                  <div className="mt-3 space-y-2 text-sm leading-6">
-                    <p className="wrap-text text-slate-600">
-                      <span className="font-medium text-slate-700">{t("expenses.tableWallet")}: </span>
-                      {walletLabel}
-                    </p>
-                    {transaction.note ? (
-                      <p className="wrap-text text-slate-600">
-                        <span className="font-medium text-slate-700">{t("expenses.tableNote")}: </span>
-                        {transaction.note}
-                      </p>
+              <div className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-slate-500">{formatDate(transaction.transaction_date)}</p>
+                    <p className="mt-1 wrap-text font-medium text-slate-900">{mainLabel}</p>
+                    {subLabel !== "—" ? (
+                      <p className="mt-0.5 wrap-text text-sm text-slate-500">{subLabel}</p>
                     ) : null}
                   </div>
-
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                        isExpense ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"
-                      }`}
-                    >
-                      {isExpense ? t("expenses.typeExpense") : t("expenses.typeIncome")}
-                    </span>
-                    {attachmentUrls[transaction.id] ? (
-                      <a
-                        href={attachmentUrls[transaction.id]}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={(event) => event.stopPropagation()}
-                        className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700"
-                      >
-                        📎 {t("expenses.viewAttachment")}
-                      </a>
-                    ) : null}
-                  </div>
-
-                  <p className="mt-3 text-xs font-medium text-emerald-700">{t("expenses.tapToEdit")}</p>
-                </div>
-              ) : (
-                <div className="p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm text-slate-500">{formatDate(transaction.transaction_date)}</p>
-                      <p className="mt-1 wrap-text font-medium text-slate-900">
-                        {transaction.categories?.icon} {categoryLabel}
-                      </p>
-                    </div>
-                    <p
-                      className={`amount-text shrink-0 ${
-                        isExpense ? "text-red-600" : "text-emerald-600"
-                      }`}
-                    >
-                      {isExpense ? "-" : "+"}
-                      {formatCurrency(Number(transaction.amount), currency)}
-                    </p>
-                  </div>
-
-                  <div className="mt-3 space-y-2 text-sm leading-6">
-                    <p className="wrap-text text-slate-600">
-                      <span className="font-medium text-slate-700">{t("expenses.tableWallet")}: </span>
-                      {walletLabel}
-                    </p>
-                    {transaction.note ? (
-                      <p className="wrap-text text-slate-600">
-                        <span className="font-medium text-slate-700">{t("expenses.tableNote")}: </span>
-                        {transaction.note}
-                      </p>
-                    ) : null}
-                  </div>
-
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                        isExpense ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"
-                      }`}
-                    >
-                      {isExpense ? t("expenses.typeExpense") : t("expenses.typeIncome")}
-                    </span>
-                    {transaction.offlinePending ? (
-                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                        {t("expenses.offlinePending")}
-                      </span>
-                    ) : null}
-                    {attachmentUrls[transaction.id] ? (
-                      <a
-                        href={attachmentUrls[transaction.id]}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700"
-                      >
-                        📎 {t("expenses.viewAttachment")}
-                      </a>
-                    ) : null}
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-2 border-t border-slate-100 bg-slate-50 p-3">
-                {canEdit ? (
-                  <button
-                    type="button"
-                    onClick={() => onEdit(transaction)}
-                    className="min-h-11 touch-manipulation rounded-2xl bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition active:bg-emerald-700"
+                  <p
+                    className={`amount-text shrink-0 ${
+                      isExpense ? "text-red-600" : "text-emerald-600"
+                    }`}
                   >
-                    {t("common.edit")}
-                  </button>
-                ) : (
-                  <div className="flex min-h-11 items-center justify-center rounded-2xl border border-dashed border-slate-200 px-3 text-center text-xs text-slate-500">
-                    {transaction.offlinePending
-                      ? t("expenses.editOfflineBlocked")
-                      : t("expenses.editTransferBlocked")}
-                  </div>
-                )}
-                <button
-                  type="button"
-                  onClick={() => onDelete(transaction.id)}
-                  className="min-h-11 touch-manipulation rounded-2xl border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-600 transition active:bg-red-50"
-                >
-                  {t("common.delete")}
-                </button>
+                    {isExpense ? "-" : "+"}
+                    {formatCurrency(Number(transaction.amount), currency)}
+                  </p>
+                </div>
+
+                <div className="mt-3 space-y-2 text-sm leading-6">
+                  <p className="wrap-text text-slate-600">
+                    <span className="font-medium text-slate-700">{t("expenses.tableWallet")}: </span>
+                    {walletLabel}
+                  </p>
+                  {transaction.note ? (
+                    <p className="wrap-text text-slate-600">
+                      <span className="font-medium text-slate-700">{t("expenses.tableNote")}: </span>
+                      {transaction.note}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                      isExpense ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"
+                    }`}
+                  >
+                    {isExpense ? t("expenses.typeExpense") : t("expenses.typeIncome")}
+                  </span>
+                  {transaction.offlinePending ? (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                      {t("expenses.offlinePending")}
+                    </span>
+                  ) : null}
+                  {attachmentUrls[transaction.id] ? (
+                    <a
+                      href={attachmentUrls[transaction.id]}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700"
+                    >
+                      📎 {t("expenses.viewAttachment")}
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-1 border-t border-slate-100 bg-slate-50 px-3 py-2">
+                <TransactionActions
+                  canEdit={canEdit}
+                  editLabel={t("common.edit")}
+                  deleteLabel={t("common.delete")}
+                  onEdit={() => onEdit(transaction)}
+                  onDelete={() => onDelete(transaction.id)}
+                />
               </div>
             </article>
           );
@@ -225,6 +179,7 @@ export default function TransactionsTable({
           <thead className="bg-slate-50 text-slate-600">
             <tr>
               <th className="px-4 py-3 text-start font-medium">{t("expenses.tableDate")}</th>
+              <th className="px-4 py-3 text-start font-medium">{t("expenses.tableMainCategory")}</th>
               <th className="px-4 py-3 text-start font-medium">{t("expenses.tableCategory")}</th>
               <th className="px-4 py-3 text-start font-medium">{t("expenses.tableType")}</th>
               <th className="px-4 py-3 text-start font-medium">{t("expenses.tableWallet")}</th>
@@ -237,6 +192,11 @@ export default function TransactionsTable({
           <tbody className="divide-y divide-slate-100 bg-white">
             {transactions.map((transaction) => {
               const walletLabel = getWalletLabel(wallets, transaction, t("expenses.noWallet"));
+              const { mainLabel, subLabel } = getTransactionCategoryColumns(
+                transaction,
+                categories,
+                categoryMessages,
+              );
               const canEdit = transaction.type !== "transfer" && !transaction.offlinePending;
 
               return (
@@ -244,13 +204,8 @@ export default function TransactionsTable({
                   <td className="whitespace-nowrap px-4 py-3 text-slate-700">
                     {formatDate(transaction.transaction_date)}
                   </td>
-                  <td className="px-4 py-3 text-slate-900">
-                    {transaction.categories?.icon}{" "}
-                    {transaction.categories?.name ??
-                      (transaction.type === "income"
-                        ? t("expenses.typeIncome")
-                        : t("expenses.noCategory"))}
-                  </td>
+                  <td className="px-4 py-3 text-slate-900">{mainLabel}</td>
+                  <td className="px-4 py-3 text-slate-600">{subLabel}</td>
                   <td className="whitespace-nowrap px-4 py-3">
                     <span
                       className={`rounded-full px-2.5 py-1 text-xs font-medium ${
@@ -287,35 +242,24 @@ export default function TransactionsTable({
                         href={attachmentUrls[transaction.id]}
                         target="_blank"
                         rel="noreferrer"
-                        className="font-medium text-emerald-700 hover:underline"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-base text-emerald-700 transition hover:bg-emerald-100"
+                        aria-label={t("expenses.viewAttachment")}
+                        title={t("expenses.viewAttachment")}
                       >
-                        📎 {t("expenses.viewAttachment")}
+                        📎
                       </a>
                     ) : (
                       <span className="text-slate-400">—</span>
                     )}
                   </td>
-                  <td className="min-w-[9rem] whitespace-nowrap px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      {canEdit ? (
-                        <button
-                          type="button"
-                          onClick={() => onEdit(transaction)}
-                          className="rounded-full px-3 py-1.5 text-sm font-medium text-emerald-700 transition hover:bg-emerald-50"
-                        >
-                          {t("common.edit")}
-                        </button>
-                      ) : (
-                        <span className="px-1 text-xs text-slate-400">—</span>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => onDelete(transaction.id)}
-                        className="rounded-full px-3 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-50"
-                      >
-                        {t("common.delete")}
-                      </button>
-                    </div>
+                  <td className="whitespace-nowrap px-3 py-2">
+                    <TransactionActions
+                      canEdit={canEdit}
+                      editLabel={t("common.edit")}
+                      deleteLabel={t("common.delete")}
+                      onEdit={() => onEdit(transaction)}
+                      onDelete={() => onDelete(transaction.id)}
+                    />
                   </td>
                 </tr>
               );

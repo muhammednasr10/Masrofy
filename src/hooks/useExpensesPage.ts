@@ -86,6 +86,7 @@ export function useExpensesPage() {
     setReceiptFile: transactions.setReceiptFile,
     setTransactionDate: transactions.setTransactionDate,
     handleSubmit: transactions.handleSubmit,
+    handleSaveLines: transactions.handleSaveLines,
     handleDelete: transactions.handleDelete,
     handleImportTransactions: transactions.handleImportTransactions,
     openEditTransaction: transactions.openEditTransaction,

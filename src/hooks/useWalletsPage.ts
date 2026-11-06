@@ -41,6 +41,7 @@ export function useWalletsPage() {
 
   const transfers = useWalletTransfers({
     defaultWalletId: derived.defaultWalletId,
+    transferableWalletIds: derived.transferableWalletIds,
     onBalanceTransactionsChange: setTransactions,
     setError,
     setMessage,

@@ -10,6 +10,7 @@ type WalletTransferModalProps = {
   wallets: Wallet[];
   form: WalletTransferFormState;
   submitting: boolean;
+  error?: string | null;
   onChange: (next: WalletTransferFormState) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onClose: () => void;
@@ -19,6 +20,7 @@ export default function WalletTransferModal({
   wallets,
   form,
   submitting,
+  error,
   onChange,
   onSubmit,
   onClose,
@@ -42,6 +44,10 @@ export default function WalletTransferModal({
       </div>
 
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
+        {error ? (
+          <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
+        ) : null}
+
         <label className="block space-y-2">
           <span className="text-sm font-medium text-slate-700">من محفظة</span>
           <WalletSelect
@@ -49,6 +55,8 @@ export default function WalletTransferModal({
             value={form.fromWalletId}
             onChange={(fromWalletId) => onChange({ ...form, fromWalletId })}
             required
+            allowEmpty={!form.fromWalletId}
+            emptyLabel="اختر محفظة"
             className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
           />
         </label>
@@ -60,6 +68,8 @@ export default function WalletTransferModal({
             value={form.toWalletId}
             onChange={(toWalletId) => onChange({ ...form, toWalletId })}
             required
+            allowEmpty={!form.toWalletId}
+            emptyLabel="اختر محفظة"
             className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500"
           />
         </label>

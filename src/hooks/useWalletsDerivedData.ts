@@ -57,6 +57,10 @@ export function useWalletsDerivedData(
     [wallets, editingWalletId],
   );
   const transferableWallets = useMemo(() => getTransferableWallets(wallets), [wallets]);
+  const transferableWalletIds = useMemo(
+    () => transferableWallets.map((wallet) => wallet.id),
+    [transferableWallets],
+  );
 
   return {
     defaultWalletId,
@@ -68,5 +72,6 @@ export function useWalletsDerivedData(
     portfolioSummary,
     takenInvestmentIds,
     transferableWallets,
+    transferableWalletIds,
   };
 }

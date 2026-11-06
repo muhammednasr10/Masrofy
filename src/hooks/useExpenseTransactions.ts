@@ -7,6 +7,7 @@ import {
   removeTransactionFromSnapshot,
   updateTransactionInSnapshot,
 } from "@/lib/expenses";
+import type { ReadyTransactionDraft } from "@/lib/expenses/batch-draft";
 import type { ParsedImportRow } from "@/lib/expenses/import-csv";
 import {
   deleteTransactionAttachments,
@@ -312,6 +313,122 @@ export function useExpenseTransactions({
     }
   }
 
+  async function handleSaveLines(lines: ReadyTransactionDraft[]) {
+    setSubmitting(true);
+    clearFeedback();
+
+    if (!walletId) {
+      setError("يجب اختيار محفظة.");
+      setSubmitting(false);
+      return;
+    }
+
+    const supabase = createClient();
+
+    try {
+      const user = await requireAuthenticatedUser(supabase);
+      const payloads = lines.map((line) => ({
+        wallet_id: walletId,
+        category_id: line.categoryId,
+        amount: line.amount,
+        type: line.type,
+        note: line.note,
+        transaction_date: transactionDate,
+      }));
+
+      if (!isBrowserOnline()) {
+        if (receiptFile && payloads.length === 1) {
+          setError("رفع المرفقات يحتاج اتصالاً بالإنترنت.");
+          return;
+        }
+
+        let offlineSnapshot = data;
+
+        for (const payload of payloads) {
+          const clientTransactionId = crypto.randomUUID();
+          await enqueueTransactionInsert(user.id, clientTransactionId, payload);
+          offlineSnapshot = appendTransactionToSnapshot(
+            offlineSnapshot,
+            buildLocalTransaction(
+              user.id,
+              clientTransactionId,
+              payload,
+              categories,
+              data.wallets,
+            ),
+            data.monthStart,
+            data.monthEnd,
+          );
+        }
+
+        setTransactions(offlineSnapshot.transactions);
+        setMonthTransactions(offlineSnapshot.monthTransactions);
+        setBalanceTransactions(offlineSnapshot.balanceTransactions);
+        void persistSnapshot(offlineSnapshot);
+        resetTransactionForm();
+        setMessage(
+          payloads.length === 1
+            ? "تم الحفظ محلياً — سيتم رفع العملية عند عودة الإنترنت."
+            : `تم حفظ ${payloads.length} عمليات محلياً — سيتم رفعها عند عودة الإنترنت.`,
+        );
+        return;
+      }
+
+      const { data: insertedRows, error: insertError } = await supabase
+        .from("transactions")
+        .insert(payloads.map((payload) => ({ user_id: user.id, ...payload })))
+        .select("*, categories(name, icon, color), wallets(name, icon, color)");
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      const savedTransactions = (insertedRows ?? []) as Transaction[];
+      let nextSnapshot = data;
+
+      for (const savedTransaction of savedTransactions) {
+        nextSnapshot = appendTransactionToSnapshot(
+          nextSnapshot,
+          savedTransaction,
+          data.monthStart,
+          data.monthEnd,
+        );
+      }
+
+      if (receiptFile && savedTransactions.length === 1) {
+        const signedUrl = await uploadTransactionReceipt(
+          supabase,
+          user.id,
+          savedTransactions[0].id,
+          receiptFile,
+        );
+
+        if (signedUrl) {
+          setAttachmentUrls((current) => ({
+            ...current,
+            [savedTransactions[0].id]: signedUrl,
+          }));
+        }
+      }
+
+      setTransactions(nextSnapshot.transactions);
+      setMonthTransactions(nextSnapshot.monthTransactions);
+      setBalanceTransactions(nextSnapshot.balanceTransactions);
+      void persistSnapshot(nextSnapshot);
+      resetTransactionForm();
+      setMessage(
+        savedTransactions.length === 1
+          ? "تم حفظ العملية بنجاح."
+          : `تم حفظ ${savedTransactions.length} عمليات.`,
+      );
+      router.refresh();
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "تعذر حفظ العمليات.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   async function handleImportTransactions(rows: ParsedImportRow[], importWalletId: string) {
     clearFeedback();
 
@@ -459,6 +576,7 @@ export function useExpenseTransactions({
     setReceiptFile,
     setTransactionDate,
     handleSubmit,
+    handleSaveLines,
     handleDelete,
     handleImportTransactions,
     openEditTransaction,

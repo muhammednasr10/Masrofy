@@ -43,5 +43,5 @@ export default function DashboardPage() {
     return <PageLoading label="جاري تحميل الملخص..." />;
   }
 
-  return <DashboardView monthLabel={data.monthLabel} data={data} />;
+  return <DashboardView data={data} />;
 }

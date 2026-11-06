@@ -25,6 +25,7 @@ export default function CategoryBreakdownReport({
   const { formatCurrency } = useFormat();
   const displayAmount = formatAmount ?? ((value: number) => formatCurrency(value, currency));
   const detailsHint = openDetailsLabel ?? t("dashboard.categoryOpenExpenses");
+  const showDetailsHint = detailsHint.length > 0;
 
   if (summary.byCategory.length === 0) {
     return <EmptyState message={t("reports.categoryEmpty")} className="" />;
@@ -46,7 +47,7 @@ export default function CategoryBreakdownReport({
         {summary.byCategory.map((category) => (
           <article
             key={category.categoryId ?? category.name}
-            className={`rounded-2xl bg-slate-50 p-4 ${rowClassName}`}
+            className={`rounded-xl bg-slate-50 px-3 py-2 ${rowClassName}`}
           >
             {onCategorySelect ? (
               <button
@@ -61,6 +62,7 @@ export default function CategoryBreakdownReport({
                   displayAmount={displayAmount}
                   detailsHint={detailsHint}
                   t={t}
+                  showHint={showDetailsHint}
                 />
               </button>
             ) : (
@@ -113,7 +115,7 @@ export default function CategoryBreakdownReport({
                       <span>{category.icon}</span>
                       {category.name}
                     </span>
-                    {onCategorySelect ? (
+                    {onCategorySelect && showDetailsHint ? (
                       <span className="text-xs font-normal text-emerald-700">{detailsHint}</span>
                     ) : null}
                   </span>

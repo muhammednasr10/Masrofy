@@ -26,7 +26,7 @@ export default function DashboardSpendLeft({ data }: { data: DashboardData }) {
 
   return (
     <div className="space-y-1">
-      <p className={`text-base font-semibold sm:text-lg ${spend.remaining < 0 ? "text-red-600" : "text-emerald-800"}`}>
+      <p className={`text-sm font-semibold ${spend.remaining < 0 ? "text-red-600" : "text-emerald-800"}`}>
         <Link href="/plan">
           {spend.remaining < 0
             ? t("dashboard.spendOver", { amount })

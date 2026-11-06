@@ -24,11 +24,6 @@ export function useDashboardCards(data: DashboardData): {
   return useMemo(() => {
     const formatAmount = (value: number) => formatCurrency(value, data.currency);
 
-    const netMonthSecondary = t("dashboard.netMonthLine", {
-      income: formatAmount(data.summary.totalIncome),
-      expenses: formatAmount(data.summary.totalExpenses),
-    });
-
     const planComparison = data.planComparison;
     const planRemaining = planComparison.expenses.planned - planComparison.expenses.actual;
     const planHasBudget = planComparison.hasPlan && planComparison.expenses.planned > 0;
@@ -44,7 +39,7 @@ export function useDashboardCards(data: DashboardData): {
         secondaryValue:
           data.dueRecurringCount > 0
             ? t("dashboard.expensesRecurringDue", { count: String(data.dueRecurringCount) })
-            : t("dashboard.expensesThisMonth", { count: String(data.transactionCount) }),
+            : undefined,
         tone: "red",
       },
       {
@@ -53,7 +48,6 @@ export function useDashboardCards(data: DashboardData): {
         title: t("dashboard.walletsTitle"),
         description: t("dashboard.walletsDesc"),
         primaryValue: maskBalance(formatAmount(data.portfolio.assetTotal)),
-        secondaryValue: t("dashboard.walletsSecondary", { count: String(data.walletCount) }),
         tone: "emerald",
       },
       {
@@ -77,7 +71,6 @@ export function useDashboardCards(data: DashboardData): {
         title: t("dashboard.netMonthTitle"),
         description: t("dashboard.netMonthDesc"),
         primaryValue: maskBalance(formatAmount(data.summary.balance)),
-        secondaryValue: maskBalance(netMonthSecondary),
         tone: "sky",
       },
     ];

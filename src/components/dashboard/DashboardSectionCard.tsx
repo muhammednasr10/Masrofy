@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "@/components/router/Link";
-import { useTranslations } from "@/components/i18n/LocaleProvider";
 
 export type DashboardSectionCardProps = {
   href: string;
@@ -27,33 +26,25 @@ export default function DashboardSectionCard({
   href,
   icon,
   title,
-  description,
   primaryValue,
   secondaryValue,
   tone = "emerald",
   className = "",
 }: DashboardSectionCardProps) {
-  const t = useTranslations();
-
   return (
     <Link
       href={href}
-      className={`group block rounded-3xl border border-white bg-gradient-to-br ${toneClasses[tone]} p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${className}`}
+      className={`block rounded-2xl border border-white bg-gradient-to-br ${toneClasses[tone]} px-3 py-2.5 shadow-sm transition hover:shadow-md ${className}`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/80 text-2xl shadow-sm">
+      <div className="flex items-center gap-2">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/80 text-lg">
           {icon}
         </span>
-        <span className="rounded-full bg-white/80 px-2 py-1 text-xs text-slate-500 transition group-hover:text-emerald-700">
-          {t("dashboard.openCard")}
-        </span>
+        <h3 className="min-w-0 truncate text-sm font-semibold text-slate-900">{title}</h3>
       </div>
-
-      <h3 className="mt-4 text-lg font-semibold text-slate-900">{title}</h3>
-      <p className="mt-1 wrap-text text-sm leading-6 text-slate-500">{description}</p>
-      <p className="amount-text mt-4 text-slate-900">{primaryValue}</p>
+      <p className="mt-1.5 text-base font-semibold leading-6 text-slate-900">{primaryValue}</p>
       {secondaryValue ? (
-        <p className="mt-1 wrap-text text-sm leading-6 text-slate-600">{secondaryValue}</p>
+        <p className="mt-0.5 truncate text-xs text-slate-500">{secondaryValue}</p>
       ) : null}
     </Link>
   );

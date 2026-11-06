@@ -25,15 +25,12 @@ export default function DashboardCategoryReport({ data }: DashboardCategoryRepor
     maskBalance(formatCurrency(value, data.currency));
 
   return (
-    <section className="rounded-3xl border border-white bg-white p-4 shadow-sm sm:p-6">
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-slate-900">{t("dashboard.categoryReportTitle")}</h2>
-          <p className="mt-1 text-sm text-slate-500">{t("dashboard.categoryReportDesc")}</p>
-        </div>
+    <section className="rounded-2xl border border-white bg-white p-3 shadow-sm">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold text-slate-900">{t("dashboard.categoryReportTitle")}</h2>
         <Link
           href="/reports#categories"
-          className="shrink-0 rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+          className="shrink-0 text-xs font-medium text-emerald-700"
         >
           {t("dashboard.categoryReportLink")}
         </Link>
@@ -44,7 +41,7 @@ export default function DashboardCategoryReport({ data }: DashboardCategoryRepor
         currency={data.currency}
         formatAmount={formatAmount}
         onCategorySelect={setSelectedCategory}
-        openDetailsLabel={t("dashboard.categoryOpenExpenses")}
+        openDetailsLabel=""
       />
 
       {selectedCategory ? (

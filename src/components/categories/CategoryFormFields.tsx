@@ -1,6 +1,7 @@
 "use client";
 
 import CategorySearchSelect from "@/components/categories/CategorySearchSelect";
+import { useState } from "react";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import { buildCategoryParentOptions, getCategoryFlow } from "@/lib/categories";
 import type { CategoryFormState } from "@/lib/categories/form";
@@ -30,6 +31,7 @@ export default function CategoryFormFields({
   compact = false,
 }: CategoryFormFieldsProps) {
   const t = useTranslations();
+  const [choosingSub, setChoosingSub] = useState(Boolean(form.parentCategoryId));
   const parentOptions = buildCategoryParentOptions(
     categories,
     form.editingCategoryId,
@@ -45,6 +47,7 @@ export default function CategoryFormFields({
     onChange({
       ...form,
       parentCategoryId: parentId || null,
+      lockParent: false,
       flow: parent ? getCategoryFlow(parent) : form.flow,
     });
   }
@@ -101,9 +104,12 @@ export default function CategoryFormFields({
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => onChange({ ...form, parentCategoryId: null })}
+                onClick={() => {
+                  setChoosingSub(false);
+                  onChange({ ...form, parentCategoryId: null, lockParent: false });
+                }}
                 className={`rounded-2xl border px-4 py-3 text-sm font-medium transition ${
-                  !form.parentCategoryId
+                  !choosingSub
                     ? "border-emerald-300 bg-emerald-50 text-emerald-800"
                     : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                 }`}
@@ -113,19 +119,9 @@ export default function CategoryFormFields({
               <button
                 type="button"
                 disabled={parentOptions.length === 0}
-                onClick={() => {
-                  const parent = form.parentCategoryId
-                    ? categories.find((item) => item.id === form.parentCategoryId)
-                    : parentOptions[0]?.category;
-
-                  onChange({
-                    ...form,
-                    parentCategoryId: parent?.id ?? parentOptions[0]?.category.id ?? null,
-                    flow: parent ? getCategoryFlow(parent) : form.flow,
-                  });
-                }}
+                onClick={() => setChoosingSub(true)}
                 className={`rounded-2xl border px-4 py-3 text-sm font-medium transition ${
-                  form.parentCategoryId
+                  choosingSub
                     ? "border-emerald-300 bg-emerald-50 text-emerald-800"
                     : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                 }`}
@@ -135,12 +131,12 @@ export default function CategoryFormFields({
             </div>
           </label>
 
-          {form.parentCategoryId ? (
+          {choosingSub ? (
             <div className="space-y-2">
               <span className="text-sm font-medium text-slate-700">{t("categories.parentLabel")}</span>
               <CategorySearchSelect
                 categories={parentCategories}
-                value={form.parentCategoryId}
+                value={form.parentCategoryId ?? ""}
                 onChange={setParentCategory}
                 required
                 listInFlow

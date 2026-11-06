@@ -44,6 +44,7 @@ export default function PlanPage() {
     notes,
     horizonLines,
     horizonSaving,
+    wallets,
     monthStart,
     monthEnd,
     setPlannedIncome,
@@ -64,6 +65,8 @@ export default function PlanPage() {
     comparison.expenseRows,
     categories,
     horizonLines,
+    monthStart,
+    monthEnd,
   );
   const monthExpenseParentIds = new Set(monthExpenseRows.map((row) => row.categoryId));
   const plannedIncomeAmount = Number(plannedIncome) || 0;
@@ -138,6 +141,7 @@ export default function PlanPage() {
               currency={currency}
               categories={categories}
               lines={horizonLines}
+              wallets={wallets}
               saving={horizonSaving}
               monthStart={monthStart}
               monthEnd={monthEnd}

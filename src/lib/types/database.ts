@@ -318,7 +318,9 @@ export type HorizonPlanItem = {
   cadence: HorizonCadence;
   certainty?: HorizonCertainty | null;
   start_date: string;
-  end_date: string;
+  end_date: string | null;
+  expected_day?: number | null;
+  wallet_id?: string | null;
   sort_order: number;
   created_at: string;
 };
@@ -377,6 +379,31 @@ export type DefaultCategory = {
   flow: CategoryFlow;
   sort_order: number;
   is_active: boolean;
+  created_at: string;
+};
+
+export type DebtDirection = "i_owe" | "owed_to_me";
+
+export type Debt = {
+  id: string;
+  user_id: string;
+  name: string;
+  direction: DebtDirection;
+  principal: number;
+  category_id: string | null;
+  wallet_id: string | null;
+  opened_on: string;
+  notes: string | null;
+  created_at: string;
+};
+
+export type DebtPayment = {
+  id: string;
+  user_id: string;
+  debt_id: string;
+  transaction_id: string | null;
+  amount: number;
+  paid_on: string;
   created_at: string;
 };
 

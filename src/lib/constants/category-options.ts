@@ -187,6 +187,7 @@ const CATEGORY_ICON_POOL = [
   "🎬",
   "🎮",
   "🕹️",
+  "🎺",
   "🎵",
   "🎧",
   "🎤",
@@ -296,6 +297,24 @@ const CATEGORY_ICON_POOL = [
   "🎯",
   "🏆",
   "🥇",
+  "🫒",
+  "🍬",
+  "🍫",
+  "🍰",
+  "🍦",
+  "🛞",
+  "🧪",
+  "🧳",
+  "🤝",
+  "🕌",
+  "🤲",
+  "👶",
+  "📚",
+  "👨‍👩‍👧",
+  "🎉",
+  "🏦",
+  "📈",
+  "👨",
 ];
 
 export const categoryIconOptions = [...new Set(CATEGORY_ICON_POOL)];
@@ -303,40 +322,4 @@ export const categoryIconOptions = [...new Set(CATEGORY_ICON_POOL)];
 export const defaultCategoryColor = categoryColorOptions[0];
 export const defaultCategoryIcon = "📦";
 
-/** Suggested icons for common Arabic category names. */
-export const CATEGORY_NAME_ICON_HINTS: Record<string, string> = {
-  أقساط: "📅",
-  هدايا: "🎁",
-  ملابس: "👕",
-  اشتراكات: "🔁",
-  طعام: "🍔",
-  مواصلات: "🚗",
-  فواتير: "💡",
-  صحة: "💊",
-  ترفيه: "🎬",
-  تسوق: "🛒",
-  ادّخار: "🎯",
-  أخرى: "📦",
-  "إيراد غير معروف": "📥",
-  "مصروف غير معروف": "📤",
-  "أنت و مالك لأبيك": "👨",
-};
-
-export function suggestCategoryIcon(name: string) {
-  const trimmed = name.trim();
-  const exact = CATEGORY_NAME_ICON_HINTS[trimmed];
-
-  if (exact) {
-    return exact;
-  }
-
-  if (/مرتب|راتب|مرتب|إضافي/.test(trimmed)) {
-    return "💰";
-  }
-
-  if (trimmed.startsWith("إيراد")) {
-    return "📥";
-  }
-
-  return null;
-}
+export { matchCategoryIcon as suggestCategoryIcon } from "@/lib/categories/icon-hints";

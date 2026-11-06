@@ -41,6 +41,9 @@ create policy "Users can manage own internal transfers"
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
+-- The new enum label cannot be validated in the same transaction that adds it.
+set check_function_bodies = off;
+
 create or replace function public.transfer_between_own_wallets(
   p_from_wallet_id uuid,
   p_to_wallet_id uuid,
@@ -90,7 +93,7 @@ begin
     raise exception 'Destination wallet not found';
   end if;
 
-  if v_from_wallet.wallet_type = 'investment' or v_to_wallet.wallet_type = 'investment' then
+  if v_from_wallet.wallet_type::text = 'investment' or v_to_wallet.wallet_type::text = 'investment' then
     raise exception 'Cannot transfer to or from investment wallets';
   end if;
 
@@ -147,6 +150,8 @@ begin
   return v_transfer_id;
 end;
 $$;
+
+set check_function_bodies = on;
 
 revoke all on function public.transfer_between_own_wallets(uuid, uuid, numeric, text, date) from public;
 grant execute on function public.transfer_between_own_wallets(uuid, uuid, numeric, text, date) to authenticated;

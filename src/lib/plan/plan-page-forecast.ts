@@ -64,7 +64,7 @@ export function buildPlanPageWealthForecast({
       amount: Number(item.planned_amount),
       cadence: isHorizonCadence(item.cadence) ? item.cadence : ("monthly" as const),
       startDate: String(item.start_date).slice(0, 10),
-      endDate: String(item.end_date).slice(0, 10),
+      endDate: item.end_date ? String(item.end_date).slice(0, 10) : "",
     }));
   const horizonApplies = savedHorizonLines.some((line) =>
     horizonOverlapsRange(line.startDate, line.endDate, monthStart, yearEnd),

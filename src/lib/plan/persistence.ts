@@ -4,7 +4,8 @@ import {
   buildAnnualTemplatePayloadItems,
   buildMonthlyPlanPayloadItems,
 } from "@/lib/plan/annual";
-import { isDateKey, isHorizonCadence, type HorizonLineDraft } from "@/lib/plan/horizon";
+import { isDateKey, isHorizonCadence, lineSpanReady, type HorizonLineDraft } from "@/lib/plan/horizon";
+import { parseExpectedDay } from "@/lib/plan/expected-day";
 import { requireAuthenticatedUser } from "@/lib/supabase/auth";
 import type {
   AnnualPlanTemplate,
@@ -194,9 +195,11 @@ export async function persistHorizonPlan(
       return [];
     }
 
-    if (!line || !isDateKey(line.startDate) || !isDateKey(line.endDate) || line.endDate < line.startDate) {
-      throw new Error(`حدّد يوم بداية ويوم نهاية لفئة ${category.name}، والنهاية بعد البداية.`);
+    if (!line || !lineSpanReady(line.startDate, line.endDate)) {
+      throw new Error(`حدّد يوم بداية لفئة ${category.name}، ولو فيها نهاية تبقى بعد البداية.`);
     }
+
+    const expectedDay = parseExpectedDay(line.expectedDay);
 
     return [
       {
@@ -207,7 +210,9 @@ export async function persistHorizonPlan(
         cadence: isHorizonCadence(line.cadence) ? line.cadence : "monthly",
         certainty: line.certainty === "contingent" ? "contingent" : "confirmed",
         start_date: line.startDate,
-        end_date: line.endDate,
+        end_date: isDateKey(line.endDate) ? line.endDate : null,
+        ...(expectedDay != null ? { expected_day: expectedDay } : {}),
+        ...(line.walletId ? { wallet_id: line.walletId } : {}),
         sort_order: index + 1,
       },
     ];
@@ -229,35 +234,59 @@ export async function persistHorizonPlan(
     const missingTable = planError?.code === "42P01" || planError?.message?.includes("horizon_plans");
     throw new Error(
       missingTable
-        ? "جداول وضع الخطة لسه مش موجودة. طبّق ملفات الهجرة 030 و 033 من مجلد supabase/migrations ثم احفظ تاني."
+        ? "جداول وضع الخطة لسه مش موجودة. طبّق ملفات الهجرة 030 و 033 و 035 من مجلد supabase/migrations ثم احفظ تاني."
         : (planError?.message ?? "تعذر حفظ وضع الخطة."),
     );
   }
 
   const rows = nextItems.map((item) => ({ ...item, plan_id: savedPlan.id }));
-
-  const { error: deleteError } = await supabase
-    .from("horizon_plan_items")
-    .delete()
-    .eq("plan_id", savedPlan.id);
-
-  if (deleteError) {
-    throw new Error(deleteError.message);
-  }
-
   let items: HorizonPlanItem[] = [];
 
   if (rows.length > 0) {
     const { data: insertedItems, error: insertError } = await supabase
       .from("horizon_plan_items")
-      .insert(rows)
+      .upsert(rows, { onConflict: "plan_id,category_id" })
       .select("*");
 
     if (insertError) {
-      throw new Error(insertError.message);
+      const missingDay = insertError.message.includes("expected_day");
+      const missingWallet = insertError.message.includes("wallet_id");
+      const endStillRequired =
+        insertError.message.includes("end_date") && insertError.message.includes("null");
+      throw new Error(
+        missingDay
+          ? "عمود اليوم المتوقع لسه مش موجود. نفّذ ملف 035_plan_expected_day.sql في محرر SQL ثم احفظ تاني."
+          : missingWallet
+            ? "عمود المحفظة لسه مش موجود. نفّذ ملف 037_horizon_item_wallet.sql في محرر SQL ثم احفظ تاني."
+            : endStillRequired
+              ? "النهاية لسه إجبارية في قاعدة البيانات. نفّذ ملف 036_horizon_open_end.sql في محرر SQL ثم احفظ تاني."
+              : insertError.message,
+      );
     }
 
     items = (insertedItems ?? []) as HorizonPlanItem[];
+
+    const keptCategoryIds = new Set(rows.map((row) => row.category_id));
+    const { data: existingRows, error: existingError } = await supabase
+      .from("horizon_plan_items")
+      .select("id, category_id")
+      .eq("plan_id", savedPlan.id);
+
+    if (existingError) {
+      throw new Error(existingError.message);
+    }
+
+    const staleIds = (existingRows ?? [])
+      .filter((row) => !keptCategoryIds.has(row.category_id))
+      .map((row) => row.id);
+
+    if (staleIds.length > 0) {
+      const { error: deleteError } = await supabase.from("horizon_plan_items").delete().in("id", staleIds);
+
+      if (deleteError) {
+        throw new Error(deleteError.message);
+      }
+    }
   }
 
   return {

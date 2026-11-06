@@ -75,6 +75,18 @@ describe("horizon parent rollup", () => {
     });
   });
 
+  it("treats an open child end as an ongoing parent range", () => {
+    const openLines = {
+      ...lines,
+      credit: { ...lines.credit, endDate: "" },
+    };
+
+    expect(widestPlannedChildrenRange("installments", [parent, childA, childB], openLines)).toEqual({
+      startDate: "2026-10-01",
+      endDate: "",
+    });
+  });
+
   it("builds a sync patch unless dates were edited manually", () => {
     expect(buildRollupParentPatch("installments", [parent, childA, childB], lines)).toEqual({
       amount: "1500",

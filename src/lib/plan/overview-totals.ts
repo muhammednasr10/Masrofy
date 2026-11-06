@@ -4,6 +4,7 @@ import type { Locale } from "@/i18n/config";
 import {
   addDaysToDateKey,
   isDateKey,
+  lineSpanReady,
   occurrenceCount,
   sumHorizonExpenses,
   type HorizonExpenseLine,
@@ -89,7 +90,7 @@ function collectHorizonLines(
 
     const line = lines[category.id];
 
-    if (!line || !isDateKey(line.startDate) || !isDateKey(line.endDate)) {
+    if (!line || !lineSpanReady(line.startDate, line.endDate)) {
       continue;
     }
 
@@ -97,7 +98,6 @@ function collectHorizonLines(
 
     if (
       !(amount > 0) ||
-      line.endDate < line.startDate ||
       line.certainty === "contingent" ||
       isHorizonRollupParent(category.id, categories, lines)
     ) {

@@ -5,6 +5,7 @@ import { DashboardBalanceVisibilityProvider } from "@/components/dashboard/Dashb
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import AppQuickActions from "@/components/layout/AppQuickActions";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
+import PlanDuePrompt from "@/components/plan/PlanDuePrompt";
 import { useDailySpendReminder } from "@/hooks/useDailySpendReminder";
 
 export default function AppShell({ children }: { children: ReactNode }) {
@@ -14,6 +15,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
   return (
     <DashboardBalanceVisibilityProvider>
       {children}
+      <PlanDuePrompt />
       <AppQuickActions />
       <MobileBottomNav />
     </DashboardBalanceVisibilityProvider>

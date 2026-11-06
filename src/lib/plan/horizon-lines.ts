@@ -4,6 +4,7 @@ import {
   isHorizonCertainty,
   type HorizonLineDraft,
 } from "@/lib/plan/horizon";
+import { parseExpectedDay } from "@/lib/plan/expected-day";
 import { widestPlannedChildrenRange } from "@/lib/plan/horizon-rollup";
 import type { Category, HorizonPlanItem } from "@/lib/types/database";
 
@@ -17,7 +18,9 @@ export function horizonDraftFromItem(
       ? (item.certainty as HorizonLineDraft["certainty"])
       : "confirmed",
     startDate: String(item.start_date).slice(0, 10),
-    endDate: String(item.end_date).slice(0, 10),
+    endDate: item.end_date ? String(item.end_date).slice(0, 10) : "",
+    expectedDay: parseExpectedDay(item.expected_day) ? String(item.expected_day) : "",
+    walletId: item.wallet_id ?? "",
     datesManual: false,
   };
 }

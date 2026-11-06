@@ -14,7 +14,7 @@ import {
 } from "@/lib/plan/horizon-rollup";
 import { sumHorizonExpenses, type HorizonLineDraft } from "@/lib/plan/horizon";
 import { formatCurrency } from "@/lib/utils/format";
-import type { Category } from "@/lib/types/database";
+import type { Category, Wallet } from "@/lib/types/database";
 
 const PLAN_KIND_TABS: Array<{ id: PlanKindTab; label: string }> = [
   { id: "income", label: "خطة الدخل" },
@@ -25,6 +25,7 @@ export default function FullPlanPanel({
   currency,
   categories,
   lines,
+  wallets,
   saving,
   monthStart,
   monthEnd,
@@ -35,6 +36,7 @@ export default function FullPlanPanel({
   currency: string;
   categories: Category[];
   lines: Record<string, HorizonLineDraft>;
+  wallets: Wallet[];
   saving: boolean;
   monthStart: string;
   monthEnd: string;
@@ -50,6 +52,7 @@ export default function FullPlanPanel({
     isCategoryRowVisible(category, categoriesById, expandedParentIds),
   );
   const scopedLines = collectConfirmedScopedLines(rows, scopedCategories, lines);
+  const hasOngoing = scopedLines.some((line) => !line.endDate);
   const periodTotal = sumHorizonExpenses(scopedLines);
   const monthTotal = sumHorizonExpenses(scopedLines, monthStart, monthEnd);
   const emptyLabel =
@@ -121,7 +124,7 @@ export default function FullPlanPanel({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-slate-500">
           لو الفئة فيها فروع بمبلغ: المبلغ مجموع الفروع، والفترة أوسع مدى منهم (وتقدر تعدّلها يدوي). «محتمل»
-          مش بيتحسب في الإجماليات.
+          مش بيتحسب في الإجماليات. علّم «مستمرة» لو الفئة مكملة من غير تاريخ نهاية. اليوم هو يوم الشهر المتوقع، ولما ييجي الميعاد هتوصلك رسالة. المحفظة هي اللي يتخصم منها المصروف أو يتزاد عليها الدخل لما تقول آه.
         </p>
         <button
           type="button"
@@ -141,13 +144,15 @@ export default function FullPlanPanel({
           <table className="stack-table w-full text-sm md:table-fixed">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50 text-slate-500">
-                <th className="w-[22%] px-2 py-3 text-center font-medium">الفئة</th>
-                <th className="w-[12%] px-1 py-3 text-center font-medium">المبلغ</th>
-                <th className="w-[12%] px-1 py-3 text-center font-medium">التكرار</th>
-                <th className="w-[12%] px-1 py-3 text-center font-medium">الحالة</th>
-                <th className="w-[14%] px-1 py-3 text-center font-medium">البداية</th>
-                <th className="w-[14%] px-1 py-3 text-center font-medium">النهاية</th>
-                <th className="w-[14%] px-1 py-3 text-center font-medium">إجمالي الفترة</th>
+                <th className="w-[14%] px-2 py-3 text-center font-medium">الفئة</th>
+                <th className="w-[10%] px-1 py-3 text-center font-medium">المبلغ</th>
+                <th className="w-[10%] px-1 py-3 text-center font-medium">التكرار</th>
+                <th className="w-[10%] px-1 py-3 text-center font-medium">الحالة</th>
+                <th className="w-[7%] px-1 py-3 text-center font-medium">اليوم</th>
+                <th className="w-[14%] px-1 py-3 text-center font-medium">المحفظة</th>
+                <th className="w-[12%] px-1 py-3 text-center font-medium">البداية</th>
+                <th className="w-[12%] px-1 py-3 text-center font-medium">النهاية</th>
+                <th className="w-[11%] px-1 py-3 text-center font-medium">إجمالي الفترة</th>
               </tr>
             </thead>
             <tbody>
@@ -167,6 +172,7 @@ export default function FullPlanPanel({
                     scopedCategories={scopedCategories}
                     lines={lines}
                     currency={currency}
+                    wallets={wallets}
                     amountAriaPrefix={amountAriaPrefix}
                     isOpen={expandedParentIds.has(category.id)}
                     onToggleParent={toggleParent}
@@ -186,6 +192,11 @@ export default function FullPlanPanel({
           <span className="mt-1 block text-lg font-semibold text-slate-900">
             {formatCurrency(periodTotal, currency)}
           </span>
+          {hasOngoing ? (
+            <span className="mt-1 block text-xs text-slate-500">
+              الفئات المستمرة مش داخلة هنا، وداخلة في الشهر المفتوح.
+            </span>
+          ) : null}
         </div>
         <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
           في الشهر المفتوح (مؤكد فقط){" "}

@@ -15,7 +15,7 @@ import {
   getCategoryDescendantIds,
   updateCategory,
 } from "@/lib/categories";
-import { suggestCategoryIcon } from "@/lib/constants/category-options";
+import { isGenericCategoryIcon, matchCategoryIcon } from "@/lib/categories/icon-hints";
 import type { CategoryFormState } from "@/lib/categories/form";
 import type { Category } from "@/lib/types/database";
 
@@ -38,8 +38,14 @@ export default function CategoriesPage() {
       .order("sort_order", { ascending: true });
 
     const loaded = (data ?? []) as Category[];
+    const byId = new Map(loaded.map((category) => [category.id, category]));
     const updates = loaded.flatMap((category) => {
-      const suggested = suggestCategoryIcon(category.name);
+      const parent = category.parent_category_id
+        ? byId.get(category.parent_category_id)
+        : undefined;
+      const specific = matchCategoryIcon(category.name);
+      const fromParent = parent ? matchCategoryIcon(parent.name) : null;
+      const suggested = specific ?? (isGenericCategoryIcon(category.icon) ? fromParent : null);
 
       if (!suggested || suggested === category.icon) {
         return [];
@@ -250,9 +256,7 @@ export default function CategoriesPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-xl font-semibold text-slate-900">{t("nav.categories")}</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              {categories.length} فئة • اضغط على الفئة لعرض التفاصيل والفرعية.
-            </p>
+            <p className="mt-1 text-sm text-slate-500">{t("categories.headerHint")}</p>
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row">

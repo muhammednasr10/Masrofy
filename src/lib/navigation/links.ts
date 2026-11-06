@@ -17,6 +17,7 @@ export const MORE_NAV_LINKS: AppNavLink[] = [
   { href: "/reports", key: "nav.reports", icon: "📊" },
   { href: "/investments", key: "nav.investments", icon: "📈" },
   { href: "/savings", key: "nav.savings", icon: "🎯" },
+  { href: "/debts", key: "nav.debts", icon: "💳" },
   { href: "/friends", key: "nav.friends", icon: "👥" },
   { href: "/categories", key: "nav.categories", icon: "🏷️" },
   { href: "/account", key: "nav.account", icon: "⚙️" },

@@ -1,5 +1,5 @@
 import { getDirectChildCategories } from "@/lib/categories/hierarchy";
-import { isDateKey, type HorizonLineDraft } from "@/lib/plan/horizon";
+import { isOpenEndedDate, lineSpanReady, type HorizonLineDraft } from "@/lib/plan/horizon";
 import type { Category } from "@/lib/types/database";
 
 export function getPlannedDirectChildren(
@@ -48,11 +48,12 @@ export function widestPlannedChildrenRange(
   const children = getPlannedDirectChildren(parentId, categories, lines);
   let startDate: string | null = null;
   let endDate: string | null = null;
+  let openEnded = false;
 
   for (const category of children) {
     const line = lines[category.id];
 
-    if (!line || !isDateKey(line.startDate) || !isDateKey(line.endDate) || line.endDate < line.startDate) {
+    if (!line || !lineSpanReady(line.startDate, line.endDate)) {
       continue;
     }
 
@@ -60,16 +61,21 @@ export function widestPlannedChildrenRange(
       startDate = line.startDate;
     }
 
+    if (isOpenEndedDate(line.endDate)) {
+      openEnded = true;
+      continue;
+    }
+
     if (!endDate || line.endDate > endDate) {
       endDate = line.endDate;
     }
   }
 
-  if (!startDate || !endDate) {
+  if (!startDate || (!openEnded && !endDate)) {
     return null;
   }
 
-  return { startDate, endDate };
+  return { startDate, endDate: openEnded ? "" : endDate! };
 }
 
 export function buildRollupParentPatch(

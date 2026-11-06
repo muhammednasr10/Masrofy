@@ -10,6 +10,7 @@ import {
   emptyCategoryPlans,
   persistHorizonPlan,
   persistMonthlyPlan,
+  rollCategoryPlansToParents,
 } from "@/lib/plan";
 import { useAnnualPlanForm } from "@/hooks/useAnnualPlanForm";
 import { useCategoryForm } from "@/hooks/useCategoryForm";
@@ -18,6 +19,7 @@ import { useMonthPeriod } from "@/hooks/useMonthPeriod";
 import { normalizeMonthStartDay } from "@/lib/calendar";
 import { emptyHorizonLine, type HorizonLineDraft } from "@/lib/plan/horizon";
 import { horizonLinesFromItems } from "@/lib/plan/horizon-lines";
+import { buildHorizonMonthPlan, horizonMonthPlanRecords } from "@/lib/plan/month-from-horizon";
 import { buildPlanPageWealthForecast } from "@/lib/plan/plan-page-forecast";
 import type {
   AnnualPlanTemplate,
@@ -137,9 +139,36 @@ export function usePlanPage() {
       typedHorizonItems = (horizonItemRows ?? []) as HorizonPlanItem[];
     }
 
+    const horizonLinesForMonth = horizonLinesFromItems(
+      typedCategories,
+      typedHorizonItems,
+      month.start,
+    );
+    const horizonMonth = buildHorizonMonthPlan(
+      typedCategories,
+      horizonLinesForMonth,
+      month.start,
+      month.end,
+    );
+
     setHorizonPlan(typedHorizonPlan);
     setHorizonItems(typedHorizonItems);
-    setHorizonLines(horizonLinesFromItems(typedCategories, typedHorizonItems, month.start));
+    setHorizonLines(horizonLinesForMonth);
+
+    function applyMonthDrafts(income: string, plans: Record<string, string>, noteText: string) {
+      if (horizonMonth.usesHorizon) {
+        setPlannedIncome(horizonMonth.plannedIncome > 0 ? String(horizonMonth.plannedIncome) : "");
+        setCategoryPlans(
+          rollCategoryPlansToParents(typedCategories, horizonMonth.plannedByCategory),
+        );
+        setNotes(noteText);
+        return;
+      }
+
+      setPlannedIncome(income);
+      setCategoryPlans(plans);
+      setNotes(noteText);
+    }
 
     setCurrency(profile?.currency ?? "EGP");
     setMonthStartDay(normalizeMonthStartDay(profile?.month_start_day));
@@ -161,9 +190,7 @@ export function usePlanPage() {
       setError(planError.message);
       setPlan(null);
       setPlanItems([]);
-      setPlannedIncome("");
-      setCategoryPlans(emptyCategoryPlans(typedCategories));
-      setNotes("");
+      applyMonthDrafts("", emptyCategoryPlans(typedCategories), "");
       setLoading(false);
       return;
     }
@@ -174,20 +201,20 @@ export function usePlanPage() {
     if (!typedPlan) {
       setPlanItems([]);
       if (typedAnnualTemplate) {
-        setPlannedIncome(String(typedAnnualTemplate.planned_income));
-        setNotes(typedAnnualTemplate.notes ?? "");
-        setCategoryPlans(categoryPlansFromTemplateItems(typedCategories, typedAnnualItems));
+        applyMonthDrafts(
+          String(typedAnnualTemplate.planned_income),
+          categoryPlansFromTemplateItems(typedCategories, typedAnnualItems),
+          typedAnnualTemplate.notes ?? "",
+        );
       } else {
-        setPlannedIncome("");
-        setNotes("");
-        setCategoryPlans(emptyCategoryPlans(typedCategories));
+        applyMonthDrafts("", emptyCategoryPlans(typedCategories), "");
       }
       setLoading(false);
       return;
     }
 
-    setPlannedIncome(String(typedPlan.planned_income));
-    setNotes(typedPlan.notes ?? "");
+    const savedIncome = String(typedPlan.planned_income);
+    const savedNotes = typedPlan.notes ?? "";
 
     const { data: itemRows, error: itemsError } = await supabase
       .from("plan_items")
@@ -198,14 +225,14 @@ export function usePlanPage() {
     if (itemsError) {
       setError(itemsError.message);
       setPlanItems([]);
-      setCategoryPlans(emptyCategoryPlans(typedCategories));
+      applyMonthDrafts(savedIncome, emptyCategoryPlans(typedCategories), savedNotes);
       setLoading(false);
       return;
     }
 
     const typedItems = (itemRows ?? []) as PlanItem[];
     setPlanItems(typedItems);
-    setCategoryPlans(categoryPlansFromItems(typedCategories, typedItems));
+    applyMonthDrafts(savedIncome, categoryPlansFromItems(typedCategories, typedItems), savedNotes);
     setLoading(false);
   }, [clearFeedback, month.end, month.start, planYear, setError]);
 
@@ -215,19 +242,35 @@ export function usePlanPage() {
 
   useSyncCompleteListener(loadData);
 
-  const comparison = useMemo(
-    () =>
-      buildPlanComparison({
-        categories,
-        plan,
-        planItems,
-        transactions,
-        referenceDate,
-        monthStartDay,
-        locale,
-      }),
-    [categories, locale, plan, planItems, referenceDate, transactions, monthStartDay],
-  );
+  const comparison = useMemo(() => {
+    const horizonMonth = buildHorizonMonthPlan(categories, horizonLines, month.start, month.end);
+    const horizonRecords = horizonMonth.usesHorizon
+      ? horizonMonth.hasAmount
+        ? horizonMonthPlanRecords(horizonMonth.plannedIncome, horizonMonth.plannedByCategory, month.start)
+        : { plan: null, planItems: [] as PlanItem[] }
+      : null;
+
+    return buildPlanComparison({
+      categories,
+      plan: horizonRecords ? horizonRecords.plan : plan,
+      planItems: horizonRecords ? horizonRecords.planItems : planItems,
+      transactions,
+      referenceDate,
+      monthStartDay,
+      locale,
+    });
+  }, [
+    categories,
+    horizonLines,
+    locale,
+    month.end,
+    month.start,
+    monthStartDay,
+    plan,
+    planItems,
+    referenceDate,
+    transactions,
+  ]);
 
   const wealthForecast = useMemo(
     () =>
@@ -382,6 +425,7 @@ export function usePlanPage() {
       });
     },
     handleSaveHorizonPlan,
+    wallets,
     categories,
     plannedIncome,
     categoryPlans,

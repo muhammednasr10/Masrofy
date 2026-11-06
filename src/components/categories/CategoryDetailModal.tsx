@@ -104,10 +104,7 @@ export default function CategoryDetailModal({
                     className="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-100 bg-white px-3 py-2.5 text-start transition hover:border-emerald-200 hover:bg-emerald-50/40"
                   >
                     <div className="flex min-w-0 items-center gap-2">
-                      <span
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-base"
-                        style={{ backgroundColor: `${child.color}22` }}
-                      >
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-200 text-base">
                         {child.icon}
                       </span>
                       <div className="min-w-0">

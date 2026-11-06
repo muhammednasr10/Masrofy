@@ -4,6 +4,7 @@ import AdminCategoriesRedirectPage from "@/app/(app)/admin/categories/page";
 import AdminSettingsPage from "@/app/(app)/admin/settings/page";
 import CategoriesPage from "@/app/(app)/categories/page";
 import DashboardPage from "@/app/(app)/dashboard/page";
+import DebtsPage from "@/app/(app)/debts/page";
 import ExpensesPage from "@/app/(app)/expenses/page";
 import FriendsPage from "@/app/(app)/friends/page";
 import InvestmentsPage from "@/app/(app)/investments/page";
@@ -74,6 +75,7 @@ export default function AppRoutes() {
         <Route path="/reports" element={<ReportsPage />} />
         <Route path="/investments" element={<InvestmentsPage />} />
         <Route path="/savings" element={<SavingsPage />} />
+        <Route path="/debts" element={<DebtsPage />} />
         <Route path="/friends" element={<FriendsPage />} />
         <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/account" element={<AccountPage />} />

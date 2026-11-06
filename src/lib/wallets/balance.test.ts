@@ -18,7 +18,16 @@ describe("getWalletTransactionNet", () => {
       makeTransaction({ id: "tx-3", wallet_id: "other-wallet", type: "income", amount: 999 }),
     ];
 
-    expect(getWalletTransactionNet(wallet.id, transactions)).toBe(300);
+    expect(getWalletTransactionNet(wallet.id, transactions, "2026-12-31")).toBe(300);
+  });
+
+  it("ignores a payment dated after today", () => {
+    const wallet = makeWallet();
+    const transactions = [
+      makeTransaction({ type: "expense", amount: 6000, transaction_date: "2027-01-15" }),
+    ];
+
+    expect(getWalletTransactionNet(wallet.id, transactions, "2026-11-06")).toBe(0);
   });
 
   it("handles internal transfer in and out roles", () => {
@@ -40,7 +49,7 @@ describe("getWalletTransactionNet", () => {
       }),
     ];
 
-    expect(getWalletTransactionNet(wallet.id, transactions)).toBe(100);
+    expect(getWalletTransactionNet(wallet.id, transactions, "2026-12-31")).toBe(100);
   });
 });
 
@@ -52,7 +61,7 @@ describe("calculateWalletBalance", () => {
       makeTransaction({ id: "tx-2", type: "expense", amount: 150 }),
     ];
 
-    expect(calculateWalletBalance(wallet, transactions)).toBe(1250);
+    expect(calculateWalletBalance(wallet, transactions, [], "2026-12-31")).toBe(1250);
   });
 
   it("returns owed amount for credit wallets", () => {
@@ -64,9 +73,9 @@ describe("calculateWalletBalance", () => {
     });
     const transactions = [makeTransaction({ type: "expense", amount: 800 })];
 
-    expect(getCreditOwed(wallet, transactions)).toBe(800);
-    expect(calculateWalletBalance(wallet, transactions)).toBe(800);
-    expect(getWalletNetWorthContribution(wallet, transactions)).toBe(-800);
+    expect(getCreditOwed(wallet, transactions, "2026-12-31")).toBe(800);
+    expect(calculateWalletBalance(wallet, transactions, [], "2026-12-31")).toBe(800);
+    expect(getWalletNetWorthContribution(wallet, transactions, [], "2026-12-31")).toBe(-800);
   });
 
   it("returns linked investment value for investment wallets", () => {
@@ -91,7 +100,7 @@ describe("getCreditAvailable", () => {
     });
     const transactions = [makeTransaction({ type: "expense", amount: 1200 })];
 
-    expect(getCreditAvailable(wallet, transactions)).toBe(1800);
+    expect(getCreditAvailable(wallet, transactions, "2026-12-31")).toBe(1800);
   });
 
   it("returns null for non-credit wallets", () => {
@@ -107,6 +116,6 @@ describe("openingBalanceFromCurrentBalance", () => {
       makeTransaction({ id: "tx-2", type: "expense", amount: 50 }),
     ];
 
-    expect(openingBalanceFromCurrentBalance(1200, wallet, transactions)).toBe(1000);
+    expect(openingBalanceFromCurrentBalance(1200, wallet, transactions, "2026-12-31")).toBe(1000);
   });
 });

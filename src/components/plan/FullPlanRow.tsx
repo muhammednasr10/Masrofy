@@ -1,8 +1,12 @@
 "use client";
 
+import WalletSelect from "@/components/wallets/WalletSelect";
 import { categoryHasChildren } from "@/lib/categories/hierarchy";
 import {
+  defaultHorizonEndDate,
   HORIZON_CADENCES,
+  isDateKey,
+  isOpenEndedDate,
   occurrenceCount,
   type HorizonCadence,
   type HorizonCertainty,
@@ -11,7 +15,7 @@ import {
 import { isHorizonRollupParent } from "@/lib/plan/horizon-rollup";
 import { lineDatesReady } from "@/lib/plan/full-plan-rows";
 import { formatCurrency } from "@/lib/utils/format";
-import type { Category } from "@/lib/types/database";
+import type { Category, Wallet } from "@/lib/types/database";
 
 const CADENCE_LABELS: Record<HorizonCadence, string> = {
   daily: "يومي",
@@ -32,6 +36,7 @@ export default function FullPlanRow({
   scopedCategories,
   lines,
   currency,
+  wallets,
   amountAriaPrefix,
   isOpen,
   onToggleParent,
@@ -44,6 +49,7 @@ export default function FullPlanRow({
   scopedCategories: Category[];
   lines: Record<string, HorizonLineDraft>;
   currency: string;
+  wallets: Wallet[];
   amountAriaPrefix: string;
   isOpen: boolean;
   onToggleParent: (categoryId: string) => void;
@@ -52,8 +58,10 @@ export default function FullPlanRow({
 }) {
   const isRollup = isHorizonRollupParent(category.id, scopedCategories, lines);
   const ready = lineDatesReady(line);
+  const openEnded = isOpenEndedDate(line.endDate);
   const amount = Number(line.amount || 0);
-  const repeats = ready ? occurrenceCount(line.cadence, line.startDate, line.endDate) : 0;
+  const repeats =
+    ready && !openEnded ? occurrenceCount(line.cadence, line.startDate, line.endDate) : 0;
   const periodAmount =
     !isRollup && ready && amount > 0
       ? amount * repeats
@@ -62,16 +70,20 @@ export default function FullPlanRow({
         : null;
   const hasChildren = categoryHasChildren(category.id, scopedCategories);
   const contingent = line.certainty === "contingent";
+  const isRoot = depth === 0;
   const fieldClass = `w-full min-w-0 rounded-lg border border-slate-200 px-2 py-2 text-center text-sm outline-none focus:border-emerald-500 md:px-1 md:py-1.5 md:text-xs sm:text-sm ${
-    isRollup ? "bg-slate-100 text-slate-600" : "bg-white"
+    isRollup ? "bg-white/80 text-slate-600" : "bg-white"
   }`;
+  const rowClass = contingent
+    ? isRoot
+      ? "bg-amber-200"
+      : "bg-amber-50"
+    : isRoot
+      ? "bg-emerald-200"
+      : "bg-emerald-50";
 
   return (
-    <tr
-      className={`border-b border-slate-100 last:border-0 ${
-        contingent ? "bg-amber-50/40" : isRollup ? "bg-slate-50/80" : ""
-      }`}
-    >
+    <tr className={`border-b border-emerald-100/80 last:border-0 ${rowClass}`}>
       <td data-span className="px-2 py-2 text-center align-middle md:text-center">
         <span
           className="inline-flex max-w-full flex-wrap items-center justify-start gap-1 font-medium text-slate-900 md:justify-center"
@@ -159,6 +171,41 @@ export default function FullPlanRow({
           </select>
         )}
       </td>
+      <td data-label="اليوم" className="px-1 py-2 text-center align-middle">
+        {isRollup ? (
+          <span className={`${fieldClass} inline-flex items-center justify-center`}>—</span>
+        ) : (
+          <input
+            type="number"
+            min={1}
+            max={31}
+            inputMode="numeric"
+            value={line.expectedDay ?? ""}
+            onChange={(event) =>
+              onLineChange(category.id, {
+                expectedDay: event.target.value,
+              })
+            }
+            placeholder="—"
+            aria-label={`اليوم المتوقع لـ ${category.name}`}
+            className={fieldClass}
+          />
+        )}
+      </td>
+      <td data-label="المحفظة" className="px-1 py-2 text-center align-middle">
+        {isRollup ? (
+          <span className={`${fieldClass} inline-flex items-center justify-center`}>—</span>
+        ) : (
+          <WalletSelect
+            wallets={wallets}
+            value={line.walletId ?? ""}
+            allowEmpty
+            emptyLabel="افتراضي"
+            onChange={(walletId) => onLineChange(category.id, { walletId })}
+            className={fieldClass}
+          />
+        )}
+      </td>
       <td data-label="البداية" className="px-1 py-2 text-center align-middle">
         <input
           type="date"
@@ -183,19 +230,39 @@ export default function FullPlanRow({
         ) : null}
       </td>
       <td data-label="النهاية" className="px-1 py-2 text-center align-middle">
-        <input
-          type="date"
-          value={line.endDate}
-          min={line.startDate || undefined}
-          onChange={(event) =>
-            onLineChange(category.id, {
-              endDate: event.target.value,
-              ...(isRollup ? { datesManual: true } : {}),
-            })
-          }
-          aria-label={`نهاية ${category.name}`}
-          className={fieldClass}
-        />
+        <label className="mb-1 flex items-center justify-center gap-1 text-[11px] text-slate-600">
+          <input
+            type="checkbox"
+            checked={openEnded}
+            onChange={(event) =>
+              onLineChange(category.id, {
+                endDate: event.target.checked
+                  ? ""
+                  : isDateKey(line.startDate)
+                    ? defaultHorizonEndDate(line.startDate)
+                    : "",
+                ...(isRollup ? { datesManual: true } : {}),
+              })
+            }
+            aria-label={`${category.name} مستمرة`}
+          />
+          مستمرة
+        </label>
+        {openEnded ? null : (
+          <input
+            type="date"
+            value={line.endDate}
+            min={line.startDate || undefined}
+            onChange={(event) =>
+              onLineChange(category.id, {
+                endDate: event.target.value,
+                ...(isRollup ? { datesManual: true } : {}),
+              })
+            }
+            aria-label={`نهاية ${category.name}`}
+            className={fieldClass}
+          />
+        )}
       </td>
       <td
         data-label="إجمالي الفترة"
@@ -205,13 +272,17 @@ export default function FullPlanRow({
       >
         {isRollup
           ? amount > 0
-            ? `${formatCurrency(amount, currency)}`
+            ? openEnded
+              ? "مستمرة"
+              : `${formatCurrency(amount, currency)}`
             : "—"
-          : periodAmount != null
-            ? `${formatCurrency(periodAmount, currency)}${contingent ? " *" : ""}`
-            : ready
-              ? "—"
-              : "راجع"}
+          : openEnded && amount > 0
+            ? "مستمرة"
+            : periodAmount != null
+              ? `${formatCurrency(periodAmount, currency)}${contingent ? " *" : ""}`
+              : ready
+                ? "—"
+                : "راجع"}
       </td>
     </tr>
   );

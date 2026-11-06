@@ -1,21 +1,26 @@
 import { getCategoryDescendantIds } from "@/lib/categories/hierarchy";
 import { isExpenseCategory } from "@/lib/categories/flow";
 import type { HorizonLineDraft } from "@/lib/plan/horizon";
+import { monthlyAmountInWindow } from "@/lib/plan/month-from-horizon";
 import type { Category, PlanComparisonRow } from "@/lib/types/database";
 
-export function categoryHasHorizonAmount(
+export function categoryHasMonthlyAmountInWindow(
   categoryId: string,
   categories: Category[],
   lines: Record<string, HorizonLineDraft>,
+  windowStart: string,
+  windowEnd: string,
 ) {
   const ids = [categoryId, ...getCategoryDescendantIds(categoryId, categories)];
-  return ids.some((id) => Number(lines[id]?.amount || 0) > 0);
+  return ids.some((id) => monthlyAmountInWindow(lines[id], windowStart, windowEnd) > 0);
 }
 
 export function filterMonthComparisonExpenseRows(
   expenseRows: PlanComparisonRow[],
   categories: Category[],
   lines: Record<string, HorizonLineDraft>,
+  windowStart: string,
+  windowEnd: string,
 ) {
   const byId = new Map(categories.map((category) => [category.id, category]));
 
@@ -27,16 +32,28 @@ export function filterMonthComparisonExpenseRows(
         return false;
       }
 
-      return categoryHasHorizonAmount(row.categoryId, categories, lines);
+      return categoryHasMonthlyAmountInWindow(
+        row.categoryId,
+        categories,
+        lines,
+        windowStart,
+        windowEnd,
+      );
     })
     .map((row) => ({
       ...row,
       children: (row.children ?? []).filter((child) => {
         if (child.categoryId.endsWith(":direct")) {
-          return Number(lines[row.categoryId]?.amount || 0) > 0;
+          return monthlyAmountInWindow(lines[row.categoryId], windowStart, windowEnd) > 0;
         }
 
-        return categoryHasHorizonAmount(child.categoryId, categories, lines);
+        return categoryHasMonthlyAmountInWindow(
+          child.categoryId,
+          categories,
+          lines,
+          windowStart,
+          windowEnd,
+        );
       }),
     }));
 }

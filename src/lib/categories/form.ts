@@ -11,6 +11,8 @@ export type CategoryFormState = {
   icon: string;
   color: string;
   parentCategoryId: string | null;
+  /** True only when the form was opened for a specific parent. */
+  lockParent: boolean;
   flow: CategoryFlow;
 };
 
@@ -24,6 +26,7 @@ export function emptyCategoryForm(
     icon: defaultCategoryIcon,
     color: defaultCategoryColor,
     parentCategoryId,
+    lockParent: Boolean(parentCategoryId),
     flow,
   };
 }
@@ -35,6 +38,7 @@ export function categoryToFormState(category: Category): CategoryFormState {
     icon: category.icon,
     color: category.color,
     parentCategoryId: category.parent_category_id,
+    lockParent: false,
     flow: getCategoryFlow(category),
   };
 }

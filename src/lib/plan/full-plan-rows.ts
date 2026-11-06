@@ -4,7 +4,7 @@ import { getCategoryParentId } from "@/lib/categories/normalize";
 import { isIncomeCategory } from "@/lib/categories/flow";
 import {
   isConfirmedHorizonLine,
-  isDateKey,
+  lineSpanReady,
   type HorizonLineDraft,
 } from "@/lib/plan/horizon";
 import { isHorizonRollupParent } from "@/lib/plan/horizon-rollup";
@@ -13,7 +13,7 @@ import type { Category } from "@/lib/types/database";
 export type PlanKindTab = "income" | "expense";
 
 export function lineDatesReady(line: HorizonLineDraft) {
-  return isDateKey(line.startDate) && isDateKey(line.endDate) && line.endDate >= line.startDate;
+  return lineSpanReady(line.startDate, line.endDate);
 }
 
 export function isCategoryRowVisible(

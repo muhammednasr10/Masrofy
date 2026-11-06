@@ -45,7 +45,7 @@ export default function PlanMonthPanel({
         <h2 className="text-xl font-semibold text-slate-900">مقارنة الواقع بالخطة</h2>
       </div>
       <p className="mt-1 text-sm text-slate-500">
-        الفئات اللي ليها مبلغ في وضع الخطة بس. عدّل المخطط هنا، ثم احفظ خطة الشهر.
+        المبالغ الشهرية من وضع الخطة، للفترة اللي واقعة جوه الشهر ده.
       </p>
 
       <form
@@ -89,7 +89,7 @@ export default function PlanMonthPanel({
             />
           ) : (
             <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
-              مفيش فئات مصاريف بمبلغ في وضع الخطة. حط مبالغ هناك الأول.
+              مفيش مصروف شهري فترته جوه الشهر ده. حدده من وضع الخطة.
             </p>
           )}
         </div>

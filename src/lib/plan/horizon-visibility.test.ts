@@ -91,7 +91,7 @@ describe("horizon visibility for month comparison", () => {
         startDate: "2026-10-01",
         endDate: "2027-09-30",
       },
-    });
+    }, "2026-11-01", "2026-11-30");
 
     expect(filtered.map((row) => row.categoryId)).toEqual(["food"]);
   });

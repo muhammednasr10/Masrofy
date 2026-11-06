@@ -22,6 +22,23 @@ export function isDateKey(value: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
+/** Empty end date means the line keeps going with no end. */
+export function isOpenEndedDate(endDate: string | null | undefined) {
+  return !isDateKey(endDate ?? "");
+}
+
+export function lineSpanReady(startDate: string, endDate: string) {
+  if (!isDateKey(startDate)) {
+    return false;
+  }
+
+  if (isOpenEndedDate(endDate)) {
+    return true;
+  }
+
+  return endDate >= startDate;
+}
+
 export function addDaysToDateKey(dateKey: string, days: number) {
   const date = parseDateKey(dateKey);
   date.setDate(date.getDate() + days);
@@ -152,6 +169,8 @@ export type HorizonLineDraft = {
   certainty: HorizonCertainty;
   startDate: string;
   endDate: string;
+  expectedDay?: string;
+  walletId?: string;
   /** When true, parent dates stay as edited and are not overwritten by children range. */
   datesManual?: boolean;
 };
@@ -163,6 +182,8 @@ export function emptyHorizonLine(startDate: string): HorizonLineDraft {
     certainty: "confirmed",
     startDate,
     endDate: defaultHorizonEndDate(startDate),
+    expectedDay: "",
+    walletId: "",
     datesManual: false,
   };
 }
@@ -179,9 +200,17 @@ export function sumHorizonExpenses(
   windowEnd?: string,
 ) {
   return lines.reduce((total, line) => {
-    if (line.amount <= 0 || line.endDate < line.startDate) {
+    if (line.amount <= 0 || !lineSpanReady(line.startDate, line.endDate)) {
       return total;
     }
+
+    const openEnded = isOpenEndedDate(line.endDate);
+
+    if (openEnded && (!windowStart || !windowEnd)) {
+      return total;
+    }
+
+    const planEnd = openEnded ? windowEnd! : line.endDate;
 
     return (
       total +
@@ -189,9 +218,9 @@ export function sumHorizonExpenses(
         occurrenceCount(
           line.cadence,
           line.startDate,
-          line.endDate,
+          planEnd,
           windowStart ?? line.startDate,
-          windowEnd ?? line.endDate,
+          windowEnd ?? planEnd,
         )
     );
   }, 0);
@@ -208,5 +237,13 @@ export function horizonOverlapsRange(
   rangeStart: string,
   rangeEnd: string,
 ) {
-  return planStart <= rangeEnd && planEnd >= rangeStart;
+  if (!isDateKey(planStart) || planStart > rangeEnd) {
+    return false;
+  }
+
+  if (isOpenEndedDate(planEnd)) {
+    return true;
+  }
+
+  return planEnd >= rangeStart;
 }

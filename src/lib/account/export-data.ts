@@ -16,6 +16,8 @@ const EXPORT_TABLES = [
   "annual_plan_template_items",
   "horizon_plans",
   "horizon_plan_items",
+  "debts",
+  "debt_payments",
   "wallet_reconciliations",
   "friendships",
   "wallet_transfers",

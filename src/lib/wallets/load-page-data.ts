@@ -43,7 +43,7 @@ export async function loadWalletsPageData(
     internalTransferResult,
   ] = await Promise.all([
     supabase.from("wallets").select("*").order("sort_order", { ascending: true }),
-    supabase.from("transactions").select("id, wallet_id, amount, type, transfer_role"),
+    supabase.from("transactions").select("id, wallet_id, amount, type, transfer_role, transaction_date"),
     supabase
       .from("transactions")
       .select("*, categories(name, icon, color), wallets(name, icon, color)")

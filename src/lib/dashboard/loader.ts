@@ -71,7 +71,7 @@ export async function loadDashboardData(
       .gte("transaction_date", month.start)
       .lte("transaction_date", month.end),
     supabase.from("wallets").select("*").order("sort_order", { ascending: true }),
-    supabase.from("transactions").select("id, wallet_id, amount, type, transfer_role"),
+    supabase.from("transactions").select("id, wallet_id, amount, type, transfer_role, transaction_date"),
     supabase.from("investments").select("*"),
     supabase.from("categories").select("*").order("sort_order", { ascending: true }),
     userId

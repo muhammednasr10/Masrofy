@@ -84,7 +84,7 @@ export function useReportsPage() {
         .gte("transaction_date", yearStart)
         .lte("transaction_date", yearEnd)
         .order("transaction_date", { ascending: false }),
-      supabase.from("transactions").select("id, wallet_id, amount, type"),
+      supabase.from("transactions").select("id, wallet_id, amount, type, transaction_date"),
       supabase
         .from("wallet_reconciliations")
         .select("*, wallets(name, icon, color)")

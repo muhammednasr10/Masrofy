@@ -19,7 +19,9 @@ export function getWalletTransactionNet(
   let net = 0;
 
   for (const transaction of transactions) {
-    if (transaction.wallet_id !== walletId || transaction.transaction_date.slice(0, 10) > asOf) {
+    const date = transaction.transaction_date?.slice(0, 10);
+
+    if (transaction.wallet_id !== walletId || (date != null && date > asOf)) {
       continue;
     }
 

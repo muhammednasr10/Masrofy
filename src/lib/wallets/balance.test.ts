@@ -30,6 +30,15 @@ describe("getWalletTransactionNet", () => {
     expect(getWalletTransactionNet(wallet.id, transactions, "2026-11-06")).toBe(0);
   });
 
+  it("still counts a transaction that has no date", () => {
+    const wallet = makeWallet();
+    const transactions = [
+      makeTransaction({ type: "expense", amount: 100, transaction_date: undefined as unknown as string }),
+    ];
+
+    expect(getWalletTransactionNet(wallet.id, transactions, "2026-11-06")).toBe(-100);
+  });
+
   it("handles internal transfer in and out roles", () => {
     const wallet = makeWallet();
     const transactions = [

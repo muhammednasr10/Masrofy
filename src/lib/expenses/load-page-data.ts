@@ -62,7 +62,7 @@ export async function loadExpensesPageData(
         .from("transactions")
         .select("*, categories(name, icon, color), wallets(name, icon, color)")
         .order("transaction_date", { ascending: false }),
-      supabase.from("transactions").select("id, wallet_id, amount, type, transfer_role"),
+      supabase.from("transactions").select("id, wallet_id, amount, type, transfer_role, transaction_date"),
     ]);
 
     const monthStartDay = normalizeMonthStartDay(profile?.month_start_day);

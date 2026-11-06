@@ -13,13 +13,7 @@ export default function DashboardSpendLeft({ data }: { data: DashboardData }) {
   const spend = getMonthSpendLeft(data.planComparison);
 
   if (!spend.hasPlan) {
-    return (
-      <p className="text-sm text-slate-500">
-        <Link href="/plan" className="font-medium text-emerald-700">
-          {t("dashboard.spendNoPlan")}
-        </Link>
-      </p>
-    );
+    return null;
   }
 
   const amount = formatCurrency(Math.abs(spend.remaining), data.currency);

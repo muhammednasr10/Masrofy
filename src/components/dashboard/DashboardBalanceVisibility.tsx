@@ -86,29 +86,15 @@ export function DashboardBalanceToggleButton() {
   const label = balancesVisible ? t("dashboard.hideBalances") : t("dashboard.showBalances");
 
   return (
-    <>
-      <button
-        type="button"
-        onClick={toggleBalances}
-        aria-label={label}
-        aria-pressed={balancesVisible}
-        title={label}
-        className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-xl text-slate-700 shadow-sm transition hover:bg-slate-50 md:hidden"
-      >
-        {balancesVisible ? "🙈" : "👁️"}
-      </button>
-
-      <button
-        type="button"
-        onClick={toggleBalances}
-        aria-label={label}
-        aria-pressed={balancesVisible}
-        title={label}
-        className="hidden h-10 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 md:inline-flex"
-      >
-        <span aria-hidden>{balancesVisible ? "🙈" : "👁️"}</span>
-        <span>{label}</span>
-      </button>
-    </>
+    <button
+      type="button"
+      onClick={toggleBalances}
+      aria-label={label}
+      aria-pressed={balancesVisible}
+      title={label}
+      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-base text-slate-700 transition hover:bg-slate-50"
+    >
+      <span aria-hidden>{balancesVisible ? "🙈" : "👁️"}</span>
+    </button>
   );
 }

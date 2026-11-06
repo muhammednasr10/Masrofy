@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import QuickAddExpenseSheet from "@/components/expenses/QuickAddExpenseSheet";
 import TransactionFormModal from "@/components/expenses/TransactionFormModal";
+import ModalShell from "@/components/ui/ModalShell";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import { useExpensesPage } from "@/hooks/useExpensesPage";
 import { QUICK_ADD_EVENT } from "@/lib/expenses/quick-add";
@@ -12,6 +13,7 @@ type DashboardAddExpenseModalProps = {
 };
 
 function DashboardAddExpenseModal({ onClose }: DashboardAddExpenseModalProps) {
+  const t = useTranslations();
   const wasSubmittingRef = useRef(false);
 
   const {
@@ -50,9 +52,17 @@ function DashboardAddExpenseModal({ onClose }: DashboardAddExpenseModalProps) {
     wasSubmittingRef.current = submitting;
   }, [submitting, message, error, onClose]);
 
+  if (loading) {
+    return (
+      <ModalShell onClose={onClose} dialog maxWidthClassName="max-w-3xl">
+        <p className="text-sm text-slate-500">{t("common.loading")}</p>
+      </ModalShell>
+    );
+  }
+
   return (
     <TransactionFormModal
-      open={!loading}
+      open
       categories={categories}
       wallets={wallets}
       currency={currency}
@@ -98,9 +108,10 @@ export default function DashboardAddExpenseButton() {
     return () => window.removeEventListener(QUICK_ADD_EVENT, handleQuickAdd);
   }, []);
 
-  function openBlankQuickAdd() {
+  function openAddForm() {
+    setQuickOpen(false);
     setPresetCategoryId(null);
-    setQuickOpen(true);
+    setFullOpen(true);
   }
 
   function closeQuickAdd() {
@@ -110,6 +121,16 @@ export default function DashboardAddExpenseButton() {
 
   return (
     <>
+      <button
+        type="button"
+        onClick={openAddForm}
+        aria-label={t("expenses.addExpense")}
+        title={t("expenses.addExpense")}
+        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-xl font-light leading-none text-white transition hover:bg-emerald-700"
+      >
+        <span aria-hidden>+</span>
+      </button>
+
       {quickOpen ? (
         <QuickAddExpenseSheet
           initialCategoryId={presetCategoryId}
@@ -119,26 +140,7 @@ export default function DashboardAddExpenseButton() {
             setFullOpen(true);
           }}
         />
-      ) : (
-        <>
-          <button
-            type="button"
-            onClick={openBlankQuickAdd}
-            aria-label={t("expenses.quickAddTitle")}
-            className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-3xl font-light leading-none text-white shadow-md transition hover:bg-emerald-700 md:hidden"
-          >
-            +
-          </button>
-
-          <button
-            type="button"
-            onClick={openBlankQuickAdd}
-            className="hidden items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700 md:inline-flex"
-          >
-            + {t("expenses.addExpense")}
-          </button>
-        </>
-      )}
+      ) : null}
 
       {fullOpen ? <DashboardAddExpenseModal onClose={() => setFullOpen(false)} /> : null}
     </>

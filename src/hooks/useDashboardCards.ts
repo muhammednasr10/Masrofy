@@ -4,7 +4,6 @@ import type { DashboardSectionCardProps } from "@/components/dashboard/Dashboard
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import { useFormat } from "@/hooks/useFormat";
 import type { DashboardData } from "@/lib/dashboard";
-import { getDashboardPlanStatus } from "@/lib/dashboard/plan-status";
 import { MORE_NAV_LINKS } from "@/lib/navigation/links";
 
 export type DashboardMoreLink = {
@@ -14,7 +13,9 @@ export type DashboardMoreLink = {
 };
 
 export function useDashboardCards(data: DashboardData): {
-  primaryCards: DashboardSectionCardProps[];
+  planCards: DashboardSectionCardProps[];
+  flowCards: DashboardSectionCardProps[];
+  walletCard: DashboardSectionCardProps;
   moreLinks: DashboardMoreLink[];
 } {
   const t = useTranslations();
@@ -25,11 +26,29 @@ export function useDashboardCards(data: DashboardData): {
     const formatAmount = (value: number) => formatCurrency(value, data.currency);
 
     const planComparison = data.planComparison;
-    const planRemaining = planComparison.expenses.planned - planComparison.expenses.actual;
-    const planHasBudget = planComparison.hasPlan && planComparison.expenses.planned > 0;
-    const planStatus = getDashboardPlanStatus(planComparison, formatAmount, t);
+    const planValue = (planned: number) =>
+      planComparison.hasPlan ? formatAmount(planned) : t("dashboard.planNoPlanValue");
 
-    const primaryCards: DashboardSectionCardProps[] = [
+    const planCards: DashboardSectionCardProps[] = [
+      {
+        href: "/plan",
+        icon: "💰",
+        title: t("dashboard.planIncomeTitle"),
+        description: t("dashboard.planDesc"),
+        primaryValue: planValue(planComparison.income.planned),
+        tone: "emerald",
+      },
+      {
+        href: "/plan",
+        icon: "📋",
+        title: t("dashboard.planExpensesTitle"),
+        description: t("dashboard.planDesc"),
+        primaryValue: planValue(planComparison.expenses.planned),
+        tone: "amber",
+      },
+    ];
+
+    const flowCards: DashboardSectionCardProps[] = [
       {
         href: "/expenses",
         icon: "💸",
@@ -43,27 +62,12 @@ export function useDashboardCards(data: DashboardData): {
         tone: "red",
       },
       {
-        href: "/wallets",
-        icon: "👛",
-        title: t("dashboard.walletsTitle"),
-        description: t("dashboard.walletsDesc"),
-        primaryValue: maskBalance(formatAmount(data.portfolio.assetTotal)),
+        href: "/expenses",
+        icon: "💵",
+        title: t("dashboard.incomeTitle"),
+        description: t("dashboard.netMonthDesc"),
+        primaryValue: maskBalance(formatAmount(data.summary.totalIncome)),
         tone: "emerald",
-      },
-      {
-        href: "/plan",
-        icon: "📋",
-        title: t("dashboard.planTitle"),
-        description: t("dashboard.planDesc"),
-        primaryValue: planHasBudget
-          ? formatAmount(Math.abs(planRemaining))
-          : t("dashboard.planNoPlanValue"),
-        secondaryValue: planHasBudget
-          ? planRemaining < 0
-            ? t("dashboard.planOverValue")
-            : t("dashboard.planRemainingValue")
-          : planStatus,
-        tone: "amber",
       },
       {
         href: "/expenses",
@@ -75,12 +79,21 @@ export function useDashboardCards(data: DashboardData): {
       },
     ];
 
+    const walletCard: DashboardSectionCardProps = {
+      href: "/wallets",
+      icon: "👛",
+      title: t("dashboard.walletsTitle"),
+      description: t("dashboard.walletsDesc"),
+      primaryValue: maskBalance(formatAmount(data.portfolio.assetTotal)),
+      tone: "emerald",
+    };
+
     const moreLinks: DashboardMoreLink[] = MORE_NAV_LINKS.map((link) => ({
       href: link.href,
       icon: link.icon,
       label: t(link.key),
     }));
 
-    return { primaryCards, moreLinks };
+    return { planCards, flowCards, walletCard, moreLinks };
   }, [data, formatCurrency, maskBalance, t]);
 }

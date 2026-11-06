@@ -9,13 +9,23 @@ type DashboardCardsProps = {
 };
 
 export default function DashboardCards({ data }: DashboardCardsProps) {
-  const { primaryCards } = useDashboardCards(data);
+  const { planCards, flowCards, walletCard } = useDashboardCards(data);
 
   return (
-    <section className="grid grid-cols-2 gap-2">
-      {primaryCards.map((card, index) => (
-        <DashboardSectionCard key={`${card.href}-${card.title}-${index}`} {...card} />
-      ))}
-    </section>
+    <div className="space-y-2">
+      <section className="grid grid-cols-2 gap-2">
+        {planCards.map((card) => (
+          <DashboardSectionCard key={card.title} {...card} />
+        ))}
+      </section>
+      <section className="grid grid-cols-3 gap-2">
+        {flowCards.map((card) => (
+          <DashboardSectionCard key={card.title} {...card} />
+        ))}
+      </section>
+      <section className="grid grid-cols-3 gap-2">
+        <DashboardSectionCard {...walletCard} />
+      </section>
+    </div>
   );
 }

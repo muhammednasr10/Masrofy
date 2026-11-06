@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  isAndroidChromium,
   isIosSafari,
   isStandalonePwa,
   markInstallPromptDismissed,
@@ -14,7 +13,7 @@ type BeforeInstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
 };
 
-export type PwaInstallPlatform = "chromium" | "ios" | "unsupported";
+export type PwaInstallPlatform = "chromium" | "ios" | "desktop" | "unsupported";
 
 export function usePwaInstall() {
   const [installed, setInstalled] = useState(false);
@@ -35,16 +34,9 @@ export function usePwaInstall() {
       return;
     }
 
-    if (isIosSafari()) {
-      setPlatform("ios");
-      setCanInstall(true);
-      return;
-    }
-
-    if (isAndroidChromium()) {
-      setPlatform("chromium");
-      setCanInstall(true);
-    }
+    const mobile = /Android|iPhone|iPad|iPod/i.test(window.navigator.userAgent);
+    setCanInstall(true);
+    setPlatform(isIosSafari() ? "ios" : mobile ? "chromium" : "desktop");
 
     function handleBeforeInstallPrompt(event: Event) {
       event.preventDefault();
@@ -70,12 +62,33 @@ export function usePwaInstall() {
   }, []);
 
   const openPrompt = useCallback(() => {
-    if (installed || !canInstall) {
+    if (installed) {
+      return;
+    }
+
+    if (deferredPrompt) {
+      void (async () => {
+        setInstalling(true);
+
+        try {
+          await deferredPrompt.prompt();
+          const choice = await deferredPrompt.userChoice;
+
+          if (choice.outcome === "accepted") {
+            setInstalled(true);
+            setCanInstall(false);
+            setPromptVisible(false);
+          }
+        } finally {
+          setInstalling(false);
+          setDeferredPrompt(null);
+        }
+      })();
       return;
     }
 
     setPromptVisible(true);
-  }, [canInstall, installed]);
+  }, [deferredPrompt, installed]);
 
   const dismissPrompt = useCallback((remember = true) => {
     setPromptVisible(false);

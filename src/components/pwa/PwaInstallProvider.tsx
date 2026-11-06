@@ -6,7 +6,6 @@ import {
   PwaInstallContextProvider,
   usePwaInstall,
 } from "@/components/pwa/PwaInstallContext";
-import { PWA_INSTALL_PROMPT_DELAY_MS } from "@/lib/pwa/constants";
 import { PWA_OPEN_INSTALL_EVENT } from "@/lib/pwa/events";
 
 export default function PwaInstallProvider({ children }: { children: React.ReactNode }) {
@@ -20,22 +19,7 @@ export default function PwaInstallProvider({ children }: { children: React.React
     openPrompt,
     dismissPrompt,
     promptInstall,
-    wasDismissedRecently,
   } = usePwaInstall();
-
-  useEffect(() => {
-    if (installed || !canInstall || wasDismissedRecently()) {
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      openPrompt();
-    }, PWA_INSTALL_PROMPT_DELAY_MS);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [canInstall, installed, openPrompt, wasDismissedRecently]);
 
   useEffect(() => {
     function handleOpenInstall() {

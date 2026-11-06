@@ -50,6 +50,14 @@ export default function PwaInstallPrompt({
               <li>{t("pwa.iosStep3")}</li>
             </ol>
           </div>
+        ) : !canNativeInstall && platform === "desktop" ? (
+          <div className="mt-5 rounded-2xl bg-slate-50 px-4 py-4 text-start text-sm leading-7 text-slate-700">
+            <p className="font-medium text-slate-900">{t("pwa.desktopTitle")}</p>
+            <ol className="mt-2 list-decimal space-y-1 ps-5">
+              <li>{t("pwa.desktopStep1")}</li>
+              <li>{t("pwa.desktopStep2")}</li>
+            </ol>
+          </div>
         ) : !canNativeInstall ? (
           <div className="mt-5 rounded-2xl bg-slate-50 px-4 py-4 text-start text-sm leading-7 text-slate-700">
             <p className="font-medium text-slate-900">{t("pwa.androidTitle")}</p>

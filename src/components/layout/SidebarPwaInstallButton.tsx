@@ -9,9 +9,9 @@ type SidebarPwaInstallButtonProps = {
 
 export default function SidebarPwaInstallButton({ onOpen }: SidebarPwaInstallButtonProps) {
   const t = useTranslations();
-  const { installed, canInstall, platform, openPrompt } = usePwaInstallContext();
+  const { installed, platform, openPrompt } = usePwaInstallContext();
 
-  if (installed || !canInstall) {
+  if (installed) {
     return null;
   }
 

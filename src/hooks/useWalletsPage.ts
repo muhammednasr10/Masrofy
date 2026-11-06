@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import { useSelectedMonth } from "@/components/month/SelectedMonthProvider";
 import { usePageFeedback } from "@/hooks/usePageFeedback";
@@ -39,17 +39,21 @@ export function useWalletsPage() {
     modals.editingWalletId,
   );
 
+  const reloadRef = useRef<() => Promise<void>>(async () => {});
+
   const transfers = useWalletTransfers({
     defaultWalletId: derived.defaultWalletId,
     transferableWalletIds: derived.transferableWalletIds,
-    onBalanceTransactionsChange: setTransactions,
+    onTransferred: () => reloadRef.current(),
     setError,
     setMessage,
     clearFeedback,
   });
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
+  const loadData = useCallback(async (options?: { silent?: boolean }) => {
+    if (!options?.silent) {
+      setLoading(true);
+    }
     const supabase = createClient();
     const data = await loadWalletsPageData(supabase, locale, referenceDate);
 
@@ -68,8 +72,16 @@ export function useWalletsPage() {
     transfers.setTransferHistory(data.internalTransfers);
     const dependent = await loadDependentWallets(supabase);
     setDependentWallets(dependent.wallets);
-    setLoading(false);
+    if (!options?.silent) {
+      setLoading(false);
+    }
   }, [locale, referenceDate, setError, setSharedMonthStartDay, transfers.setTransferHistory]);
+
+  useEffect(() => {
+    reloadRef.current = async () => {
+      await loadData({ silent: true });
+    };
+  }, [loadData]);
 
   useEffect(() => {
     void loadData();

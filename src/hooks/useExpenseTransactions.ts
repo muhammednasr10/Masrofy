@@ -1,28 +1,19 @@
 "use client";
 
 import { FormEvent, useCallback, useMemo, useState, type Dispatch, type SetStateAction } from "react";
-import { useRouter } from "@/lib/router/navigation";
 import {
-  appendTransactionToSnapshot,
-  removeTransactionFromSnapshot,
-  updateTransactionInSnapshot,
-} from "@/lib/expenses";
+  deleteExpenseTransaction,
+  importExpenseTransactions,
+  saveExpenseLines,
+  submitExpenseTransaction,
+  type ExpenseTransactionCommandContext,
+} from "@/hooks/expense-transaction-commands";
+import { useRouter } from "@/lib/router/navigation";
+import { appendTransactionToSnapshot, getSelectedWalletSnapshot } from "@/lib/expenses";
 import type { ReadyTransactionDraft } from "@/lib/expenses/batch-draft";
 import type { ParsedImportRow } from "@/lib/expenses/import-csv";
-import {
-  deleteTransactionAttachments,
-  uploadTransactionReceipt,
-} from "@/lib/attachments";
-import { createClient } from "@/lib/supabase/client";
-import { requireAuthenticatedUser } from "@/lib/supabase/auth";
 import type { Category, Transaction, TransactionType, Wallet } from "@/lib/types/database";
-import {
-  buildLocalTransaction,
-  enqueueTransactionInsert,
-  isBrowserOnline,
-  type OfflineTransaction,
-} from "@/lib/offline";
-import { getSelectedWalletSnapshot } from "@/lib/expenses";
+import type { OfflineTransaction } from "@/lib/offline";
 
 type ExpensesSnapshot = {
   currency: string;
@@ -178,375 +169,47 @@ export function useExpenseTransactions({
     resetTransactionForm();
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSubmitting(true);
-    clearFeedback();
-
-    if (!walletId) {
-      setError("يجب اختيار محفظة.");
-      setSubmitting(false);
-      return;
-    }
-
-    const supabase = createClient();
-    const isEditing = Boolean(editingTransactionId);
-
-    try {
-      const user = await requireAuthenticatedUser(supabase);
-      const payload = {
-        wallet_id: walletId,
-        category_id: categoryId || null,
-        amount: Number(amount),
-        type,
-        note: note.trim() || null,
-        transaction_date: transactionDate,
-      };
-
-      if (isEditing) {
-        if (!isBrowserOnline()) {
-          setError("تعديل العمليات يحتاج اتصالاً بالإنترنت.");
-          return;
-        }
-
-        const { data: updatedRow, error: updateError } = await supabase
-          .from("transactions")
-          .update(payload)
-          .eq("id", editingTransactionId)
-          .select("*, categories(name, icon, color), wallets(name, icon, color)")
-          .single();
-
-        if (updateError) {
-          throw updateError;
-        }
-
-        const updatedTransaction = updatedRow as Transaction;
-
-        if (receiptFile) {
-          const signedUrl = await uploadTransactionReceipt(
-            supabase,
-            user.id,
-            updatedTransaction.id,
-            receiptFile,
-          );
-
-          if (signedUrl) {
-            setAttachmentUrls((current) => ({
-              ...current,
-              [updatedTransaction.id]: signedUrl,
-            }));
-          }
-        }
-
-        const nextSnapshot = updateTransactionInSnapshot(
-          data,
-          updatedTransaction,
-          data.monthStart,
-          data.monthEnd,
-        );
-
-        setTransactions(nextSnapshot.transactions);
-        setMonthTransactions(nextSnapshot.monthTransactions);
-        setBalanceTransactions(nextSnapshot.balanceTransactions);
-        void persistSnapshot(nextSnapshot);
-        resetTransactionForm();
-        setMessage("تم تحديث العملية بنجاح.");
-        router.refresh();
-        return;
-      }
-
-      if (!isBrowserOnline()) {
-        if (receiptFile) {
-          setError("رفع المرفقات يحتاج اتصالاً بالإنترنت.");
-          return;
-        }
-
-        const clientTransactionId = crypto.randomUUID();
-        await enqueueTransactionInsert(user.id, clientTransactionId, payload);
-        ingestTransaction(
-          buildLocalTransaction(user.id, clientTransactionId, payload, categories, data.wallets),
-        );
-        resetTransactionForm();
-        setMessage("تم الحفظ محلياً — سيتم رفع العملية عند عودة الإنترنت.");
-        return;
-      }
-
-      const { data: insertedRow, error: insertError } = await supabase
-        .from("transactions")
-        .insert({
-          user_id: user.id,
-          ...payload,
-        })
-        .select("*, categories(name, icon, color), wallets(name, icon, color)")
-        .single();
-
-      if (insertError) {
-        throw insertError;
-      }
-
-      const savedTransaction = insertedRow as Transaction;
-
-      if (receiptFile) {
-        const signedUrl = await uploadTransactionReceipt(
-          supabase,
-          user.id,
-          savedTransaction.id,
-          receiptFile,
-        );
-
-        if (signedUrl) {
-          setAttachmentUrls((current) => ({
-            ...current,
-            [savedTransaction.id]: signedUrl,
-          }));
-        }
-      }
-
-      ingestTransaction(savedTransaction);
-      resetTransactionForm();
-      setMessage("تم حفظ العملية بنجاح.");
-      router.refresh();
-    } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "تعذر حفظ العملية.");
-    } finally {
-      setSubmitting(false);
-    }
+  function commandContext(): ExpenseTransactionCommandContext {
+    return {
+      data,
+      walletId,
+      categoryId,
+      amount,
+      type,
+      note,
+      transactionDate,
+      receiptFile,
+      editingTransactionId,
+      categories,
+      setSubmitting,
+      clearFeedback,
+      setError,
+      setMessage,
+      setTransactions,
+      setMonthTransactions,
+      setBalanceTransactions,
+      setAttachmentUrls,
+      persistSnapshot,
+      resetTransactionForm,
+      ingestTransaction,
+      router,
+    };
   }
 
-  async function handleSaveLines(lines: ReadyTransactionDraft[]) {
-    setSubmitting(true);
-    clearFeedback();
-
-    if (!walletId) {
-      setError("يجب اختيار محفظة.");
-      setSubmitting(false);
-      return;
-    }
-
-    const supabase = createClient();
-
-    try {
-      const user = await requireAuthenticatedUser(supabase);
-      const payloads = lines.map((line) => ({
-        wallet_id: walletId,
-        category_id: line.categoryId,
-        amount: line.amount,
-        type: line.type,
-        note: line.note,
-        transaction_date: transactionDate,
-      }));
-
-      if (!isBrowserOnline()) {
-        if (receiptFile && payloads.length === 1) {
-          setError("رفع المرفقات يحتاج اتصالاً بالإنترنت.");
-          return;
-        }
-
-        let offlineSnapshot = data;
-
-        for (const payload of payloads) {
-          const clientTransactionId = crypto.randomUUID();
-          await enqueueTransactionInsert(user.id, clientTransactionId, payload);
-          offlineSnapshot = appendTransactionToSnapshot(
-            offlineSnapshot,
-            buildLocalTransaction(
-              user.id,
-              clientTransactionId,
-              payload,
-              categories,
-              data.wallets,
-            ),
-            data.monthStart,
-            data.monthEnd,
-          );
-        }
-
-        setTransactions(offlineSnapshot.transactions);
-        setMonthTransactions(offlineSnapshot.monthTransactions);
-        setBalanceTransactions(offlineSnapshot.balanceTransactions);
-        void persistSnapshot(offlineSnapshot);
-        resetTransactionForm();
-        setMessage(
-          payloads.length === 1
-            ? "تم الحفظ محلياً — سيتم رفع العملية عند عودة الإنترنت."
-            : `تم حفظ ${payloads.length} عمليات محلياً — سيتم رفعها عند عودة الإنترنت.`,
-        );
-        return;
-      }
-
-      const { data: insertedRows, error: insertError } = await supabase
-        .from("transactions")
-        .insert(payloads.map((payload) => ({ user_id: user.id, ...payload })))
-        .select("*, categories(name, icon, color), wallets(name, icon, color)");
-
-      if (insertError) {
-        throw insertError;
-      }
-
-      const savedTransactions = (insertedRows ?? []) as Transaction[];
-      let nextSnapshot = data;
-
-      for (const savedTransaction of savedTransactions) {
-        nextSnapshot = appendTransactionToSnapshot(
-          nextSnapshot,
-          savedTransaction,
-          data.monthStart,
-          data.monthEnd,
-        );
-      }
-
-      if (receiptFile && savedTransactions.length === 1) {
-        const signedUrl = await uploadTransactionReceipt(
-          supabase,
-          user.id,
-          savedTransactions[0].id,
-          receiptFile,
-        );
-
-        if (signedUrl) {
-          setAttachmentUrls((current) => ({
-            ...current,
-            [savedTransactions[0].id]: signedUrl,
-          }));
-        }
-      }
-
-      setTransactions(nextSnapshot.transactions);
-      setMonthTransactions(nextSnapshot.monthTransactions);
-      setBalanceTransactions(nextSnapshot.balanceTransactions);
-      void persistSnapshot(nextSnapshot);
-      resetTransactionForm();
-      setMessage(
-        savedTransactions.length === 1
-          ? "تم حفظ العملية بنجاح."
-          : `تم حفظ ${savedTransactions.length} عمليات.`,
-      );
-      router.refresh();
-    } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "تعذر حفظ العمليات.");
-    } finally {
-      setSubmitting(false);
-    }
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    return submitExpenseTransaction(event, commandContext());
   }
 
-  async function handleImportTransactions(rows: ParsedImportRow[], importWalletId: string) {
-    clearFeedback();
-
-    if (!importWalletId) {
-      setError("يجب اختيار محفظة للاستيراد.");
-      return;
-    }
-
-    if (!isBrowserOnline()) {
-      setError("استيراد العمليات يحتاج اتصالاً بالإنترنت.");
-      return;
-    }
-
-    if (rows.length === 0) {
-      setError("لا توجد عمليات صالحة للاستيراد.");
-      return;
-    }
-
-    setSubmitting(true);
-    const supabase = createClient();
-
-    try {
-      const user = await requireAuthenticatedUser(supabase);
-
-      const inserts = rows.map((row) => ({
-        user_id: user.id,
-        wallet_id: importWalletId,
-        category_id:
-          row.categoryName != null
-            ? categories.find(
-                (category) =>
-                  category.name.trim().toLowerCase() === row.categoryName?.trim().toLowerCase(),
-              )?.id ?? null
-            : null,
-        amount: row.amount,
-        type: row.type,
-        note: row.note,
-        transaction_date: row.transaction_date,
-      }));
-
-      const { data: insertedRows, error: insertError } = await supabase
-        .from("transactions")
-        .insert(inserts)
-        .select("*, categories(name, icon, color), wallets(name, icon, color)");
-
-      if (insertError) {
-        throw insertError;
-      }
-
-      let nextSnapshot: typeof data = { ...data };
-
-      for (const savedTransaction of (insertedRows ?? []) as Transaction[]) {
-        nextSnapshot = {
-          ...nextSnapshot,
-          ...appendTransactionToSnapshot(
-            nextSnapshot,
-            savedTransaction,
-            data.monthStart,
-            data.monthEnd,
-          ),
-        };
-      }
-
-      setTransactions(nextSnapshot.transactions);
-      setMonthTransactions(nextSnapshot.monthTransactions);
-      setBalanceTransactions(nextSnapshot.balanceTransactions);
-      void persistSnapshot(nextSnapshot);
-      setMessage(`تم استيراد ${(insertedRows ?? []).length} عملية بنجاح.`);
-      router.refresh();
-    } catch (importError) {
-      setError(importError instanceof Error ? importError.message : "تعذر استيراد العمليات.");
-    } finally {
-      setSubmitting(false);
-    }
+  function handleSaveLines(lines: ReadyTransactionDraft[]) {
+    return saveExpenseLines(lines, commandContext());
   }
 
-  async function handleDelete(id: string) {
-    clearFeedback();
+  function handleImportTransactions(rows: ParsedImportRow[], importWalletId: string) {
+    return importExpenseTransactions(rows, importWalletId, commandContext());
+  }
 
-    const deletedTransaction = data.transactions.find((transaction) => transaction.id === id);
-
-    if (deletedTransaction?.offlinePending) {
-      setError("لا يمكن حذف عملية محفوظة محلياً قبل مزامنتها.");
-      return;
-    }
-
-    if (!isBrowserOnline()) {
-      setError("حذف العمليات يحتاج اتصالاً بالإنترنت.");
-      return;
-    }
-
-    const supabase = createClient();
-
-    try {
-      await deleteTransactionAttachments(supabase, id);
-
-      const { error: deleteError } = await supabase.from("transactions").delete().eq("id", id);
-
-      if (deleteError) {
-        throw deleteError;
-      }
-
-      const nextSnapshot = removeTransactionFromSnapshot(data, id);
-
-      setTransactions(nextSnapshot.transactions);
-      setMonthTransactions(nextSnapshot.monthTransactions);
-      setBalanceTransactions(nextSnapshot.balanceTransactions);
-      setAttachmentUrls((current) => {
-        const next = { ...current };
-        delete next[id];
-        return next;
-      });
-
-      setMessage("تم حذف العملية.");
-      router.refresh();
-    } catch (deleteFailure) {
-      setError(deleteFailure instanceof Error ? deleteFailure.message : "تعذر حذف العملية.");
-    }
+  function handleDelete(id: string) {
+    return deleteExpenseTransaction(id, commandContext());
   }
 
   const ingestCategoryWithSelection = useCallback(

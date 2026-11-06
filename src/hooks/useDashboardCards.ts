@@ -4,19 +4,10 @@ import type { DashboardSectionCardProps } from "@/components/dashboard/Dashboard
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import { useFormat } from "@/hooks/useFormat";
 import type { DashboardData } from "@/lib/dashboard";
-import { MORE_NAV_LINKS } from "@/lib/navigation/links";
-
-export type DashboardMoreLink = {
-  href: string;
-  icon: string;
-  label: string;
-};
-
 export function useDashboardCards(data: DashboardData): {
   planCards: DashboardSectionCardProps[];
   flowCards: DashboardSectionCardProps[];
   walletCard: DashboardSectionCardProps;
-  moreLinks: DashboardMoreLink[];
 } {
   const t = useTranslations();
   const { formatCurrency } = useFormat();
@@ -51,6 +42,14 @@ export function useDashboardCards(data: DashboardData): {
     const flowCards: DashboardSectionCardProps[] = [
       {
         href: "/expenses",
+        icon: "💵",
+        title: t("dashboard.incomeTitle"),
+        description: t("dashboard.netMonthDesc"),
+        primaryValue: maskBalance(formatAmount(data.summary.totalIncome)),
+        tone: "emerald",
+      },
+      {
+        href: "/expenses",
         icon: "💸",
         title: t("dashboard.expensesTitle"),
         description: t("dashboard.expensesDesc"),
@@ -60,14 +59,6 @@ export function useDashboardCards(data: DashboardData): {
             ? t("dashboard.expensesRecurringDue", { count: String(data.dueRecurringCount) })
             : undefined,
         tone: "red",
-      },
-      {
-        href: "/expenses",
-        icon: "💵",
-        title: t("dashboard.incomeTitle"),
-        description: t("dashboard.netMonthDesc"),
-        primaryValue: maskBalance(formatAmount(data.summary.totalIncome)),
-        tone: "emerald",
       },
       {
         href: "/expenses",
@@ -88,12 +79,6 @@ export function useDashboardCards(data: DashboardData): {
       tone: "emerald",
     };
 
-    const moreLinks: DashboardMoreLink[] = MORE_NAV_LINKS.map((link) => ({
-      href: link.href,
-      icon: link.icon,
-      label: t(link.key),
-    }));
-
-    return { planCards, flowCards, walletCard, moreLinks };
+    return { planCards, flowCards, walletCard };
   }, [data, formatCurrency, maskBalance, t]);
 }

@@ -44,7 +44,7 @@ function WalletBalanceCellComponent({
         {!compact ? (
           <>
             <p className="wrap-text text-sm leading-6 text-slate-500">
-              مجموع المحافظ الفرعية (بدون كريديت)
+              رصيد المحفظة والفروع (بدون كريديت)
             </p>
             {aggregatedSummary.creditNotes.map((note) => (
               <p key={note.walletName} className="wrap-text text-sm leading-6 text-amber-700">

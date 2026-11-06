@@ -3,6 +3,12 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import {
+  DEFAULT_DAILY_REMINDER,
+  loadDailyReminderSettings,
+  saveDailyReminderSettings,
+  type DailyReminderSettings,
+} from "@/lib/notifications/daily-reminder";
+import {
   getNotificationPermission,
   requestNotificationPermission,
   subscribeToPushNotifications,
@@ -18,12 +24,18 @@ export default function AccountNotificationsSection() {
   const [permission, setPermission] = useState<ReturnType<typeof getNotificationPermission>>("unsupported");
   const [optedOut, setOptedOut] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [reminder, setReminder] = useState<DailyReminderSettings>(DEFAULT_DAILY_REMINDER);
   const enabled = permission === "granted" && !optedOut;
 
   useEffect(() => {
     setPermission(getNotificationPermission());
     setOptedOut(areDueNotificationsOptedOut());
+    setReminder(loadDailyReminderSettings());
   }, []);
+
+  function updateReminder(next: DailyReminderSettings) {
+    setReminder(saveDailyReminderSettings(next));
+  }
 
   async function handleEnable() {
     setBusy(true);
@@ -82,6 +94,41 @@ export default function AccountNotificationsSection() {
           {t("account.notificationsEnable")}
         </button>
       )}
+
+      <div className="mt-6 space-y-3 border-t border-slate-100 pt-5">
+        <div className="flex items-center justify-between gap-3">
+          <h4 className="text-sm font-semibold text-slate-900">{t("account.dailyReminderTitle")}</h4>
+          <button
+            type="button"
+            aria-pressed={reminder.enabled}
+            onClick={() => updateReminder({ ...reminder, enabled: !reminder.enabled })}
+            className={`rounded-full px-3 py-1 text-xs font-medium ${
+              reminder.enabled ? "bg-emerald-50 text-emerald-800" : "bg-slate-100 text-slate-600"
+            }`}
+          >
+            {reminder.enabled ? t("account.dailyReminderEnabled") : t("account.notificationsDisable")}
+          </button>
+        </div>
+        <p className="text-xs text-slate-500">{t("account.dailyReminderHint")}</p>
+        <label className="block space-y-1">
+          <span className="text-sm text-slate-700">{t("account.dailyReminderToday")}</span>
+          <input
+            type="time"
+            value={reminder.todayTime}
+            onChange={(event) => updateReminder({ ...reminder, todayTime: event.target.value })}
+            className="w-full rounded-2xl border border-slate-200 px-4 py-2 text-sm outline-none focus:border-emerald-500"
+          />
+        </label>
+        <label className="block space-y-1">
+          <span className="text-sm text-slate-700">{t("account.dailyReminderMissed")}</span>
+          <input
+            type="time"
+            value={reminder.missedTime}
+            onChange={(event) => updateReminder({ ...reminder, missedTime: event.target.value })}
+            className="w-full rounded-2xl border border-slate-200 px-4 py-2 text-sm outline-none focus:border-emerald-500"
+          />
+        </label>
+      </div>
     </section>
   );
 }

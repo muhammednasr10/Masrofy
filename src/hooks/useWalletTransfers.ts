@@ -10,12 +10,12 @@ import {
   prefillWalletTransferForm,
   type WalletTransferFormState,
 } from "@/lib/wallets/transfer";
-import type { InternalWalletTransfer, Transaction } from "@/lib/types/database";
+import type { InternalWalletTransfer } from "@/lib/types/database";
 
 type UseWalletTransfersOptions = {
   defaultWalletId: string;
   transferableWalletIds: string[];
-  onBalanceTransactionsChange: (transactions: Transaction[]) => void;
+  onTransferred: () => Promise<void> | void;
   setError: (message: string | null) => void;
   setMessage: (message: string | null) => void;
   clearFeedback: () => void;
@@ -24,7 +24,7 @@ type UseWalletTransfersOptions = {
 export function useWalletTransfers({
   defaultWalletId,
   transferableWalletIds,
-  onBalanceTransactionsChange,
+  onTransferred,
   setError,
   setMessage,
   clearFeedback,
@@ -58,19 +58,16 @@ export function useWalletTransfers({
 
     try {
       const supabase = createClient();
-      const { transfer, balanceTransactions } = await executeWalletTransfer(
-        supabase,
-        transferForm,
-      );
+      const { transfer } = await executeWalletTransfer(supabase, transferForm);
 
       if (transfer) {
         setInternalTransfers((current) => [transfer, ...current]);
       }
 
-      onBalanceTransactionsChange(balanceTransactions);
       setShowTransferModal(false);
       setTransferForm(prefillWalletTransferForm(transferableWalletIds, defaultWalletId));
       setMessage("تم التحويل بين المحافظ.");
+      await onTransferred();
     } catch (transferError) {
       setError(getWalletTransferErrorMessage(transferError));
     } finally {

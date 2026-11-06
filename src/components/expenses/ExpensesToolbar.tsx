@@ -1,74 +1,125 @@
 "use client";
 
-import { useState } from "react";
-import ExportTransactionsButton from "@/components/expenses/ExportTransactionsButton";
-import ImportTransactionsModal from "@/components/expenses/ImportTransactionsModal";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
-import type { ParsedImportRow } from "@/lib/expenses/import-csv";
+import { useFormat } from "@/hooks/useFormat";
+import { getTransactionCategoryColumns } from "@/lib/expenses/transaction-display";
+import { getTransactionWalletDisplay } from "@/lib/expenses/display";
+import { downloadTransactionsExcel, downloadTransactionsPdf } from "@/lib/expenses/export-sheet";
 import type { OfflineTransaction } from "@/lib/offline/types";
-import type { Wallet } from "@/lib/types/database";
+import type { Category, Wallet } from "@/lib/types/database";
 
 type ExpensesToolbarProps = {
   transactions: OfflineTransaction[];
   wallets: Wallet[];
+  categories: Category[];
   currency: string;
-  submitting: boolean;
   onAddTransaction: () => void;
-  onAddRecurring: () => void;
-  onImport: (rows: ParsedImportRow[], walletId: string) => Promise<void>;
 };
 
 export default function ExpensesToolbar({
   transactions,
   wallets,
+  categories,
   currency,
-  submitting,
   onAddTransaction,
-  onAddRecurring,
-  onImport,
 }: ExpensesToolbarProps) {
   const t = useTranslations();
-  const [showImportModal, setShowImportModal] = useState(false);
+  const { formatCurrency, formatDate } = useFormat();
+  const canExport = transactions.length > 0;
+
+  function buildSheet() {
+    const headers = [
+      t("expenses.tableDate"),
+      t("expenses.tableMainCategory"),
+      t("expenses.tableCategory"),
+      t("expenses.tableType"),
+      t("expenses.tableWallet"),
+      t("expenses.tableNote"),
+      t("expenses.tableAmount"),
+    ];
+    const messages = {
+      typeIncome: t("expenses.typeIncome"),
+      typeTransfer: t("wallets.transferTransaction"),
+      noCategory: t("expenses.noCategory"),
+    };
+    const rows = transactions.map((transaction) => {
+      const { mainLabel, subLabel } = getTransactionCategoryColumns(
+        transaction,
+        categories,
+        messages,
+      );
+      const wallet = getTransactionWalletDisplay(wallets, transaction.wallet_id);
+      const typeLabel =
+        transaction.type === "expense"
+          ? t("expenses.typeExpense")
+          : transaction.type === "income"
+            ? t("expenses.typeIncome")
+            : t("wallets.transferTransaction");
+
+      return [
+        formatDate(transaction.transaction_date),
+        mainLabel,
+        subLabel,
+        typeLabel,
+        wallet?.wallet.name ?? transaction.wallets?.name ?? t("expenses.noWallet"),
+        transaction.note ?? "",
+        formatCurrency(Number(transaction.amount), currency),
+      ];
+    });
+
+    return { headers, rows };
+  }
+
+  function handleExcel() {
+    if (!canExport) {
+      return;
+    }
+
+    const { headers, rows } = buildSheet();
+    const dateStamp = new Date().toISOString().slice(0, 10);
+    downloadTransactionsExcel(headers, rows, `masrofy-transactions-${dateStamp}.xls`);
+  }
+
+  function handlePdf() {
+    if (!canExport) {
+      return;
+    }
+
+    const { headers, rows } = buildSheet();
+    downloadTransactionsPdf(t("expenses.transactionLog"), headers, rows);
+  }
 
   return (
-    <>
-      <div className="flex flex-wrap gap-3">
-        <button
-          type="button"
-          onClick={onAddTransaction}
-          className="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700"
-        >
-          + {t("expenses.addTransaction")}
-        </button>
-        <button
-          type="button"
-          onClick={onAddRecurring}
-          className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-medium text-emerald-800 transition hover:bg-emerald-100"
-        >
-          {t("expenses.addRecurring")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowImportModal(true)}
-          className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-        >
-          ⬆ {t("expenses.importCsv")}
-        </button>
-        <ExportTransactionsButton
-          transactions={transactions}
-          wallets={wallets}
-          currency={currency}
-        />
-      </div>
-
-      <ImportTransactionsModal
-        open={showImportModal}
-        wallets={wallets}
-        currency={currency}
-        submitting={submitting}
-        onClose={() => setShowImportModal(false)}
-        onImport={onImport}
-      />
-    </>
+    <div className="flex items-center gap-1.5">
+      <button
+        type="button"
+        onClick={onAddTransaction}
+        aria-label={t("expenses.addTransaction")}
+        title={t("expenses.addTransaction")}
+        className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-600 text-xl font-light leading-none text-white transition hover:bg-emerald-700"
+      >
+        <span aria-hidden>+</span>
+      </button>
+      <button
+        type="button"
+        onClick={handleExcel}
+        disabled={!canExport}
+        aria-label={t("expenses.exportExcel")}
+        title={t("expenses.exportExcel")}
+        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-[10px] font-semibold text-emerald-800 transition hover:bg-emerald-100 disabled:opacity-40"
+      >
+        XLS
+      </button>
+      <button
+        type="button"
+        onClick={handlePdf}
+        disabled={!canExport}
+        aria-label={t("expenses.exportPdf")}
+        title={t("expenses.exportPdf")}
+        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-200 bg-red-50 text-[10px] font-semibold text-red-700 transition hover:bg-red-100 disabled:opacity-40"
+      >
+        PDF
+      </button>
+    </div>
   );
 }

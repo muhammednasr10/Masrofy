@@ -19,7 +19,7 @@
   },
   "nav": {
     "dashboard": "Dashboard",
-    "expenses": "Expenses",
+    "expenses": "Transactions",
     "plan": "Plan",
     "wallets": "Wallets",
     "investments": "Investments",
@@ -274,10 +274,15 @@
     "notificationsDisable": "Turn off notifications",
     "notificationsEnabled": "Notifications are enabled on this device.",
     "notificationsBlocked": "Notifications are blocked in the browser. Allow them in site settings, then try again.",
-    "notificationsUnsupported": "This browser does not support notifications."
+    "notificationsUnsupported": "This browser does not support notifications.",
+    "dailyReminderTitle": "Daily spending reminder",
+    "dailyReminderHint": "The reminder arrives while the app is open, or the first time you open it after that time on the same day.",
+    "dailyReminderToday": "Time: what did you spend today?",
+    "dailyReminderMissed": "Time: if yesterday had no expenses",
+    "dailyReminderEnabled": "Daily reminder is on"
   },
   "expenses": {
-    "loading": "Loading expenses...",
+    "loading": "Loading transactions...",
     "monthSummaryLabel": "Month summary",
     "netBalanceHint": "Income − expenses",
     "monthSummary": "Summary for {month}",
@@ -285,6 +290,8 @@
     "totalIncome": "Total income",
     "monthBalance": "Net balance",
     "transactionLog": "Transaction log",
+    "exportExcel": "Download Excel",
+    "exportPdf": "Download PDF",
     "transactionCount": "{filtered} of {total} transactions",
     "summaryLine": "Expenses {expenses} • Income {income}",
     "addExpense": "Add expense",

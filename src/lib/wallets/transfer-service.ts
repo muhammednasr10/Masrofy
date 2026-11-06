@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { InternalWalletTransfer, Transaction } from "@/lib/types/database";
+import type { InternalWalletTransfer } from "@/lib/types/database";
 import { readSupabaseError } from "@/lib/supabase/errors";
 import type { WalletTransferFormState } from "@/lib/wallets/transfer";
 
@@ -96,17 +96,17 @@ export async function executeWalletTransfer(
     },
   );
 
-  if (transferError) {
-    throw new Error(getWalletTransferErrorMessage(transferError));
+  if (transferError || !transferId) {
+    throw new Error(getWalletTransferErrorMessage(transferError ?? "تعذر تنفيذ التحويل."));
   }
 
-  const [{ data: transferRow }, { data: balanceRows }] = await Promise.all([
-    supabase.from("internal_wallet_transfers").select("*").eq("id", transferId).single(),
-    supabase.from("transactions").select("id, wallet_id, amount, type, transfer_role"),
-  ]);
+  const { data: transferRow } = await supabase
+    .from("internal_wallet_transfers")
+    .select("*")
+    .eq("id", transferId)
+    .maybeSingle();
 
   return {
     transfer: (transferRow ?? null) as InternalWalletTransfer | null,
-    balanceTransactions: (balanceRows ?? []) as Transaction[],
   };
 }

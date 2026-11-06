@@ -3,8 +3,8 @@
 import Link from "@/components/router/Link";
 import { FormEvent, useRef, useState } from "react";
 import CategoryFormModal from "@/components/categories/CategoryFormModal";
-import CategorySearchSelect from "@/components/categories/CategorySearchSelect";
 import SelectedWalletPanel from "@/components/expenses/SelectedWalletPanel";
+import TransactionDraftLineRow from "@/components/expenses/TransactionDraftLineRow";
 import WalletSelect from "@/components/wallets/WalletSelect";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import { useCategoryForm } from "@/hooks/useCategoryForm";
@@ -38,20 +38,6 @@ type TransactionBatchFormProps = {
 
 const fieldClass =
   "w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500";
-
-function FlowArrow({ direction }: { direction: "up" | "down" }) {
-  return (
-    <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" aria-hidden>
-      <path
-        d={direction === "down" ? "M8 3v10M4.5 9.5 8 13l3.5-3.5" : "M8 13V3M4.5 6.5 8 3l3.5 3.5"}
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 
 export default function TransactionBatchForm({
   categories,
@@ -172,104 +158,36 @@ export default function TransactionBatchForm({
 
         <div className="space-y-2">
           {lines.map((line, index) => (
-            <div key={line.id} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-2">
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <div className="flex shrink-0 rounded-xl bg-white p-0.5">
-                  <button
-                    type="button"
-                    onClick={() => updateLine(line.id, { type: "expense" })}
-                    aria-pressed={line.type === "expense"}
-                    aria-label={t("expenses.typeExpense")}
-                    title={t("expenses.typeExpense")}
-                    className={`flex h-8 w-8 items-center justify-center rounded-lg transition ${
-                      line.type === "expense"
-                        ? "bg-red-100 text-red-600"
-                        : "text-red-300 hover:bg-red-50 hover:text-red-500"
-                    }`}
-                  >
-                    <FlowArrow direction="down" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => updateLine(line.id, { type: "income" })}
-                    aria-pressed={line.type === "income"}
-                    aria-label={t("expenses.typeIncome")}
-                    title={t("expenses.typeIncome")}
-                    className={`flex h-8 w-8 items-center justify-center rounded-lg transition ${
-                      line.type === "income"
-                        ? "bg-emerald-100 text-emerald-600"
-                        : "text-emerald-300 hover:bg-emerald-50 hover:text-emerald-500"
-                    }`}
-                  >
-                    <FlowArrow direction="up" />
-                  </button>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <CategorySearchSelect
-                    categories={categories}
-                    value={line.categoryId}
-                    onChange={(categoryId) => updateLine(line.id, { categoryId })}
-                    onPicked={() => {
-                      setFocusLineId(null);
-                      focusAmount(line.id);
-                    }}
-                    autoFocus={focusLineId === line.id}
-                    allowEmpty
-                    listInFlow
-                    placeholder={t("expenses.formCategory")}
-                    className={fieldClass}
-                    onCreateNew={(name) => {
-                      setActiveLineId(line.id);
-                      categoryForm.openForm(null, name);
-                    }}
-                  />
-                </div>
-                <input
-                  ref={(node) => {
-                    amountRefs.current[line.id] = node;
-                  }}
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  inputMode="decimal"
-                  value={line.amount}
-                  placeholder={t("expenses.formAmount")}
-                  aria-label={`${t("expenses.formAmount")} ${index + 1}`}
-                  onChange={(event) => updateLine(line.id, { amount: event.target.value })}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      addLine(line.id);
-                    }
-                  }}
-                  className="w-[4.75rem] shrink-0 rounded-xl border border-slate-200 bg-white px-2 py-2 text-sm outline-none focus:border-emerald-500 sm:w-24 sm:px-3"
-                />
-                <input
-                  type="text"
-                  value={line.note}
-                  placeholder={t("expenses.formNoteOptional")}
-                  aria-label={t("expenses.formNote")}
-                  onChange={(event) => updateLine(line.id, { note: event.target.value })}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      addLine(line.id);
-                    }
-                  }}
-                  className="w-[4.75rem] shrink-0 rounded-xl border border-slate-200 bg-white px-2 py-2 text-sm outline-none focus:border-emerald-500 sm:w-36 sm:px-3"
-                />
-                {lines.length > 1 ? (
-                  <button
-                    type="button"
-                    onClick={() => removeLine(line.id)}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-                    aria-label={t("expenses.removeLine")}
-                  >
-                    ×
-                  </button>
-                ) : null}
-              </div>
-            </div>
+            <TransactionDraftLineRow
+              key={line.id}
+              line={line}
+              index={index}
+              categories={categories}
+              fieldClass={fieldClass}
+              showRemove={lines.length > 1}
+              autoFocus={focusLineId === line.id}
+              amountRef={(node) => {
+                amountRefs.current[line.id] = node;
+              }}
+              expenseLabel={t("expenses.typeExpense")}
+              incomeLabel={t("expenses.typeIncome")}
+              categoryPlaceholder={t("expenses.formCategory")}
+              amountLabel={t("expenses.formAmount")}
+              noteLabel={t("expenses.formNote")}
+              notePlaceholder={t("expenses.formNoteOptional")}
+              removeLabel={t("expenses.removeLine")}
+              onChange={(patch) => updateLine(line.id, patch)}
+              onPicked={() => {
+                setFocusLineId(null);
+                focusAmount(line.id);
+              }}
+              onCreateCategory={(name) => {
+                setActiveLineId(line.id);
+                categoryForm.openForm(null, name);
+              }}
+              onAddAfter={() => addLine(line.id)}
+              onRemove={() => removeLine(line.id)}
+            />
           ))}
         </div>
 

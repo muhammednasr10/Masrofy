@@ -185,6 +185,27 @@ export function getAggregatedSubWalletSummary(
     liquidTotal += balance;
   }
 
+  const parent = normalizeWallets(wallets).find((wallet) => wallet.id === parentId);
+
+  if (parent) {
+    if (isCreditWallet(parent)) {
+      creditNotes.push({
+        walletName: parent.name,
+        owed: getCreditOwed(parent, transactions),
+        available: getCreditAvailable(parent, transactions),
+        limit: parent.credit_limit != null ? Number(parent.credit_limit) : null,
+      });
+    } else {
+      const ownBalance = calculateWalletBalance(parent, transactions, investments);
+
+      if (isInvestmentWallet(parent)) {
+        investmentTotal += ownBalance;
+      } else {
+        liquidTotal += ownBalance;
+      }
+    }
+  }
+
   const creditTotal = creditNotes.reduce((total, note) => total + note.owed, 0);
 
   return {

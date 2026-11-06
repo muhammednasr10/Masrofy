@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { makeWallet } from "@/test/factories";
-import { buildWalletDisplayRows } from "@/lib/wallets/hierarchy";
+import { makeTransaction, makeWallet } from "@/test/factories";
+import { getAggregatedSubWalletSummary, buildWalletDisplayRows } from "@/lib/wallets/hierarchy";
 
 describe("buildWalletDisplayRows amount order", () => {
   it("sorts top-level wallets from largest balance to smallest", () => {
@@ -45,5 +45,28 @@ describe("buildWalletDisplayRows amount order", () => {
         (row) => row.wallet.id,
       ),
     ).toEqual(["cib", "anoda", "small-card"]);
+  });
+
+  it("keeps money transferred onto a parent that has sub-wallets", () => {
+    const parent = makeWallet({ id: "cib", name: "بنك CIB", opening_balance: 0 });
+    const card = makeWallet({
+      id: "anoda",
+      name: "كارت انودا",
+      parent_wallet_id: "cib",
+      wallet_type: "card",
+      card_kind: "debit",
+      opening_balance: 800,
+    });
+    const transactions = [
+      makeTransaction({
+        id: "in",
+        wallet_id: "cib",
+        amount: 500,
+        type: "transfer",
+        transfer_role: "in",
+      }),
+    ];
+
+    expect(getAggregatedSubWalletSummary("cib", [parent, card], transactions).assetTotal).toBe(1300);
   });
 });

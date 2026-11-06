@@ -2,40 +2,30 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "@/lib/router/navigation";
-import ExpensesSummaryCard from "@/components/expenses/ExpensesSummaryCard";
 import ExpensesTransactionLog from "@/components/expenses/ExpensesTransactionLog";
-import RecurringTransactionFormModal from "@/components/expenses/RecurringTransactionFormModal";
-import RecurringTransactionsSection from "@/components/expenses/RecurringTransactionsSection";
 import TransactionFormModal from "@/components/expenses/TransactionFormModal";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import { FeedbackBanner } from "@/components/ui/FeedbackBanner";
 import { useExpensesPage } from "@/hooks/useExpensesPage";
-import { useFormat } from "@/hooks/useFormat";
-import { useRecurringTransactions } from "@/hooks/useRecurringTransactions";
 import { ADD_EXPENSE_QUERY } from "@/lib/expenses/navigation";
 
 function ExpensesPageContent() {
   const t = useTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { formatCurrency } = useFormat();
   const [showTransactionModal, setShowTransactionModal] = useState(false);
-  const [showRecurringPanel, setShowRecurringPanel] = useState(false);
   const wasSubmittingRef = useRef(false);
   const openedFromQueryRef = useRef(false);
 
   const {
     loading,
-    monthSummary,
     categories,
     wallets,
     transactions,
-    allTransactionsCount,
     filters,
     setFilters,
     monthStart,
     monthEnd,
-    filteredSummary,
     currency,
     amount,
     categoryId,
@@ -59,23 +49,14 @@ function ExpensesPageContent() {
     handleSubmit,
     handleSaveLines,
     handleDelete,
-    handleImportTransactions,
     openEditTransaction,
     closeTransactionModal,
     editingTransactionId,
-    ingestTransaction,
     ingestCategory,
   } = useExpensesPage();
 
-  const recurring = useRecurringTransactions({
-    wallets,
-    categories,
-    defaultWalletId: walletId,
-    onTransactionCreated: ingestTransaction,
-  });
-
   useEffect(() => {
-    if (openedFromQueryRef.current || loading || recurring.loading) {
+    if (openedFromQueryRef.current || loading) {
       return;
     }
 
@@ -84,7 +65,7 @@ function ExpensesPageContent() {
       setShowTransactionModal(true);
       router.replace("/expenses", { scroll: false });
     }
-  }, [loading, recurring.loading, router, searchParams]);
+  }, [loading, router, searchParams]);
 
   useEffect(() => {
     if (wasSubmittingRef.current && !submitting && message && !error && showTransactionModal) {
@@ -95,40 +76,19 @@ function ExpensesPageContent() {
     wasSubmittingRef.current = submitting;
   }, [submitting, message, error, showTransactionModal, closeTransactionModal]);
 
-  if (loading || recurring.loading) {
+  if (loading) {
     return <p className="text-sm text-slate-500">{t("expenses.loading")}</p>;
   }
 
-  const summaryLine =
-    filteredSummary.totalExpenses + filteredSummary.totalIncome > 0
-      ? t("expenses.summaryLine", {
-          expenses: formatCurrency(filteredSummary.totalExpenses, currency),
-          income: formatCurrency(filteredSummary.totalIncome, currency),
-        })
-      : "";
-
   return (
     <div className="space-y-6">
-      <ExpensesSummaryCard
-        totalExpenses={monthSummary.totalExpenses}
-        totalIncome={monthSummary.totalIncome}
-        balance={monthSummary.balance}
-        currency={currency}
-      />
-
-      <FeedbackBanner
-        error={error ?? recurring.error}
-        message={message ?? recurring.message}
-      />
+      <FeedbackBanner error={error} message={message} />
 
       <ExpensesTransactionLog
         transactions={transactions}
-        allTransactionsCount={allTransactionsCount}
-        summaryLine={summaryLine}
         wallets={wallets}
         categories={categories}
         currency={currency}
-        submitting={submitting}
         filters={filters}
         monthStart={monthStart}
         monthEnd={monthEnd}
@@ -138,26 +98,11 @@ function ExpensesPageContent() {
           closeTransactionModal();
           setShowTransactionModal(true);
         }}
-        onAddRecurring={() => setShowRecurringPanel(true)}
-        onImport={handleImportTransactions}
         onDelete={handleDelete}
         onEdit={(transaction) => {
           openEditTransaction(transaction);
           setShowTransactionModal(true);
         }}
-      />
-
-      <RecurringTransactionsSection
-        open={showRecurringPanel}
-        recurrings={recurring.recurrings}
-        currency={currency}
-        actingId={recurring.actingId}
-        onRegisterDue={recurring.registerDue}
-        onEdit={recurring.openEditModal}
-        onToggleActive={recurring.toggleActive}
-        onDelete={recurring.deleteRecurring}
-        onOpenAdd={recurring.openFormModal}
-        onClose={() => setShowRecurringPanel(false)}
       />
 
       <TransactionFormModal
@@ -190,19 +135,6 @@ function ExpensesPageContent() {
         }}
         onCategoryCreated={ingestCategory}
       />
-
-      {recurring.showFormModal ? (
-        <RecurringTransactionFormModal
-          mode={recurring.editingId ? "edit" : "add"}
-          form={recurring.form}
-          wallets={wallets}
-          categories={categories}
-          submitting={recurring.submitting}
-          onChange={recurring.setForm}
-          onSubmit={recurring.handleSave}
-          onClose={recurring.closeFormModal}
-        />
-      ) : null}
     </div>
   );
 }

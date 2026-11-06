@@ -4,12 +4,12 @@ export type AppNavLink = {
   icon: string;
 };
 
-/** Daily path: home → expenses → wallets → plan */
+/** Daily path: home → plan → transactions → wallets */
 export const PRIMARY_NAV_LINKS: AppNavLink[] = [
   { href: "/dashboard", key: "nav.dashboard", icon: "🏠" },
-  { href: "/expenses", key: "nav.expenses", icon: "💸" },
-  { href: "/wallets", key: "nav.wallets", icon: "👛" },
   { href: "/plan", key: "nav.plan", icon: "📋" },
+  { href: "/expenses", key: "nav.expenses", icon: "🧾" },
+  { href: "/wallets", key: "nav.wallets", icon: "👛" },
 ];
 
 /** Progressive disclosure — still available, not in the main strip */

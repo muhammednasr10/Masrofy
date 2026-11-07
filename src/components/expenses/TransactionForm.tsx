@@ -143,8 +143,10 @@ export default function TransactionForm({
             value={categoryId}
             onChange={onCategoryChange}
             onQueryChange={setTypedCategoryName}
+            onCreateNew={(name) => categoryForm.openForm(null, name)}
             allowEmpty={type === "income"}
             required={type === "expense"}
+            listInFlow
             className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus-within:border-emerald-500"
           />
       </div>

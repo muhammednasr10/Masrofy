@@ -58,8 +58,8 @@ export default function TransactionDraftLineRow({
   onRemove: () => void;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-2">
-      <div className="flex items-center gap-1.5 sm:gap-2">
+    <div className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50/70 p-2 sm:space-y-0 sm:p-2">
+      <div className="flex items-start gap-1.5 sm:items-center sm:gap-2">
         <div className="flex shrink-0 rounded-xl bg-white p-0.5">
           <button
             type="button"
@@ -67,7 +67,7 @@ export default function TransactionDraftLineRow({
             aria-pressed={line.type === "expense"}
             aria-label={expenseLabel}
             title={expenseLabel}
-            className={`flex h-8 w-8 items-center justify-center rounded-lg transition ${
+            className={`flex h-9 w-9 items-center justify-center rounded-lg transition sm:h-8 sm:w-8 ${
               line.type === "expense"
                 ? "bg-red-100 text-red-600"
                 : "text-red-300 hover:bg-red-50 hover:text-red-500"
@@ -81,7 +81,7 @@ export default function TransactionDraftLineRow({
             aria-pressed={line.type === "income"}
             aria-label={incomeLabel}
             title={incomeLabel}
-            className={`flex h-8 w-8 items-center justify-center rounded-lg transition ${
+            className={`flex h-9 w-9 items-center justify-center rounded-lg transition sm:h-8 sm:w-8 ${
               line.type === "income"
                 ? "bg-emerald-100 text-emerald-600"
                 : "text-emerald-300 hover:bg-emerald-50 hover:text-emerald-500"
@@ -104,6 +104,19 @@ export default function TransactionDraftLineRow({
             onCreateNew={onCreateCategory}
           />
         </div>
+        {showRemove ? (
+          <button
+            type="button"
+            onClick={onRemove}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-red-50 hover:text-red-600 sm:hidden"
+            aria-label={removeLabel}
+          >
+            ×
+          </button>
+        ) : null}
+      </div>
+
+      <div className="flex items-center gap-1.5 sm:ms-[4.25rem] sm:gap-2">
         <input
           ref={amountRef}
           type="number"
@@ -120,7 +133,7 @@ export default function TransactionDraftLineRow({
               onAddAfter();
             }
           }}
-          className="w-[4.75rem] shrink-0 rounded-xl border border-slate-200 bg-white px-2 py-2 text-sm outline-none focus:border-emerald-500 sm:w-24 sm:px-3"
+          className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 sm:w-24 sm:flex-none sm:px-3 sm:py-2"
         />
         <input
           type="text"
@@ -134,13 +147,13 @@ export default function TransactionDraftLineRow({
               onAddAfter();
             }
           }}
-          className="w-[4.75rem] shrink-0 rounded-xl border border-slate-200 bg-white px-2 py-2 text-sm outline-none focus:border-emerald-500 sm:w-36 sm:px-3"
+          className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 sm:w-36 sm:flex-none sm:px-3 sm:py-2"
         />
         {showRemove ? (
           <button
             type="button"
             onClick={onRemove}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+            className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-red-50 hover:text-red-600 sm:flex"
             aria-label={removeLabel}
           >
             ×

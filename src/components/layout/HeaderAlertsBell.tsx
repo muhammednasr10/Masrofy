@@ -1,30 +1,34 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import { useAlerts } from "@/components/alerts/AlertsProvider";
 import AlertsDropdownPanel from "@/components/layout/AlertsDropdownPanel";
-import { useTranslations, useLocale } from "@/components/i18n/LocaleProvider";
-import { useDueRecurringNotifications } from "@/hooks/useDueRecurringNotifications";
-import { useHeaderAlerts } from "@/hooks/useHeaderAlerts";
+import { useTranslations } from "@/components/i18n/LocaleProvider";
 
 export default function HeaderAlertsBell() {
   const t = useTranslations();
-  const { locale } = useLocale();
   const {
     alerts,
     dueRecurrings,
+    duePlanLines,
     currency,
+    walletNames,
     actingId,
     actionError,
     totalCount,
+    panelSource,
+    togglePanel,
+    closePanel,
     registerDue,
     skipDue,
-  } = useHeaderAlerts();
-  useDueRecurringNotifications(dueRecurrings, locale);
-  const [open, setOpen] = useState(false);
+    confirmPlanDue,
+    dismissPlanDue,
+  } = useAlerts();
   const containerRef = useRef<HTMLDivElement>(null);
+  const panelOpen = panelSource === "header";
 
   useEffect(() => {
-    if (!open) {
+    if (!panelOpen) {
       return;
     }
 
@@ -33,12 +37,12 @@ export default function HeaderAlertsBell() {
         return;
       }
 
-      setOpen(false);
+      closePanel();
     }
 
     function handleEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        setOpen(false);
+        closePanel();
       }
     }
 
@@ -49,15 +53,15 @@ export default function HeaderAlertsBell() {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleEscape);
     };
-  }, [open]);
+  }, [closePanel, panelOpen]);
 
   return (
     <div ref={containerRef} className="relative z-[100]">
       <button
         type="button"
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => togglePanel("header")}
         className="relative flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-lg text-slate-700 transition hover:bg-slate-50"
-        aria-expanded={open}
+        aria-expanded={panelOpen}
         aria-haspopup="true"
         aria-label={t("alerts.title")}
       >
@@ -69,16 +73,21 @@ export default function HeaderAlertsBell() {
         ) : null}
       </button>
 
-      {open ? (
+      {panelOpen ? (
         <AlertsDropdownPanel
           alerts={alerts}
           dueRecurrings={dueRecurrings}
+          duePlanLines={duePlanLines}
           currency={currency}
+          walletNames={walletNames}
           actingId={actingId}
           actionError={actionError}
-          onRegisterDue={registerDue}
-          onSkipDue={skipDue}
-          onClose={() => setOpen(false)}
+          onRegisterDue={(recurring) => void registerDue(recurring)}
+          onSkipDue={(recurring) => void skipDue(recurring)}
+          onConfirmPlanDue={(line) => void confirmPlanDue(line)}
+          onDismissPlanDue={(line) => void dismissPlanDue(line)}
+          onClose={closePanel}
+          placement="header"
         />
       ) : null}
     </div>

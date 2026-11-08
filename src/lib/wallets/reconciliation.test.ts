@@ -110,6 +110,7 @@ describe("reconcilable wallet display", () => {
     expect(summary.liquidTotal).toBe(1000);
     expect(summary.investmentTotal).toBe(5200);
     expect(summary.creditTotal).toBe(800);
+    expect(summary.parentOwnBalance).toBe(0);
     expect(summary.assetTotal).toBe(6200);
   });
 });

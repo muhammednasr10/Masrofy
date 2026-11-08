@@ -3,6 +3,7 @@ import {
   defaultWalletIcon,
 } from "@/lib/constants/wallet-options";
 import type { CardKind, Investment, Transaction, Wallet, WalletType } from "@/lib/types/database";
+import { formatMoneyInput } from "@/lib/utils/money";
 import { calculateWalletBalance } from "@/lib/wallets/balance";
 import { getInvestmentWalletBalance } from "@/lib/wallets/investment-link";
 
@@ -42,7 +43,7 @@ export function walletToForm(
     walletType: wallet.wallet_type,
     icon: wallet.icon,
     color: wallet.color,
-    currentBalance: String(calculateWalletBalance(wallet, transactions, investments)),
+    currentBalance: formatMoneyInput(calculateWalletBalance(wallet, transactions, investments)),
     parentWalletId: wallet.parent_wallet_id,
     investmentId: wallet.investment_id,
     cardKind: wallet.card_kind,

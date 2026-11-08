@@ -3,12 +3,14 @@
 import { FormEvent, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Transaction, Wallet } from "@/lib/types/database";
+import { formatMoneyInput } from "@/lib/utils/money";
 import {
   buildInventoryDisplayRows,
   buildReconciliationPreview,
   calculateWalletBalance,
   getInventoryNetAdjustment,
 } from "@/lib/wallets";
+import { setWalletCurrentBalance } from "@/lib/wallets/set-current-balance";
 
 export type WalletInventoryPreview = {
   wallet: Wallet;
@@ -17,6 +19,9 @@ export type WalletInventoryPreview = {
   difference: number;
   isMatched: boolean;
 };
+
+/** @deprecated inventory no longer classifies differences; kept for leftover UI imports */
+export type DifferenceClassification = "unknown" | "known";
 
 export function useWalletInventory(
   wallets: Wallet[],
@@ -47,7 +52,7 @@ export function useWalletInventory(
       return edited;
     }
 
-    return String(calculateWalletBalance(wallet, transactions));
+    return formatMoneyInput(calculateWalletBalance(wallet, transactions));
   }
 
   const previews = useMemo(() => {
@@ -90,24 +95,25 @@ export function useWalletInventory(
     setError(null);
 
     const supabase = createClient();
-    const trimmedNote = note.trim() || null;
 
-    const { error: reconcileError } = await supabase.rpc("reconcile_wallets_batch", {
-      p_items: previews.map((preview) => ({
-        wallet_id: preview.wallet.id,
-        actual_balance: preview.actualBalance,
-      })),
-      p_note: trimmedNote,
-    });
+    try {
+      for (const preview of previews) {
+        if (preview.isMatched) {
+          continue;
+        }
 
-    if (reconcileError) {
-      setError(reconcileError.message);
+        await setWalletCurrentBalance(supabase, preview.wallet, preview.actualBalance);
+      }
+
+      await onComplete();
+      onClose();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "تعذر تحديث الأرصدة.");
       setSaving(false);
       return;
     }
 
-    await onComplete();
-    onClose();
+    setSaving(false);
   }
 
   return {

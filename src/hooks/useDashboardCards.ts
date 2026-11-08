@@ -76,6 +76,12 @@ export function useDashboardCards(data: DashboardData): {
       title: t("dashboard.walletsTitle"),
       description: t("dashboard.walletsDesc"),
       primaryValue: maskBalance(formatAmount(data.portfolio.assetTotal)),
+      secondaryValue:
+        data.portfolio.creditTotal > 0
+          ? t("dashboard.walletsCreditDue", {
+              amount: formatAmount(data.portfolio.creditTotal),
+            })
+          : undefined,
       tone: "emerald",
     };
 

@@ -1,7 +1,6 @@
 "use client";
 
 import ExpensesToolbar from "@/components/expenses/ExpensesToolbar";
-import TransactionFiltersPanel from "@/components/expenses/TransactionFiltersPanel";
 import TransactionsTable from "@/components/expenses/TransactionsTable";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import type { TransactionFilters } from "@/lib/expenses/filters";
@@ -51,21 +50,16 @@ export default function ExpensesTransactionLog({
         />
       </div>
 
-      <TransactionFiltersPanel
-        filters={filters}
-        categories={categories}
-        wallets={wallets}
-        defaultDateFrom={monthStart}
-        defaultDateTo={monthEnd}
-        onChange={onFiltersChange}
-      />
-
       <TransactionsTable
         transactions={transactions}
         wallets={wallets}
         categories={categories}
         currency={currency}
+        filters={filters}
+        defaultDateFrom={monthStart}
+        defaultDateTo={monthEnd}
         attachmentUrls={attachmentUrls}
+        onFiltersChange={onFiltersChange}
         onDelete={onDelete}
         onEdit={onEdit}
       />

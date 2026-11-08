@@ -1,5 +1,6 @@
 "use client";
 
+import PlanDueReminderButton from "@/components/expenses/PlanDueReminderButton";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import { useFormat } from "@/hooks/useFormat";
 import { getTransactionCategoryColumns } from "@/lib/expenses/transaction-display";
@@ -91,6 +92,7 @@ export default function ExpensesToolbar({
 
   return (
     <div className="flex items-center gap-1.5">
+      <PlanDueReminderButton />
       <button
         type="button"
         onClick={onAddTransaction}

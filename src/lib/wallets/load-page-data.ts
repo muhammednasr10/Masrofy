@@ -9,6 +9,7 @@ import type {
   WalletReconciliation,
 } from "@/lib/types/database";
 import { normalizeWallets, sortWallets } from "@/lib/wallets/normalize";
+import { deleteBalanceAdjustmentTransactions } from "@/lib/wallets/set-current-balance";
 
 export type WalletsPageData = {
   currency: string;
@@ -33,6 +34,13 @@ export async function loadWalletsPageData(
     .maybeSingle();
   const resolvedMonthStartDay = normalizeMonthStartDay(profile?.month_start_day);
   const month = getMonthRange(referenceDate, locale, resolvedMonthStartDay);
+
+  // Drop fake balance-fix incomes/expenses (the +60k stack) before reading balances.
+  try {
+    await deleteBalanceAdjustmentTransactions(supabase);
+  } catch {
+    // Non-fatal: page still loads; edit/inventory paths purge again on save.
+  }
 
   const [
     walletResult,

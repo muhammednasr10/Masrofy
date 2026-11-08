@@ -127,4 +127,23 @@ describe("openingBalanceFromCurrentBalance", () => {
 
     expect(openingBalanceFromCurrentBalance(1200, wallet, transactions, "2026-12-31")).toBe(1000);
   });
+
+  it("keeps typed balance when a large income already exists on the wallet", () => {
+    const wallet = makeWallet({ id: "cash", opening_balance: 1524 });
+    const transactions = [
+      makeTransaction({
+        id: "ghost-income",
+        wallet_id: "cash",
+        type: "income",
+        amount: 60000,
+        transaction_date: "2026-11-01",
+      }),
+    ];
+
+    const opening = openingBalanceFromCurrentBalance(1524, wallet, transactions, "2026-11-08");
+    expect(opening).toBe(-58476);
+    expect(calculateWalletBalance({ ...wallet, opening_balance: opening }, transactions, [], "2026-11-08")).toBe(
+      1524,
+    );
+  });
 });

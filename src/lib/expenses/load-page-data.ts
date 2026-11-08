@@ -5,6 +5,7 @@ import type { Category, Transaction, Wallet } from "@/lib/types/database";
 import { isDateInMonthRange, normalizeMonthStartDay } from "@/lib/calendar";
 import type { ExpensesPageSnapshot } from "@/lib/expenses/append-transaction";
 import { normalizeWallets } from "@/lib/wallets/normalize";
+import { deleteBalanceAdjustmentTransactions } from "@/lib/wallets/set-current-balance";
 
 function sliceExpensesSnapshot(
   snapshot: ExpensesPageSnapshot,
@@ -48,6 +49,12 @@ export async function loadExpensesPageData(
   }
 
   try {
+    try {
+      await deleteBalanceAdjustmentTransactions(supabase);
+    } catch {
+      // Non-fatal — page still loads.
+    }
+
     const [
       { data: profile },
       { data: categoryRows },

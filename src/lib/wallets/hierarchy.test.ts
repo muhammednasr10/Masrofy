@@ -67,6 +67,48 @@ describe("buildWalletDisplayRows amount order", () => {
       }),
     ];
 
-    expect(getAggregatedSubWalletSummary("cib", [parent, card], transactions).assetTotal).toBe(1300);
+    const summary = getAggregatedSubWalletSummary("cib", [parent, card], transactions);
+    expect(summary.parentOwnBalance).toBe(500);
+    expect(summary.assetTotal).toBe(1300);
+  });
+
+  it("does not let a negative parent ledger drag down card balances", () => {
+    const parent = makeWallet({ id: "cib", name: "بنك CIB", opening_balance: 0 });
+    const debit = makeWallet({
+      id: "debit",
+      name: "خصم",
+      parent_wallet_id: "cib",
+      wallet_type: "card",
+      card_kind: "debit",
+      opening_balance: 12000,
+    });
+    const credit = makeWallet({
+      id: "credit",
+      name: "كريديت",
+      parent_wallet_id: "cib",
+      wallet_type: "card",
+      card_kind: "credit",
+      opening_balance: 57425,
+      credit_limit: 80000,
+    });
+    const transactions = [
+      makeTransaction({
+        id: "parent-expense",
+        wallet_id: "cib",
+        amount: 57425,
+        type: "expense",
+      }),
+    ];
+
+    const summary = getAggregatedSubWalletSummary(
+      "cib",
+      [parent, debit, credit],
+      transactions,
+    );
+
+    expect(summary.parentOwnBalance).toBe(-57425);
+    expect(summary.creditTotal).toBe(57425);
+    expect(summary.liquidTotal).toBe(12000);
+    expect(summary.assetTotal).toBe(12000);
   });
 });

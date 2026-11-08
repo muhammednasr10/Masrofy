@@ -2,9 +2,11 @@
 
 import Link from "@/components/router/Link";
 import DueNotificationPrompt from "@/components/layout/DueNotificationPrompt";
+import DuePlanAlertsList from "@/components/layout/DuePlanAlertsList";
 import DueRecurringAlertsList from "@/components/layout/DueRecurringAlertsList";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import type { DashboardAlert } from "@/lib/alerts/dashboard";
+import type { DuePlanLine } from "@/lib/plan/expected-day";
 import type { RecurringTransaction } from "@/lib/types/database";
 
 const toneClasses = {
@@ -16,26 +18,41 @@ const toneClasses = {
 type AlertsDropdownPanelProps = {
   alerts: DashboardAlert[];
   dueRecurrings: RecurringTransaction[];
+  duePlanLines: DuePlanLine[];
   currency: string;
+  walletNames: Record<string, string>;
   actingId: string | null;
   actionError: string | null;
   onRegisterDue: (recurring: RecurringTransaction) => void;
   onSkipDue: (recurring: RecurringTransaction) => void;
+  onConfirmPlanDue: (line: DuePlanLine) => void;
+  onDismissPlanDue: (line: DuePlanLine) => void;
   onClose: () => void;
+  placement?: "header" | "fab";
 };
 
 export default function AlertsDropdownPanel({
   alerts,
   dueRecurrings,
+  duePlanLines,
   currency,
+  walletNames,
   actingId,
   actionError,
   onRegisterDue,
   onSkipDue,
+  onConfirmPlanDue,
+  onDismissPlanDue,
   onClose,
+  placement = "header",
 }: AlertsDropdownPanelProps) {
   const t = useTranslations();
-  const totalCount = alerts.length + dueRecurrings.length;
+  const totalCount = alerts.length + dueRecurrings.length + duePlanLines.length;
+  const dueCount = dueRecurrings.length + duePlanLines.length;
+  const panelPositionClass =
+    placement === "fab"
+      ? "bottom-[calc(100%+0.5rem)] end-0"
+      : "end-0 top-[calc(100%+0.5rem)]";
 
   return (
     <>
@@ -46,7 +63,7 @@ export default function AlertsDropdownPanel({
         aria-label={t("common.close")}
       />
       <div
-        className="absolute end-0 top-[calc(100%+0.5rem)] z-[100] w-[min(24rem,calc(100vw-2rem))] max-h-[min(28rem,calc(100dvh-6rem))] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl"
+        className={`absolute ${panelPositionClass} z-[100] w-[min(24rem,calc(100vw-2rem))] max-h-[min(28rem,calc(100dvh-8rem))] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl`}
         role="menu"
       >
         <div className="border-b border-slate-100 px-4 py-3">
@@ -57,7 +74,16 @@ export default function AlertsDropdownPanel({
           <p className="mt-0.5 text-xs text-slate-500">{t("alerts.subtitle")}</p>
         </div>
 
-        <DueNotificationPrompt dueCount={dueRecurrings.length} />
+        <DueNotificationPrompt dueCount={dueCount} />
+
+        <DuePlanAlertsList
+          duePlanLines={duePlanLines}
+          currency={currency}
+          walletNames={walletNames}
+          actingId={actingId}
+          onConfirm={onConfirmPlanDue}
+          onDismiss={onDismissPlanDue}
+        />
 
         <DueRecurringAlertsList
           dueRecurrings={dueRecurrings}
@@ -77,7 +103,7 @@ export default function AlertsDropdownPanel({
           </p>
         ) : null}
 
-        {alerts.length === 0 && dueRecurrings.length === 0 ? (
+        {alerts.length === 0 && dueRecurrings.length === 0 && duePlanLines.length === 0 ? (
           <p className="px-4 py-6 text-center text-sm text-slate-500">{t("alerts.empty")}</p>
         ) : alerts.length > 0 ? (
           <ul className="space-y-2 p-3">

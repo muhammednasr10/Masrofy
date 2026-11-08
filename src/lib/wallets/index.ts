@@ -8,5 +8,6 @@ export * from "@/lib/wallets/monthly-transactions";
 export * from "@/lib/wallets/normalize";
 export * from "@/lib/wallets/reconciliation";
 export * from "@/lib/wallets/reconciliation-labels";
+export * from "@/lib/wallets/set-current-balance";
 export * from "@/lib/wallets/transfer";
 export * from "@/lib/wallets/transfer-service";

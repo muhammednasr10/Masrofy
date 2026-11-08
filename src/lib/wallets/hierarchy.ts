@@ -146,6 +146,14 @@ export type ParentWalletBalanceSummary = {
   creditTotal: number;
   /** Liquid + investment (still excludes credit). */
   assetTotal: number;
+  /**
+   * Parent ledger not allocated to sub-wallets.
+   * Positive amounts count in asset totals (e.g. transfer onto the bank).
+   * Negative leftovers are kept visible but do not reduce wealth totals —
+   * they usually come from expenses/transfers recorded on the parent while
+   * cards already hold the real balances.
+   */
+  parentOwnBalance: number;
   creditNotes: Array<{
     walletName: string;
     owed: number;
@@ -153,6 +161,10 @@ export type ParentWalletBalanceSummary = {
     limit: number | null;
   }>;
 };
+
+function parentOwnWealthContribution(parentOwnBalance: number) {
+  return parentOwnBalance > 0 ? parentOwnBalance : 0;
+}
 
 export function getAggregatedSubWalletSummary(
   parentId: string,
@@ -163,6 +175,7 @@ export function getAggregatedSubWalletSummary(
   const creditNotes: ParentWalletBalanceSummary["creditNotes"] = [];
   let liquidTotal = 0;
   let investmentTotal = 0;
+  let parentOwnBalance = 0;
 
   for (const child of getDirectChildWallets(parentId, wallets)) {
     if (isCreditWallet(child)) {
@@ -195,14 +208,11 @@ export function getAggregatedSubWalletSummary(
         available: getCreditAvailable(parent, transactions),
         limit: parent.credit_limit != null ? Number(parent.credit_limit) : null,
       });
+    } else if (isInvestmentWallet(parent)) {
+      investmentTotal += calculateWalletBalance(parent, transactions, investments);
     } else {
-      const ownBalance = calculateWalletBalance(parent, transactions, investments);
-
-      if (isInvestmentWallet(parent)) {
-        investmentTotal += ownBalance;
-      } else {
-        liquidTotal += ownBalance;
-      }
+      parentOwnBalance = calculateWalletBalance(parent, transactions, investments);
+      liquidTotal += parentOwnWealthContribution(parentOwnBalance);
     }
   }
 
@@ -213,6 +223,7 @@ export function getAggregatedSubWalletSummary(
     investmentTotal,
     creditTotal,
     assetTotal: liquidTotal + investmentTotal,
+    parentOwnBalance,
     creditNotes,
   };
 }

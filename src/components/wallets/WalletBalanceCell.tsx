@@ -46,6 +46,13 @@ function WalletBalanceCellComponent({
             <p className="wrap-text text-sm leading-6 text-slate-500">
               رصيد المحفظة والفروع (بدون كريديت)
             </p>
+            {aggregatedSummary.parentOwnBalance < 0 ? (
+              <p className="wrap-text text-sm leading-6 text-amber-700">
+                حركة سالبة على الحساب مباشرة{" "}
+                {formatCurrency(aggregatedSummary.parentOwnBalance, currency)} — مش داخلة في
+                المجموع
+              </p>
+            ) : null}
             {aggregatedSummary.creditNotes.map((note) => (
               <p key={note.walletName} className="wrap-text text-sm leading-6 text-amber-700">
                 ملاحظة: {note.walletName} — مستحق {formatCurrency(note.owed, currency)}

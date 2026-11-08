@@ -15,6 +15,7 @@ import type {
 import { getMonthRange, normalizeMonthStartDay } from "@/lib/calendar";
 import { summarizeTransactions } from "@/lib/utils/summary";
 import { summarizePortfolioWealth } from "@/lib/wallets";
+import { deleteBalanceAdjustmentTransactions } from "@/lib/wallets/set-current-balance";
 
 export type DashboardData = {
   profile: Pick<Profile, "full_name" | "currency"> | null;
@@ -54,6 +55,12 @@ export async function loadDashboardData(
   const monthStartDay = normalizeMonthStartDay(profile?.month_start_day);
   const month = getMonthRange(referenceDate, locale, monthStartDay);
   const today = new Date().toISOString().slice(0, 10);
+
+  try {
+    await deleteBalanceAdjustmentTransactions(supabase);
+  } catch {
+    // Non-fatal — balances still load; wallets page / balance save also purge.
+  }
 
   const [
     { data: transactions },

@@ -37,13 +37,7 @@ export default function WalletInventorySummary({
           <p className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
             {Math.abs(netAdjustment) < 0.005
               ? t("wallets.inventoryNetZero")
-              : netAdjustment > 0
-                ? t("wallets.inventoryNetIncome", {
-                    amount: formatCurrency(Math.abs(netAdjustment), currency),
-                  })
-                : t("wallets.inventoryNetExpense", {
-                    amount: formatCurrency(Math.abs(netAdjustment), currency),
-                  })}
+              : t("wallets.inventoryClassifyHint")}
           </p>
         </div>
       ) : (

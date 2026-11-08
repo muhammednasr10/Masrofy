@@ -3,14 +3,16 @@
 import { FormEvent, useCallback, useState, type Dispatch, type SetStateAction } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Investment, Transaction, Wallet } from "@/lib/types/database";
+import { roundMoney } from "@/lib/utils/money";
 import {
   buildWalletPayload,
+  calculateWalletBalance,
   getWalletParentId,
-  openingBalanceFromCurrentBalance,
   sortWallets,
   walletHasChildren,
   type WalletFormState,
 } from "@/lib/wallets";
+import { setWalletCurrentBalance } from "@/lib/wallets/set-current-balance";
 
 type WalletMutationFeedback = {
   setError: (message: string | null) => void;
@@ -29,13 +31,14 @@ type UseWalletMutationsOptions = WalletMutationFeedback & {
   defaultWalletId: string;
   closeAddModal: () => void;
   closeEditModal: () => void;
-  loadData: () => Promise<void>;
+  loadData: (options?: { silent?: boolean }) => Promise<void>;
 };
 
 export function useWalletMutations({
   wallets,
   setWallets,
   transactions,
+  investments,
   addForm,
   editForm,
   editingWalletId,
@@ -164,23 +167,21 @@ export function useWalletMutations({
       clearFeedback();
 
       const supabase = createClient();
+      const editingWallet = wallets.find((wallet) => wallet.id === editingWalletId);
       const payload = buildWalletPayload(editForm);
-      const updateData =
-        editForm.walletType === "investment"
-          ? payload
-          : {
-              ...payload,
-              opening_balance: openingBalanceFromCurrentBalance(
-                Number(editForm.currentBalance) || 0,
-                {
-                  id: editingWalletId,
-                  card_kind: editForm.cardKind,
-                },
-                transactions,
-              ),
-            };
+      const nextBalance = roundMoney(Number(editForm.currentBalance) || 0);
+      const recordedBalance = editingWallet
+        ? calculateWalletBalance(editingWallet, transactions, investments)
+        : nextBalance;
+      const balanceChanged =
+        editForm.walletType !== "investment" && Math.abs(nextBalance - recordedBalance) >= 0.005;
 
-      const { data, error: updateError } = await supabase
+      // Metadata only — never put the typed balance into opening_balance here.
+      const { opening_balance: _ignoredOpening, ...metaPayload } = payload;
+      const updateData =
+        editForm.walletType === "investment" ? payload : metaPayload;
+
+      const { error: updateError } = await supabase
         .from("wallets")
         .update(updateData)
         .eq("id", editingWalletId)
@@ -193,11 +194,25 @@ export function useWalletMutations({
         return;
       }
 
-      setWallets((current) =>
-        sortWallets(
-          current.map((wallet) => (wallet.id === editingWalletId ? (data as Wallet) : wallet)),
-        ),
-      );
+      if (balanceChanged) {
+        try {
+          await setWalletCurrentBalance(
+            supabase,
+            {
+              id: editingWalletId,
+              card_kind: editForm.cardKind,
+              opening_balance: editingWallet?.opening_balance ?? 0,
+            },
+            nextBalance,
+          );
+        } catch (caught) {
+          setError(caught instanceof Error ? caught.message : "تعذر تحديث الرصيد.");
+          setSavingEdit(false);
+          return;
+        }
+      }
+
+      await loadData({ silent: true });
       setMessage("تم تحديث المحفظة بنجاح.");
       closeEditModal();
       setSavingEdit(false);
@@ -205,12 +220,14 @@ export function useWalletMutations({
     [
       editingWalletId,
       editForm,
+      wallets,
       transactions,
+      investments,
+      loadData,
       clearFeedback,
       closeEditModal,
       setError,
       setMessage,
-      setWallets,
     ],
   );
 

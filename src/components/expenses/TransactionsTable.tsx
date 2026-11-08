@@ -1,9 +1,12 @@
 "use client";
 
+import CategorySearchSelect from "@/components/categories/CategorySearchSelect";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import IconActionButton from "@/components/ui/IconActionButton";
+import WalletSelect from "@/components/wallets/WalletSelect";
 import { useFormat } from "@/hooks/useFormat";
 import { getTransactionWalletDisplay } from "@/lib/expenses/display";
+import type { TransactionFilters } from "@/lib/expenses/filters";
 import { getTransactionCategoryColumns } from "@/lib/expenses/transaction-display";
 import type { OfflineTransaction } from "@/lib/offline/types";
 import type { Category, Wallet } from "@/lib/types/database";
@@ -51,12 +54,19 @@ function TransactionActions({
   );
 }
 
+const filterClass =
+  "mt-2 w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-normal text-slate-700 outline-none focus:border-emerald-500";
+
 export default function TransactionsTable({
   transactions,
   wallets,
   categories,
   currency,
+  filters,
+  defaultDateFrom,
+  defaultDateTo,
   attachmentUrls,
+  onFiltersChange,
   onDelete,
   onEdit,
 }: {
@@ -64,7 +74,11 @@ export default function TransactionsTable({
   wallets: Wallet[];
   categories: Category[];
   currency: string;
+  filters: TransactionFilters;
+  defaultDateFrom: string;
+  defaultDateTo: string;
   attachmentUrls: Record<string, string>;
+  onFiltersChange: (filters: TransactionFilters) => void;
   onDelete: (id: string) => void;
   onEdit: (transaction: OfflineTransaction) => void;
 }) {
@@ -76,121 +90,128 @@ export default function TransactionsTable({
     noCategory: t("expenses.noCategory"),
   };
 
-  if (transactions.length === 0) {
-    return (
-      <p className="mt-6 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-        {t("expenses.noResults")}
-      </p>
-    );
+  function resetFilters() {
+    onFiltersChange({
+      search: "",
+      dateFrom: defaultDateFrom,
+      dateTo: defaultDateTo,
+      categoryId: "",
+      walletId: "",
+      type: "all",
+    });
   }
 
   return (
-    <>
-      <div className="mt-6 space-y-3 md:hidden">
-        {transactions.map((transaction) => {
-          const walletLabel = getWalletLabel(wallets, transaction, t("expenses.noWallet"));
-          const { mainLabel, subLabel } = getTransactionCategoryColumns(
-            transaction,
-            categories,
-            categoryMessages,
-          );
-          const isExpense = transaction.type === "expense";
-          const canEdit = transaction.type !== "transfer" && !transaction.offlinePending;
-
-          return (
-            <article
-              key={transaction.id}
-              className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm"
-            >
-              <div className="p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm text-slate-500">{formatDate(transaction.transaction_date)}</p>
-                    <p className="mt-1 wrap-text font-medium text-slate-900">{mainLabel}</p>
-                    {subLabel !== "—" ? (
-                      <p className="mt-0.5 wrap-text text-sm text-slate-500">{subLabel}</p>
-                    ) : null}
-                  </div>
-                  <p
-                    className={`amount-text shrink-0 ${
-                      isExpense ? "text-red-600" : "text-emerald-600"
-                    }`}
-                  >
-                    {isExpense ? "-" : "+"}
-                    {formatCurrency(Number(transaction.amount), currency)}
-                  </p>
-                </div>
-
-                <div className="mt-3 space-y-2 text-sm leading-6">
-                  <p className="wrap-text text-slate-600">
-                    <span className="font-medium text-slate-700">{t("expenses.tableWallet")}: </span>
-                    {walletLabel}
-                  </p>
-                  {transaction.note ? (
-                    <p className="wrap-text text-slate-600">
-                      <span className="font-medium text-slate-700">{t("expenses.tableNote")}: </span>
-                      {transaction.note}
-                    </p>
-                  ) : null}
-                </div>
-
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <span
-                    className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                      isExpense ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"
-                    }`}
-                  >
-                    {isExpense ? t("expenses.typeExpense") : t("expenses.typeIncome")}
-                  </span>
-                  {transaction.offlinePending ? (
-                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                      {t("expenses.offlinePending")}
-                    </span>
-                  ) : null}
-                  {attachmentUrls[transaction.id] ? (
-                    <a
-                      href={attachmentUrls[transaction.id]}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700"
-                    >
-                      📎 {t("expenses.viewAttachment")}
-                    </a>
-                  ) : null}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-1 border-t border-slate-100 bg-slate-50 px-3 py-2">
-                <TransactionActions
-                  canEdit={canEdit}
-                  editLabel={t("common.edit")}
-                  deleteLabel={t("common.delete")}
-                  onEdit={() => onEdit(transaction)}
-                  onDelete={() => onDelete(transaction.id)}
+    <div className="mt-4 x-scroll rounded-2xl border border-slate-100">
+      <table className="min-w-full text-sm">
+        <thead className="bg-slate-50 text-slate-600">
+          <tr>
+            <th className="min-w-[9.5rem] px-3 py-3 text-start align-top font-medium">
+              {t("expenses.tableDate")}
+              <div className="mt-2 space-y-1.5">
+                <input
+                  type="date"
+                  value={filters.dateFrom}
+                  onChange={(event) =>
+                    onFiltersChange({ ...filters, dateFrom: event.target.value })
+                  }
+                  aria-label={t("expenses.dateFrom")}
+                  className={`${filterClass} mt-0`}
+                />
+                <input
+                  type="date"
+                  value={filters.dateTo}
+                  onChange={(event) =>
+                    onFiltersChange({ ...filters, dateTo: event.target.value })
+                  }
+                  aria-label={t("expenses.dateTo")}
+                  className={`${filterClass} mt-0`}
                 />
               </div>
-            </article>
-          );
-        })}
-      </div>
-
-      <div className="mt-6 hidden x-scroll rounded-2xl border border-slate-100 md:block">
-        <table className="min-w-full text-sm">
-          <thead className="bg-slate-50 text-slate-600">
+            </th>
+            <th className="min-w-[10rem] px-3 py-3 text-start align-top font-medium">
+              {t("expenses.tableMainCategory")}
+              <CategorySearchSelect
+                categories={categories}
+                value={filters.categoryId}
+                onChange={(categoryId) => onFiltersChange({ ...filters, categoryId })}
+                allowEmpty
+                emptyLabel={t("expenses.allCategories")}
+                className={filterClass}
+              />
+            </th>
+            <th className="min-w-[8rem] px-3 py-3 text-start align-top font-medium">
+              {t("expenses.tableCategory")}
+            </th>
+            <th className="min-w-[7.5rem] px-3 py-3 text-start align-top font-medium">
+              {t("expenses.tableType")}
+              <select
+                value={filters.type}
+                onChange={(event) =>
+                  onFiltersChange({
+                    ...filters,
+                    type: event.target.value as TransactionFilters["type"],
+                  })
+                }
+                aria-label={t("expenses.type")}
+                className={filterClass}
+              >
+                <option value="all">{t("expenses.typeAll")}</option>
+                <option value="expense">{t("expenses.typeExpense")}</option>
+                <option value="income">{t("expenses.typeIncome")}</option>
+              </select>
+            </th>
+            <th className="min-w-[10rem] px-3 py-3 text-start align-top font-medium">
+              {t("expenses.tableWallet")}
+              <WalletSelect
+                wallets={wallets}
+                value={filters.walletId}
+                onChange={(walletId) => onFiltersChange({ ...filters, walletId })}
+                allowEmpty
+                emptyLabel={t("expenses.allWallets")}
+                className={filterClass}
+              />
+            </th>
+            <th className="min-w-[10rem] px-3 py-3 text-start align-top font-medium">
+              {t("expenses.tableNote")}
+              <input
+                type="search"
+                value={filters.search}
+                onChange={(event) =>
+                  onFiltersChange({ ...filters, search: event.target.value })
+                }
+                placeholder={t("expenses.searchPlaceholder")}
+                aria-label={t("expenses.searchLabel")}
+                className={filterClass}
+              />
+            </th>
+            <th className="min-w-[6.5rem] px-3 py-3 text-start align-top font-medium">
+              {t("expenses.tableAmount")}
+            </th>
+            <th className="min-w-[4.5rem] px-3 py-3 text-start align-top font-medium">
+              {t("expenses.tableAttachment")}
+            </th>
+            <th className="min-w-[6rem] px-3 py-3 text-start align-top font-medium">
+              {t("expenses.tableAction")}
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="mt-2 block w-full rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1.5 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100"
+              >
+                {t("expenses.filtersReset")}
+              </button>
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100 bg-white">
+          {transactions.length === 0 ? (
             <tr>
-              <th className="px-4 py-3 text-start font-medium">{t("expenses.tableDate")}</th>
-              <th className="px-4 py-3 text-start font-medium">{t("expenses.tableMainCategory")}</th>
-              <th className="px-4 py-3 text-start font-medium">{t("expenses.tableCategory")}</th>
-              <th className="px-4 py-3 text-start font-medium">{t("expenses.tableType")}</th>
-              <th className="px-4 py-3 text-start font-medium">{t("expenses.tableWallet")}</th>
-              <th className="px-4 py-3 text-start font-medium">{t("expenses.tableNote")}</th>
-              <th className="px-4 py-3 text-start font-medium">{t("expenses.tableAmount")}</th>
-              <th className="px-4 py-3 text-start font-medium">{t("expenses.tableAttachment")}</th>
-              <th className="px-4 py-3 text-start font-medium">{t("expenses.tableAction")}</th>
+              <td colSpan={9} className="px-4 py-10 text-center text-sm text-slate-500">
+                {t("expenses.noResults")}
+              </td>
             </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 bg-white">
-            {transactions.map((transaction) => {
+          ) : (
+            transactions.map((transaction) => {
               const walletLabel = getWalletLabel(wallets, transaction, t("expenses.noWallet"));
               const { mainLabel, subLabel } = getTransactionCategoryColumns(
                 transaction,
@@ -201,12 +222,12 @@ export default function TransactionsTable({
 
               return (
                 <tr key={transaction.id} className="hover:bg-slate-50/80">
-                  <td className="whitespace-nowrap px-4 py-3 text-slate-700">
+                  <td className="whitespace-nowrap px-3 py-3 text-slate-700">
                     {formatDate(transaction.transaction_date)}
                   </td>
-                  <td className="px-4 py-3 text-slate-900">{mainLabel}</td>
-                  <td className="px-4 py-3 text-slate-600">{subLabel}</td>
-                  <td className="whitespace-nowrap px-4 py-3">
+                  <td className="px-3 py-3 text-slate-900">{mainLabel}</td>
+                  <td className="px-3 py-3 text-slate-600">{subLabel}</td>
+                  <td className="whitespace-nowrap px-3 py-3">
                     <span
                       className={`rounded-full px-2.5 py-1 text-xs font-medium ${
                         transaction.type === "expense"
@@ -224,19 +245,19 @@ export default function TransactionsTable({
                       </span>
                     ) : null}
                   </td>
-                  <td className="min-w-[180px] px-4 py-3 text-slate-600">{walletLabel}</td>
-                  <td className="max-w-[200px] px-4 py-3 text-slate-600">
+                  <td className="min-w-[180px] px-3 py-3 text-slate-600">{walletLabel}</td>
+                  <td className="max-w-[200px] px-3 py-3 text-slate-600">
                     {transaction.note || "—"}
                   </td>
                   <td
-                    className={`whitespace-nowrap px-4 py-3 font-semibold ${
+                    className={`whitespace-nowrap px-3 py-3 font-semibold ${
                       transaction.type === "expense" ? "text-red-600" : "text-emerald-600"
                     }`}
                   >
                     {transaction.type === "expense" ? "-" : "+"}
                     {formatCurrency(Number(transaction.amount), currency)}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3">
+                  <td className="whitespace-nowrap px-3 py-3">
                     {attachmentUrls[transaction.id] ? (
                       <a
                         href={attachmentUrls[transaction.id]}
@@ -252,7 +273,7 @@ export default function TransactionsTable({
                       <span className="text-slate-400">—</span>
                     )}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2">
+                  <td className="whitespace-nowrap px-2 py-2">
                     <TransactionActions
                       canEdit={canEdit}
                       editLabel={t("common.edit")}
@@ -263,10 +284,10 @@ export default function TransactionsTable({
                   </td>
                 </tr>
               );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </>
+            })
+          )}
+        </tbody>
+      </table>
+    </div>
   );
 }

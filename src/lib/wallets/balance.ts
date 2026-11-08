@@ -1,4 +1,5 @@
 import type { Investment, Transaction, Wallet } from "@/lib/types/database";
+import { roundMoney } from "@/lib/utils/money";
 import { getInvestmentWalletBalance, isInvestmentWallet } from "@/lib/wallets/investment-link";
 
 export function isCreditWallet(wallet: Pick<Wallet, "card_kind">): boolean {
@@ -35,11 +36,13 @@ export function getWalletTransactionNet(
     net += transaction.type === "income" ? amount : -amount;
   }
 
-  return net;
+  return roundMoney(net);
 }
 
 export function getCreditOwed(wallet: Wallet, transactions: Transaction[], asOf = localDateKey()): number {
-  return Number(wallet.opening_balance) - getWalletTransactionNet(wallet.id, transactions, asOf);
+  return roundMoney(
+    Number(wallet.opening_balance) - getWalletTransactionNet(wallet.id, transactions, asOf),
+  );
 }
 
 export function calculateWalletBalance(
@@ -49,14 +52,16 @@ export function calculateWalletBalance(
   asOf = localDateKey(),
 ): number {
   if (isInvestmentWallet(wallet)) {
-    return getInvestmentWalletBalance(wallet, investments);
+    return roundMoney(getInvestmentWalletBalance(wallet, investments));
   }
 
   if (isCreditWallet(wallet)) {
     return getCreditOwed(wallet, transactions, asOf);
   }
 
-  return Number(wallet.opening_balance) + getWalletTransactionNet(wallet.id, transactions, asOf);
+  return roundMoney(
+    Number(wallet.opening_balance) + getWalletTransactionNet(wallet.id, transactions, asOf),
+  );
 }
 
 export function getWalletNetWorthContribution(
@@ -85,7 +90,7 @@ export function getCreditAvailable(
     return null;
   }
 
-  return Math.max(0, Number(wallet.credit_limit) - getCreditOwed(wallet, transactions, asOf));
+  return Math.max(0, roundMoney(Number(wallet.credit_limit) - getCreditOwed(wallet, transactions, asOf)));
 }
 
 export function openingBalanceFromCurrentBalance(
@@ -97,8 +102,8 @@ export function openingBalanceFromCurrentBalance(
   const net = getWalletTransactionNet(wallet.id, transactions, asOf);
 
   if (isCreditWallet(wallet as Wallet)) {
-    return currentBalance + net;
+    return roundMoney(currentBalance + net);
   }
 
-  return currentBalance - net;
+  return roundMoney(currentBalance - net);
 }

@@ -1,4 +1,5 @@
 import type { Investment, Transaction, Wallet, WalletReconciliation } from "@/lib/types/database";
+import { roundMoney } from "@/lib/utils/money";
 import {
   calculateWalletBalance,
   getCreditAvailable,
@@ -94,11 +95,12 @@ export function buildReconciliationPreview(
   investments: Investment[] = [],
 ) {
   const recordedBalance = calculateWalletBalance(wallet, transactions, investments);
-  const difference = actualBalance - recordedBalance;
+  const roundedActual = roundMoney(actualBalance);
+  const difference = roundMoney(roundedActual - recordedBalance);
 
   return {
     recordedBalance,
-    actualBalance,
+    actualBalance: roundedActual,
     difference,
     isMatched: Math.abs(difference) < 0.005,
   };
@@ -137,6 +139,7 @@ export function summarizePortfolioWealth(
   const creditNotes: ParentWalletBalanceSummary["creditNotes"] = [];
   let liquidTotal = 0;
   let investmentTotal = 0;
+  let parentOwnBalance = 0;
 
   for (const wallet of normalizeWallets(wallets)) {
     const parentId = getWalletParentId(wallet);
@@ -149,6 +152,7 @@ export function summarizePortfolioWealth(
       const summary = getAggregatedSubWalletSummary(wallet.id, wallets, transactions, investments);
       liquidTotal += summary.liquidTotal;
       investmentTotal += summary.investmentTotal;
+      parentOwnBalance += summary.parentOwnBalance;
       creditNotes.push(...summary.creditNotes);
       continue;
     }
@@ -180,6 +184,7 @@ export function summarizePortfolioWealth(
     investmentTotal,
     creditTotal,
     assetTotal: liquidTotal + investmentTotal,
+    parentOwnBalance,
     creditNotes,
   };
 }

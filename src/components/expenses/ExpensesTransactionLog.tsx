@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import ExpensesToolbar from "@/components/expenses/ExpensesToolbar";
+import MonthDailySummaryModal from "@/components/expenses/MonthDailySummaryModal";
 import TransactionsTable from "@/components/expenses/TransactionsTable";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import type { TransactionFilters } from "@/lib/expenses/filters";
@@ -9,6 +11,7 @@ import type { Category, Wallet } from "@/lib/types/database";
 
 export default function ExpensesTransactionLog({
   transactions,
+  monthTransactions,
   wallets,
   categories,
   currency,
@@ -22,6 +25,7 @@ export default function ExpensesTransactionLog({
   onEdit,
 }: {
   transactions: OfflineTransaction[];
+  monthTransactions: OfflineTransaction[];
   wallets: Wallet[];
   categories: Category[];
   currency: string;
@@ -35,6 +39,7 @@ export default function ExpensesTransactionLog({
   onEdit: (transaction: OfflineTransaction) => void;
 }) {
   const t = useTranslations();
+  const [showDailySummary, setShowDailySummary] = useState(false);
 
   return (
     <section className="rounded-3xl border border-white bg-white p-4 shadow-sm sm:p-6">
@@ -47,6 +52,7 @@ export default function ExpensesTransactionLog({
           categories={categories}
           currency={currency}
           onAddTransaction={onAddTransaction}
+          onOpenDailySummary={() => setShowDailySummary(true)}
         />
       </div>
 
@@ -63,6 +69,16 @@ export default function ExpensesTransactionLog({
         onDelete={onDelete}
         onEdit={onEdit}
       />
+
+      {showDailySummary ? (
+        <MonthDailySummaryModal
+          transactions={monthTransactions}
+          monthStart={monthStart}
+          monthEnd={monthEnd}
+          currency={currency}
+          onClose={() => setShowDailySummary(false)}
+        />
+      ) : null}
     </section>
   );
 }

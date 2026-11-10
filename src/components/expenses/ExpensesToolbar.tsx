@@ -15,6 +15,7 @@ type ExpensesToolbarProps = {
   categories: Category[];
   currency: string;
   onAddTransaction: () => void;
+  onOpenDailySummary: () => void;
 };
 
 export default function ExpensesToolbar({
@@ -23,6 +24,7 @@ export default function ExpensesToolbar({
   categories,
   currency,
   onAddTransaction,
+  onOpenDailySummary,
 }: ExpensesToolbarProps) {
   const t = useTranslations();
   const { formatCurrency, formatDate } = useFormat();
@@ -93,6 +95,15 @@ export default function ExpensesToolbar({
   return (
     <div className="flex items-center gap-1.5">
       <PlanDueReminderButton />
+      <button
+        type="button"
+        onClick={onOpenDailySummary}
+        aria-label={t("expenses.dailySummary")}
+        title={t("expenses.dailySummary")}
+        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-sky-200 bg-sky-50 text-base transition hover:bg-sky-100"
+      >
+        <span aria-hidden>📅</span>
+      </button>
       <button
         type="button"
         onClick={onAddTransaction}

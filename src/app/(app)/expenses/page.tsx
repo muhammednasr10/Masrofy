@@ -22,6 +22,7 @@ function ExpensesPageContent() {
     categories,
     wallets,
     transactions,
+    monthTransactions,
     filters,
     setFilters,
     monthStart,
@@ -86,6 +87,7 @@ function ExpensesPageContent() {
 
       <ExpensesTransactionLog
         transactions={transactions}
+        monthTransactions={monthTransactions}
         wallets={wallets}
         categories={categories}
         currency={currency}

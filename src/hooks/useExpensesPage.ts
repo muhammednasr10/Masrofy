@@ -62,6 +62,7 @@ export function useExpensesPage() {
     categories: expenses.categories,
     wallets: expenses.wallets,
     transactions: expenses.filteredTransactions,
+    monthTransactions: expenses.monthTransactions,
     allTransactionsCount: expenses.transactions.length,
     filters: expenses.filters,
     setFilters: expenses.setFilters,

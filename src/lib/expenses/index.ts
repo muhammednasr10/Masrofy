@@ -1,4 +1,5 @@
 export * from "@/lib/expenses/append-transaction";
+export * from "@/lib/expenses/daily-month-summary";
 export * from "@/lib/expenses/display";
 export * from "@/lib/expenses/filters";
 export * from "@/lib/expenses/group-transactions";

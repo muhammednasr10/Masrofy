@@ -11,6 +11,8 @@ export type Profile = {
   onboarding_completed: boolean;
   locale: "ar" | "en";
   month_start_day: number;
+  month_start_mode?: "fixed" | "category";
+  month_start_category_id?: string | null;
   is_admin: boolean;
   created_at: string;
 };

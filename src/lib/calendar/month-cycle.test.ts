@@ -41,11 +41,19 @@ describe("getMonthRange", () => {
 });
 
 describe("normalizeMonthStartDay", () => {
-  it("clamps invalid values to 1 and values above 28 to 28", () => {
+  it("clamps invalid values to 1 and values above 31 to 31", () => {
     expect(normalizeMonthStartDay(undefined)).toBe(1);
     expect(normalizeMonthStartDay(0)).toBe(1);
-    expect(normalizeMonthStartDay(31)).toBe(28);
+    expect(normalizeMonthStartDay(31)).toBe(31);
+    expect(normalizeMonthStartDay(32)).toBe(31);
     expect(normalizeMonthStartDay(25)).toBe(25);
+  });
+
+  it("supports day 31 by clamping inside short months", () => {
+    const range = getMonthRange(new Date(2026, 2, 5), "en", 31);
+
+    expect(range.start).toBe("2026-02-28");
+    expect(range.end).toBe("2026-03-30");
   });
 });
 

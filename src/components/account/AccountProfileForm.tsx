@@ -7,6 +7,7 @@ import { FeedbackBanner } from "@/components/ui/FeedbackBanner";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
 import { useFormat } from "@/hooks/useFormat";
 import MonthStartDayField from "@/components/account/MonthStartDayField";
+import type { MonthStartMode } from "@/lib/calendar";
 
 type AccountProfileFormProps = {
   fullName: string;
@@ -19,10 +20,14 @@ type AccountProfileFormProps = {
   error: string | null;
   message: string | null;
   monthStartDay: number;
+  monthStartMode: MonthStartMode;
+  monthStartCategoryId: string | null;
   onFullNameChange: (value: string) => void;
   onDefaultWalletChange: (value: string) => void;
   onCurrencyChange: (value: string) => void;
   onMonthStartDayChange: (value: number) => void;
+  onMonthStartModeChange: (mode: MonthStartMode) => void;
+  onMonthStartCategoryChange: (categoryId: string | null) => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   onSignOut: () => void;
 };
@@ -38,10 +43,14 @@ export default function AccountProfileForm({
   error,
   message,
   monthStartDay,
+  monthStartMode,
+  monthStartCategoryId,
   onFullNameChange,
   onDefaultWalletChange,
   onCurrencyChange,
   onMonthStartDayChange,
+  onMonthStartModeChange,
+  onMonthStartCategoryChange,
   onSubmit,
   onSignOut,
 }: AccountProfileFormProps) {
@@ -98,7 +107,14 @@ export default function AccountProfileForm({
           </select>
         </label>
 
-        <MonthStartDayField value={monthStartDay} onChange={onMonthStartDayChange} />
+        <MonthStartDayField
+          value={monthStartDay}
+          mode={monthStartMode}
+          categoryId={monthStartCategoryId}
+          onDayChange={onMonthStartDayChange}
+          onModeChange={onMonthStartModeChange}
+          onCategoryChange={onMonthStartCategoryChange}
+        />
 
         {createdAt ? (
           <p className="text-sm text-slate-500">

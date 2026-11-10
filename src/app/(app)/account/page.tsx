@@ -38,6 +38,8 @@ export default function AccountPage() {
         defaultWalletId={account.defaultWalletId}
         currency={account.currency}
         monthStartDay={account.monthStartDay}
+        monthStartMode={account.monthStartMode}
+        monthStartCategoryId={account.monthStartCategoryId}
         wallets={account.wallets}
         createdAt={account.createdAt}
         saving={account.saving}
@@ -47,6 +49,8 @@ export default function AccountPage() {
         onDefaultWalletChange={account.setDefaultWalletId}
         onCurrencyChange={account.setCurrency}
         onMonthStartDayChange={account.setMonthStartDay}
+        onMonthStartModeChange={account.setMonthStartMode}
+        onMonthStartCategoryChange={account.setMonthStartCategoryId}
         onSubmit={account.handleSubmit}
         onSignOut={account.handleSignOut}
       />

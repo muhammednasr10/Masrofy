@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "@/lib/router/navigation";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import { useSelectedMonth } from "@/components/month/SelectedMonthProvider";
@@ -8,6 +8,7 @@ import { isLocale } from "@/i18n/config";
 import { createClient } from "@/lib/supabase/client";
 import { loadAccountPageData, saveAccountProfile } from "@/lib/account";
 import { usePageFeedback } from "@/hooks/usePageFeedback";
+import type { MonthStartMode } from "@/lib/calendar";
 import type { Wallet } from "@/lib/types/database";
 import type { AccountStats } from "@/lib/account/load-data";
 
@@ -16,6 +17,9 @@ export function useAccountPage() {
   const { locale, setLocale } = useLocale();
   const { setMonthStartDay: setSharedMonthStartDay } = useSelectedMonth();
   const { error, message, setError, setMessage, clearFeedback } = usePageFeedback();
+  const formDirtyRef = useRef(false);
+  const localeRef = useRef(locale);
+  localeRef.current = locale;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -25,6 +29,8 @@ export function useAccountPage() {
   const [currency, setCurrency] = useState("EGP");
   const [defaultWalletId, setDefaultWalletId] = useState("");
   const [monthStartDay, setMonthStartDay] = useState(1);
+  const [monthStartMode, setMonthStartMode] = useState<MonthStartMode>("fixed");
+  const [monthStartCategoryId, setMonthStartCategoryId] = useState<string | null>(null);
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [createdAt, setCreatedAt] = useState<string | null>(null);
   const [stats, setStats] = useState<AccountStats>({
@@ -33,36 +39,93 @@ export function useAccountPage() {
     walletsCount: 0,
   });
 
-  const loadAccount = useCallback(async () => {
-    const supabase = createClient();
-    const data = await loadAccountPageData(supabase);
-
-    if (!data) {
-      router.push("/login");
-      return;
-    }
-
-    setEmail(data.email);
-    setEmailVerified(data.emailVerified);
-    setFullName(data.fullName);
-    setCurrency(data.currency);
-    setDefaultWalletId(data.defaultWalletId);
-    setMonthStartDay(data.monthStartDay);
-    setSharedMonthStartDay(data.monthStartDay);
-    setWallets(data.wallets);
-    setCreatedAt(data.createdAt);
-    setStats(data.stats);
-
-    if (isLocale(data.locale) && data.locale !== locale) {
-      await setLocale(data.locale);
-    }
-
-    setLoading(false);
-  }, [locale, router, setLocale, setSharedMonthStartDay]);
-
   useEffect(() => {
-    void loadAccount();
-  }, [loadAccount]);
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const supabase = createClient();
+        const data = await loadAccountPageData(supabase);
+
+        if (cancelled) {
+          return;
+        }
+
+        if (!data) {
+          router.push("/login");
+          return;
+        }
+
+        setEmail(data.email);
+        setEmailVerified(data.emailVerified);
+        setCreatedAt(data.createdAt);
+        setStats(data.stats);
+        setWallets(data.wallets);
+
+        // Don't overwrite fields the user already edited (e.g. month-start mode).
+        if (!formDirtyRef.current) {
+          setFullName(data.fullName);
+          setCurrency(data.currency);
+          setDefaultWalletId(data.defaultWalletId);
+          setMonthStartDay(data.monthStartDay);
+          setMonthStartMode(data.monthStartMode);
+          setMonthStartCategoryId(data.monthStartCategoryId);
+        }
+
+        setSharedMonthStartDay(data.monthStartDay);
+
+        if (isLocale(data.locale) && data.locale !== localeRef.current) {
+          await setLocale(data.locale);
+        }
+      } catch (caught) {
+        if (!cancelled) {
+          setError(caught instanceof Error ? caught.message : "تعذر تحميل بيانات الحساب.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router, setLocale, setSharedMonthStartDay]);
+
+  function markDirty() {
+    formDirtyRef.current = true;
+  }
+
+  function handleFullNameChange(value: string) {
+    markDirty();
+    setFullName(value);
+  }
+
+  function handleCurrencyChange(value: string) {
+    markDirty();
+    setCurrency(value);
+  }
+
+  function handleDefaultWalletChange(value: string) {
+    markDirty();
+    setDefaultWalletId(value);
+  }
+
+  function handleMonthStartDayChange(value: number) {
+    markDirty();
+    setMonthStartDay(value);
+  }
+
+  function handleMonthStartModeChange(mode: MonthStartMode) {
+    markDirty();
+    setMonthStartMode(mode);
+  }
+
+  function handleMonthStartCategoryChange(categoryId: string | null) {
+    markDirty();
+    setMonthStartCategoryId(categoryId);
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -75,6 +138,8 @@ export function useAccountPage() {
       currency,
       defaultWalletId,
       monthStartDay,
+      monthStartMode,
+      monthStartCategoryId,
     });
 
     if (result.error) {
@@ -83,6 +148,7 @@ export function useAccountPage() {
       return;
     }
 
+    formDirtyRef.current = false;
     setMessage(result.message ?? "تم حفظ بيانات الحساب.");
     setSharedMonthStartDay(monthStartDay);
     setSaving(false);
@@ -114,14 +180,18 @@ export function useAccountPage() {
     currency,
     defaultWalletId,
     monthStartDay,
+    monthStartMode,
+    monthStartCategoryId,
     wallets,
     createdAt,
     stats,
     initials,
-    setFullName,
-    setCurrency,
-    setDefaultWalletId,
-    setMonthStartDay,
+    setFullName: handleFullNameChange,
+    setCurrency: handleCurrencyChange,
+    setDefaultWalletId: handleDefaultWalletChange,
+    setMonthStartDay: handleMonthStartDayChange,
+    setMonthStartMode: handleMonthStartModeChange,
+    setMonthStartCategoryId: handleMonthStartCategoryChange,
     handleSubmit,
     handleSignOut,
     handleSectionFeedback,

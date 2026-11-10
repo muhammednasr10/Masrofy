@@ -2,7 +2,7 @@
 
 import { FormEvent, useCallback, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import {
-  deleteExpenseTransaction,
+  deleteExpenseTransactions,
   importExpenseTransactions,
   saveExpenseLines,
   submitExpenseTransaction,
@@ -208,8 +208,9 @@ export function useExpenseTransactions({
     return importExpenseTransactions(rows, importWalletId, commandContext());
   }
 
-  function handleDelete(id: string) {
-    return deleteExpenseTransaction(id, commandContext());
+  function handleDelete(ids: string | string[]) {
+    const list = Array.isArray(ids) ? ids : [ids];
+    return deleteExpenseTransactions(list, commandContext());
   }
 
   const ingestCategoryWithSelection = useCallback(

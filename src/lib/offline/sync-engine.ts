@@ -1,3 +1,4 @@
+import { syncMonthStartFromCategoryTransaction } from "@/lib/calendar";
 import { createClient } from "@/lib/supabase/client";
 import { requireAuthenticatedUser } from "@/lib/supabase/auth";
 import {
@@ -50,6 +51,13 @@ export async function flushOfflineSyncQueue(): Promise<SyncResult> {
       failedCount += 1;
       continue;
     }
+
+    await syncMonthStartFromCategoryTransaction(
+      supabase,
+      user.id,
+      item.payload.category_id,
+      item.payload.transaction_date,
+    );
 
     await removeSyncItem(item.id);
     syncedCount += 1;

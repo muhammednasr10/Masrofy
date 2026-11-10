@@ -1,3 +1,4 @@
+import { sortTransactionsNewestFirst } from "@/lib/expenses/sort-transactions";
 import type { Transaction, TransactionType } from "@/lib/types/database";
 
 export type TransactionFilters = {
@@ -40,7 +41,7 @@ export function filterTransactions(
 ) {
   const search = filters.search.trim().toLowerCase();
 
-  return transactions.filter((transaction) => {
+  const filtered = transactions.filter((transaction) => {
     if (filters.dateFrom && transaction.transaction_date < filters.dateFrom) {
       return false;
     }
@@ -77,4 +78,6 @@ export function filterTransactions(
       amount.includes(search)
     );
   });
+
+  return sortTransactionsNewestFirst(filtered);
 }

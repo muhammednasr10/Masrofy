@@ -6,6 +6,7 @@ import { isDateInMonthRange, normalizeMonthStartDay } from "@/lib/calendar";
 import type { ExpensesPageSnapshot } from "@/lib/expenses/append-transaction";
 import { normalizeWallets } from "@/lib/wallets/normalize";
 import { deleteBalanceAdjustmentTransactions } from "@/lib/wallets/set-current-balance";
+import { sortTransactionsNewestFirst } from "@/lib/expenses/sort-transactions";
 
 function sliceExpensesSnapshot(
   snapshot: ExpensesPageSnapshot,
@@ -68,14 +69,17 @@ export async function loadExpensesPageData(
       supabase
         .from("transactions")
         .select("*, categories(name, icon, color), wallets(name, icon, color)")
-        .order("transaction_date", { ascending: false }),
+        .order("transaction_date", { ascending: false })
+        .order("created_at", { ascending: false }),
       supabase.from("transactions").select("id, wallet_id, amount, type, transfer_role, transaction_date"),
     ]);
 
     const monthStartDay = normalizeMonthStartDay(profile?.month_start_day);
     const month = { start: monthStart, end: monthEnd };
-    const expenseTransactions = ((transactionRows ?? []) as Transaction[]).filter(
-      (transaction) => transaction.type !== "transfer",
+    const expenseTransactions = sortTransactionsNewestFirst(
+      ((transactionRows ?? []) as Transaction[]).filter(
+        (transaction) => transaction.type !== "transfer",
+      ),
     );
     const attachmentUrls = await loadSignedAttachmentUrls(
       supabase,

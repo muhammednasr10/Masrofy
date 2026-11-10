@@ -31,7 +31,7 @@ export default function ExpensesTransactionLog({
   attachmentUrls: Record<string, string>;
   onFiltersChange: (filters: TransactionFilters) => void;
   onAddTransaction: () => void;
-  onDelete: (id: string) => void;
+  onDelete: (ids: string[]) => void;
   onEdit: (transaction: OfflineTransaction) => void;
 }) {
   const t = useTranslations();

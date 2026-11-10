@@ -27,7 +27,7 @@ export default function IconActionButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`flex h-9 w-9 items-center justify-center rounded-lg text-base transition disabled:pointer-events-none disabled:opacity-40 ${toneClasses[tone]}`}
+      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm transition disabled:pointer-events-none disabled:opacity-40 sm:h-9 sm:w-9 sm:text-base ${toneClasses[tone]}`}
       aria-label={label}
       title={label}
     >

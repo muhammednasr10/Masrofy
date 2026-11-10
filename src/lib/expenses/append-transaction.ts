@@ -1,6 +1,7 @@
 import type { Category, Transaction, Wallet } from "@/lib/types/database";
 import type { OfflineTransaction } from "@/lib/offline/types";
 import { isDateInMonthRange } from "@/lib/calendar";
+import { sortTransactionsNewestFirst } from "@/lib/expenses/sort-transactions";
 
 export type ExpensesPageSnapshot = {
   currency: string;
@@ -21,7 +22,10 @@ export function appendTransactionToSnapshot(
   monthStart: string,
   monthEnd: string,
 ): ExpensesPageSnapshot {
-  const nextTransactions = [savedTransaction, ...snapshot.transactions];
+  const nextTransactions = sortTransactionsNewestFirst([
+    savedTransaction,
+    ...snapshot.transactions,
+  ]);
   const nextBalance = [
     {
       id: savedTransaction.id,
@@ -36,7 +40,7 @@ export function appendTransactionToSnapshot(
     start: monthStart,
     end: monthEnd,
   })
-    ? [savedTransaction, ...snapshot.monthTransactions]
+    ? sortTransactionsNewestFirst([savedTransaction, ...snapshot.monthTransactions])
     : snapshot.monthTransactions;
 
   return {
@@ -67,8 +71,10 @@ export function updateTransactionInSnapshot(
   monthStart: string,
   monthEnd: string,
 ): ExpensesPageSnapshot {
-  const nextTransactions = snapshot.transactions.map((item) =>
-    item.id === updatedTransaction.id ? updatedTransaction : item,
+  const nextTransactions = sortTransactionsNewestFirst(
+    snapshot.transactions.map((item) =>
+      item.id === updatedTransaction.id ? updatedTransaction : item,
+    ),
   );
   const nextBalanceTransactions = snapshot.balanceTransactions.map((item) =>
     item.id === updatedTransaction.id
@@ -81,8 +87,10 @@ export function updateTransactionInSnapshot(
         }
       : item,
   );
-  const nextMonthTransactions = nextTransactions.filter((item) =>
-    isDateInMonthRange(item.transaction_date, { start: monthStart, end: monthEnd }),
+  const nextMonthTransactions = sortTransactionsNewestFirst(
+    nextTransactions.filter((item) =>
+      isDateInMonthRange(item.transaction_date, { start: monthStart, end: monthEnd }),
+    ),
   );
 
   return {

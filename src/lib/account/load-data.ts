@@ -1,6 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Profile, Wallet } from "@/lib/types/database";
-import { normalizeMonthStartDay } from "@/lib/calendar";
+import {
+  normalizeMonthStartDay,
+  normalizeMonthStartMode,
+  type MonthStartMode,
+} from "@/lib/calendar";
 
 export type AccountStats = {
   categoriesCount: number;
@@ -16,6 +20,8 @@ export type AccountPageData = {
   defaultWalletId: string;
   locale: string;
   monthStartDay: number;
+  monthStartMode: MonthStartMode;
+  monthStartCategoryId: string | null;
   wallets: Wallet[];
   createdAt: string | null;
   stats: AccountStats;
@@ -61,6 +67,8 @@ export async function loadAccountPageData(
       "",
     locale: typedProfile?.locale ?? "ar",
     monthStartDay: normalizeMonthStartDay(typedProfile?.month_start_day),
+    monthStartMode: normalizeMonthStartMode(typedProfile?.month_start_mode),
+    monthStartCategoryId: typedProfile?.month_start_category_id ?? null,
     wallets: typedWallets,
     createdAt: user.created_at ?? null,
     stats: {
@@ -78,6 +86,8 @@ export async function saveAccountProfile(
     currency: string;
     defaultWalletId: string;
     monthStartDay: number;
+    monthStartMode: MonthStartMode;
+    monthStartCategoryId: string | null;
   },
 ) {
   const {
@@ -88,6 +98,12 @@ export async function saveAccountProfile(
     return { error: "يجب تسجيل الدخول أولاً." };
   }
 
+  const mode = normalizeMonthStartMode(params.monthStartMode);
+
+  if (mode === "category" && !params.monthStartCategoryId) {
+    return { error: "اختَر فئة لربط بداية الشهر بيها." };
+  }
+
   const { error: updateError } = await supabase
     .from("profiles")
     .update({
@@ -95,6 +111,8 @@ export async function saveAccountProfile(
       currency: params.currency,
       default_wallet_id: params.defaultWalletId || null,
       month_start_day: normalizeMonthStartDay(params.monthStartDay),
+      month_start_mode: mode,
+      month_start_category_id: mode === "category" ? params.monthStartCategoryId : null,
     })
     .eq("id", user.id);
 

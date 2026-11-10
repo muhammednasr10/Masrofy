@@ -19,3 +19,10 @@ export {
   shiftPlanMonthKey,
   type MonthRange,
 } from "@/lib/calendar/month-cycle";
+export {
+  dayFromTransactionDate,
+  normalizeMonthStartMode,
+  resolveCategoryMonthStartDay,
+  syncMonthStartFromCategoryTransaction,
+  type MonthStartMode,
+} from "@/lib/calendar/month-start-sync";

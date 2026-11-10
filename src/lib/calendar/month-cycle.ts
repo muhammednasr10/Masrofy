@@ -2,7 +2,7 @@ import { defaultLocale, getIntlLocale, type Locale } from "@/i18n/config";
 import { formatDate, formatLocalDate, startOfLocalDay } from "@/lib/calendar/dates";
 
 export const MONTH_START_DAY_MIN = 1;
-export const MONTH_START_DAY_MAX = 28;
+export const MONTH_START_DAY_MAX = 31;
 export const MONTH_START_DAYS = Array.from(
   { length: MONTH_START_DAY_MAX },
   (_, index) => index + MONTH_START_DAY_MIN,

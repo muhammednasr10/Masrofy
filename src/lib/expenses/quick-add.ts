@@ -1,4 +1,4 @@
-import { isDateInMonthRange } from "@/lib/calendar";
+import { isDateInMonthRange, syncMonthStartFromCategoryTransaction } from "@/lib/calendar";
 import { enqueueTransactionInsert, isBrowserOnline } from "@/lib/offline";
 import { requireAuthenticatedUser } from "@/lib/supabase/auth";
 import type { Category, Wallet } from "@/lib/types/database";
@@ -110,6 +110,13 @@ export async function saveQuickExpense(
   if (error) {
     throw error;
   }
+
+  await syncMonthStartFromCategoryTransaction(
+    supabase,
+    user.id,
+    payload.category_id,
+    payload.transaction_date,
+  );
 
   return { offline: false };
 }

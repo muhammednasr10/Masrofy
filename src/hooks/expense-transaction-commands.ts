@@ -17,6 +17,7 @@ import {
   isBrowserOnline,
   type OfflineTransaction,
 } from "@/lib/offline";
+import { syncMonthStartFromCategoryTransaction } from "@/lib/calendar";
 
 type BalanceTransaction = Pick<
   Transaction,
@@ -123,6 +124,12 @@ export async function submitExpenseTransaction(
       }
 
       const updatedTransaction = updatedRow as Transaction;
+      await syncMonthStartFromCategoryTransaction(
+        supabase,
+        user.id,
+        updatedTransaction.category_id,
+        updatedTransaction.transaction_date,
+      );
 
       if (context.receiptFile) {
         const signedUrl = await uploadTransactionReceipt(
@@ -191,6 +198,12 @@ export async function submitExpenseTransaction(
     }
 
     const savedTransaction = insertedRow as Transaction;
+    await syncMonthStartFromCategoryTransaction(
+      supabase,
+      user.id,
+      savedTransaction.category_id,
+      savedTransaction.transaction_date,
+    );
 
     if (context.receiptFile) {
       const signedUrl = await uploadTransactionReceipt(
@@ -293,6 +306,16 @@ export async function saveExpenseLines(
     }
 
     const savedTransactions = (insertedRows ?? []) as Transaction[];
+
+    for (const savedTransaction of savedTransactions) {
+      await syncMonthStartFromCategoryTransaction(
+        supabase,
+        user.id,
+        savedTransaction.category_id,
+        savedTransaction.transaction_date,
+      );
+    }
+
     let nextSnapshot = context.data;
 
     for (const savedTransaction of savedTransactions) {
@@ -419,11 +442,26 @@ export async function deleteExpenseTransaction(
   id: string,
   context: ExpenseTransactionCommandContext,
 ) {
+  return deleteExpenseTransactions([id], context);
+}
+
+export async function deleteExpenseTransactions(
+  ids: string[],
+  context: ExpenseTransactionCommandContext,
+) {
   context.clearFeedback();
 
-  const deletedTransaction = context.data.transactions.find((transaction) => transaction.id === id);
+  const uniqueIds = [...new Set(ids.filter(Boolean))];
 
-  if (deletedTransaction?.offlinePending) {
+  if (uniqueIds.length === 0) {
+    return;
+  }
+
+  const pending = uniqueIds.some((id) =>
+    context.data.transactions.find((transaction) => transaction.id === id)?.offlinePending,
+  );
+
+  if (pending) {
     context.setError("لا يمكن حذف عملية محفوظة محلياً قبل مزامنتها.");
     return;
   }
@@ -436,22 +474,34 @@ export async function deleteExpenseTransaction(
   const supabase = createClient();
 
   try {
-    await deleteTransactionAttachments(supabase, id);
+    for (const id of uniqueIds) {
+      await deleteTransactionAttachments(supabase, id);
+    }
 
-    const { error: deleteError } = await supabase.from("transactions").delete().eq("id", id);
+    const { error: deleteError } = await supabase.from("transactions").delete().in("id", uniqueIds);
 
     if (deleteError) {
       throw deleteError;
     }
 
-    applySnapshot(context, removeTransactionFromSnapshot(context.data, id));
+    let nextSnapshot = context.data;
+
+    for (const id of uniqueIds) {
+      nextSnapshot = removeTransactionFromSnapshot(nextSnapshot, id);
+    }
+
+    applySnapshot(context, nextSnapshot);
     context.setAttachmentUrls((current) => {
       const next = { ...current };
-      delete next[id];
+      for (const id of uniqueIds) {
+        delete next[id];
+      }
       return next;
     });
 
-    context.setMessage("تم حذف العملية.");
+    context.setMessage(
+      uniqueIds.length === 1 ? "تم حذف العملية." : `تم حذف ${uniqueIds.length} عمليات مجمّعة.`,
+    );
     context.router.refresh();
   } catch (deleteFailure) {
     context.setError(deleteFailure instanceof Error ? deleteFailure.message : "تعذر حذف العملية.");

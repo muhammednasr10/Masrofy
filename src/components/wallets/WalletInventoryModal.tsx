@@ -36,8 +36,13 @@ export default function WalletInventoryModal({
     saving,
     error,
     setNote,
+    categories,
+    classifications,
+    categoryIds,
     getActualBalanceInput,
     updateActualBalance,
+    setClassification,
+    setCategoryId,
     handleSubmit,
   } = useWalletInventory(wallets, transactions, focusWalletId, onComplete, onClose);
 
@@ -104,7 +109,12 @@ export default function WalletInventoryModal({
                   preview={preview}
                   actualBalanceInput={getActualBalanceInput(wallet)}
                   currency={currency}
+                  categories={categories}
+                  classification={classifications[wallet.id] ?? "unknown"}
+                  categoryId={categoryIds[wallet.id] ?? ""}
                   onActualBalanceChange={updateActualBalance}
+                  onClassificationChange={setClassification}
+                  onCategoryChange={setCategoryId}
                 />
               );
             })}

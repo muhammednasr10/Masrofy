@@ -3,8 +3,12 @@ import type { Transaction, Wallet } from "@/lib/types/database";
 import { roundMoney } from "@/lib/utils/money";
 import {
   calculateWalletBalance,
+  isCreditWallet,
   openingBalanceFromCurrentBalance,
 } from "@/lib/wallets/balance";
+import { getBalanceDifferenceKind } from "@/lib/wallets/reconciliation-labels";
+
+export type InventoryDifferenceClassification = "unknown" | "known";
 
 /** Auto-generated balance fix rows — these piled up and created the fake +60k. */
 const ADJUSTMENT_NOTE_PATTERN =
@@ -85,6 +89,92 @@ export async function setWalletCurrentBalance(
   const ledger = await fetchWalletLedger(supabase, wallet.id);
   const openingBalance = openingBalanceFromCurrentBalance(nextBalance, wallet, ledger);
 
+  const { error } = await supabase
+    .from("wallets")
+    .update({ opening_balance: openingBalance })
+    .eq("id", wallet.id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const verified = calculateWalletBalance(
+    { ...wallet, opening_balance: openingBalance } as Wallet,
+    ledger,
+  );
+
+  if (Math.abs(verified - nextBalance) >= 0.02) {
+    throw new Error(
+      `تعذر تثبيت الرصيد على ${nextBalance}. المحسوب بعد الحفظ: ${verified}.`,
+    );
+  }
+
+  return {
+    openingBalance,
+    verifiedBalance: verified,
+  };
+}
+
+/**
+ * Inventory update: unknown → adjust opening only.
+ * known → record a real categorized income/expense for the gap, then lock the balance.
+ * Never inserts the old ghost “تحديث رصيد” rows.
+ */
+export async function applyWalletInventoryBalance(
+  supabase: SupabaseClient,
+  wallet: Pick<Wallet, "id" | "card_kind" | "opening_balance">,
+  desiredBalance: number,
+  options: {
+    userId: string;
+    classification: InventoryDifferenceClassification;
+    categoryId?: string | null;
+    note?: string | null;
+  },
+) {
+  const nextBalance = roundMoney(desiredBalance);
+  await deleteBalanceAdjustmentTransactions(supabase, wallet.id);
+
+  let ledger = await fetchWalletLedger(supabase, wallet.id);
+  const recorded = calculateWalletBalance({ ...wallet } as Wallet, ledger);
+  const difference = roundMoney(nextBalance - recorded);
+
+  if (Math.abs(difference) < 0.005) {
+    return setWalletCurrentBalance(supabase, wallet, nextBalance);
+  }
+
+  if (options.classification === "known") {
+    if (!options.categoryId) {
+      throw new Error("اختَر فئة للفرق المعروف.");
+    }
+
+    const kind = getBalanceDifferenceKind(difference, isCreditWallet(wallet));
+    if (!kind) {
+      throw new Error("لا يوجد فرق لتسجيله.");
+    }
+
+    const note = options.note?.trim() || null;
+    if (note && isBalanceAdjustmentTransaction({ note })) {
+      throw new Error("استخدم ملاحظة عادية، مش ملاحظة تحديث رصيد تلقائي.");
+    }
+
+    const { error: insertError } = await supabase.from("transactions").insert({
+      user_id: options.userId,
+      wallet_id: wallet.id,
+      category_id: options.categoryId,
+      amount: Math.abs(difference),
+      type: kind,
+      note,
+      transaction_date: new Date().toISOString().slice(0, 10),
+    });
+
+    if (insertError) {
+      throw new Error(insertError.message);
+    }
+
+    ledger = await fetchWalletLedger(supabase, wallet.id);
+  }
+
+  const openingBalance = openingBalanceFromCurrentBalance(nextBalance, wallet, ledger);
   const { error } = await supabase
     .from("wallets")
     .update({ opening_balance: openingBalance })

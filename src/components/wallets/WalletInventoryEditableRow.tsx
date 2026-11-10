@@ -1,15 +1,20 @@
 "use client";
 
+import WalletInventoryDifferencePrompt from "@/components/wallets/WalletInventoryDifferencePrompt";
 import { DifferenceBadge } from "@/components/wallets/WalletReconciliationHistory";
 import { useFormat } from "@/hooks/useFormat";
 import { useTranslations } from "@/components/i18n/LocaleProvider";
-import type { Wallet } from "@/lib/types/database";
+import type { Category, Wallet } from "@/lib/types/database";
 import {
   getActualBalanceLabel,
   getRecordedBalanceLabel,
   isCreditWallet,
 } from "@/lib/wallets";
-import type { WalletInventoryPreview } from "@/hooks/useWalletInventory";
+import { getBalanceDifferenceKind } from "@/lib/wallets/reconciliation-labels";
+import type {
+  DifferenceClassification,
+  WalletInventoryPreview,
+} from "@/hooks/useWalletInventory";
 
 type WalletInventoryEditableRowProps = {
   wallet: Wallet;
@@ -18,7 +23,12 @@ type WalletInventoryEditableRowProps = {
   preview: WalletInventoryPreview;
   actualBalanceInput: string;
   currency: string;
+  categories: Category[];
+  classification: DifferenceClassification;
+  categoryId: string;
   onActualBalanceChange: (walletId: string, value: string) => void;
+  onClassificationChange: (walletId: string, value: DifferenceClassification) => void;
+  onCategoryChange: (walletId: string, categoryId: string) => void;
 };
 
 export default function WalletInventoryEditableRow({
@@ -28,12 +38,18 @@ export default function WalletInventoryEditableRow({
   preview,
   actualBalanceInput,
   currency,
+  categories,
+  classification,
+  categoryId,
   onActualBalanceChange,
+  onClassificationChange,
+  onCategoryChange,
 }: WalletInventoryEditableRowProps) {
   const t = useTranslations();
   const { formatCurrency } = useFormat();
   const actualBalanceLabel = getActualBalanceLabel(wallet);
   const isCredit = isCreditWallet(wallet);
+  const differenceKind = getBalanceDifferenceKind(preview.difference, isCredit);
 
   return (
     <article
@@ -86,6 +102,17 @@ export default function WalletInventoryEditableRow({
           </div>
         </div>
       </div>
+
+      {differenceKind ? (
+        <WalletInventoryDifferencePrompt
+          kind={differenceKind}
+          classification={classification}
+          categoryId={categoryId}
+          categories={categories}
+          onClassificationChange={(value) => onClassificationChange(wallet.id, value)}
+          onCategoryChange={(nextCategoryId) => onCategoryChange(wallet.id, nextCategoryId)}
+        />
+      ) : null}
     </article>
   );
 }
